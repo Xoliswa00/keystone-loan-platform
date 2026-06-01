@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('status')->default('pending'); // pending, approved, posted
             
             // 🔗 Integration with submodules
-            $table->foreignId('customer_id')->nullable()->constrained('Customers');
+            $table->foreignId('customer_id')->nullable()->constrained('customers');
             $table->foreignId('vendor_id')->nullable()->constrained('apvendors');
             $table->foreignId('loan_id')->nullable()->constrained('loans');
             

@@ -5,7 +5,7 @@
 @section('content')
 <div class="container">
     <h1>Loan Repayments</h1>
-    <a href="{{ route('loan_repayments.create') }}" class="btn btn-primary">Add Loan Repayment</a>
+    <a href="{{ route('loanrepayments.create') }}" class="btn btn-primary">Add Loan Repayment</a>
 
     @if(session('success'))
         <div class="alert alert-success mt-3">
@@ -31,8 +31,8 @@
                     <td>{{ $repayment->repayment_date }}</td>
                     <td>{{ ucfirst($repayment->status) }}</td>
                     <td>
-                        <a href="{{ route('loan_repayments.edit', $repayment) }}" class="btn btn-warning btn-sm">Edit</a>
-                        <form action="{{ route('loan_repayments.destroy', $repayment) }}" method="POST" class="d-inline">
+                        <a href="{{ route('loanrepayments.edit', $repayment) }}" class="btn btn-warning btn-sm">Edit</a>
+                        <form action="{{ route('loanrepayments.destroy', $repayment) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm">Delete</button>

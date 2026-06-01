@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 class="font-semibold text-xl text-blue-600 dark:text-blue-800 leading-tight">
             {{ __('Loans Management') }}
         </h2>
     </x-slot>
@@ -12,15 +12,15 @@
                     <div class="container mx-auto">
                         <div class="flex justify-between items-center mb-6">
                             <h1 class="text-2xl sm:text-3xl font-semibold">Loan Overview</h1>
-                            <a href="{{ route('loanapplications.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-md shadow hover:bg-indigo-700 transition-all">
+                            <a href="{{ route('loanapplications.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md shadow hover:bg-blue-700 transition-all">
                                 + New Loan Application
                             </a>
                         </div>
 
                         <!-- Loan Summary Cards -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <div class="bg-indigo-100 dark:bg-indigo-900 p-4 rounded-lg shadow-md">
-                                <h4 class="text-lg font-semibold text-indigo-800 dark:text-indigo-200">Total Applications</h4>
+                            <div class="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg shadow-md">
+                                <h4 class="text-lg font-semibold text-blue-800 dark:text-blue-200">Total Applications</h4>
                                 <p class="text-2xl font-bold mt-2">{{ $loansapp->count() }}</p>
                             </div>
                             <div class="bg-yellow-100 dark:bg-yellow-900 p-4 rounded-lg shadow-md">
@@ -48,6 +48,7 @@
                                             <th class="border px-4 py-2">Loan ID</th>
                                             <th class="border px-4 py-2">Type</th>
                                             <th class="border px-4 py-2">Amount</th>
+                                            <th class="border px-4 py-2">Total Due</th>
                                             <th class="border px-4 py-2">Status</th>
                                             <th class="border px-4 py-2">Applicant</th>
                                             <th class="border px-4 py-2">Created</th>
@@ -59,19 +60,24 @@
                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                 <td class="border px-4 py-2">{{ $loan->id }}</td>
                                                 <td class="border px-4 py-2">{{ $loan->loan_type }}</td>
-                                                <td class="border px-4 py-2">R{{ number_format($loan->loan_amount, 2) }}</td>
+                                                <td class="border px-4 py-2">R{{ number_format($loan->loan_amount, 2) }}
+                                                 <th class="border px-4 py-2">{{$loan->loanfee->total_due}}   
+                                                </td>
                                                 <td class="border px-4 py-2 capitalize">{{ $loan->status }}</td>
                                                 <td class="border px-4 py-2">{{ $loan->user->name ?? 'N/A' }}</td>
                                                 <td class="border px-4 py-2">{{ $loan->created_at->format('d M Y') }}</td>
                                                 <td class="border px-4 py-2">
                                                     <div class="flex flex-wrap gap-2">
                                                         <a href="{{ route('loans.show', $loan->id) }}" class="text-blue-500 hover:underline" aria-label="View Loan">View</a>
-                                                        <a href="{{ route('loans.edit', $loan->id) }}" class="text-yellow-500 hover:underline" aria-label="Edit Loan">Edit</a>
-                                                        <form action="{{ route('loans.destroy', $loan->id) }}" method="POST" class="inline">
+                                               <!--         <a href="{{ route('loans.edit', $loan->id) }}" class="text-yellow-500 hover:underline" aria-label="Edit Loan">Edit</a> --> 
+                                               
+                                               @if($loan->status=='Pending')
+                                                        <form action="{{ route('loanapplications.destroy', $loan->id) }}" method="POST" class="inline">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="text-red-500 hover:underline" onclick="return confirm('Are you sure?')" aria-label="Delete Loan">Delete</button>
+                                                            <button type="submit" class="text-red-500 hover:underline" aria-label="Delete Loan">Delete</button>
                                                         </form>
+                                                        @endif
                                                     </div>
                                                 </td>
                                             </tr>

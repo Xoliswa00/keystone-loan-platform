@@ -17,6 +17,17 @@
                         <h2 class="text-2xl font-semibold text-gray-600 dark:text-gray-300 mb-4
                             text-base sm:text-1xl">
                             Personal Information
+                            @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
                         </h2>
 
                         <!-- Name -->
@@ -95,7 +106,8 @@
                                 type="text"
                                 name="address"
                                 class="w-full form-control px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
-                                placeholder="123 Main Street"
+                                placeholder="123 Main Street"                                 required
+
                                 aria-describedby="addressHelp"
                             />
                             <x-input-error :messages="$errors->get('address')" class="text-xs sm:text-sm text-red-500 mt-1" />
@@ -115,7 +127,8 @@
                             <select
                                 id="employment_status"
                                 name="employment_status"
-                                class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
+                                class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"                                 required
+
                             >
                                 <option value="" disabled selected>Select Employment Status</option>
                                 <option value="Full-time">Full-time</option>
@@ -134,7 +147,8 @@
                                 type="number"
                                 name="net_salary"
                                 class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
-                                placeholder="e.g. 1000"
+                                placeholder="e.g. 1000"                                 required
+
                                 min="0"
                                 aria-describedby="salaryHelp"
                             />
@@ -147,7 +161,8 @@
                             <select
                                 id="salary_frequency"
                                 name="salary_frequency"
-                                class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
+                                class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"                                 required
+
                             >
                                 <option value="" disabled selected>Select Frequency</option>
                                 <option value="Monthly">Monthly</option>
@@ -165,14 +180,15 @@
                                 name="salary_payment_day"
                                 class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                                 placeholder="e.g. 25"
-                                min="1"
+                                min="1"                                 required
+
                                 max="31"
                                 aria-describedby="salaryHelp"
                             />
                             <x-input-error :messages="$errors->get('salary_payment_day')" class="text-xs sm:text-sm text-red-500 mt-1" />
                         </div>
 
-                        <!-- Credit Score -->
+                        <!-- Credit Score 
                         <div class="space-y-2 mt-3">
                             <x-input-label for="credit_score" :value="__('Credit Score')" class="text-base sm:text-lg" />
                             <x-text-input
@@ -187,7 +203,7 @@
                             />
                             <x-input-error :messages="$errors->get('credit_score')" class="text-xs sm:text-sm text-red-500 mt-1" />
                         </div>
-                    </section>
+                    </section> -->
 
                     <!-- Account Security Section -->
                     <section class="space-y-6">

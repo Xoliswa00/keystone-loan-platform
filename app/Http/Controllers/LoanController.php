@@ -14,6 +14,9 @@ use app\models\Disbursement;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+    use App\Mail\LoanNotificationMail;
+use Illuminate\Support\Facades\Mail;
+
 class LoanController extends Controller
 {
     /**
@@ -90,7 +93,6 @@ public function create()
             'loan_term' => $request->loan_term,
             'collateral' => $request->collateral,
             'approved_amount' => $request->approved_amount,
-            'remaining_balance' => $request->approved_amount,
             'status' => 'pending',
             'admin_id' => Auth::id(),
             'processed_at' => now(),
@@ -102,9 +104,10 @@ public function create()
     /**
      * Display the specified loan.
      */
-    public function show(Loan $loan)
+    public function show($id)
     {
-        return view('loans.show', compact('loan'));
+            $loanApplication= LoanApplication::with('user')->findOrFail($id);
+        return view('loans.show', compact('loanApplication'));
     }
 
     /**
@@ -154,7 +157,23 @@ public function create()
      */
     public function destroy(Loan $loan)
     {
-        $loan->delete();
+                    // authorize if you have policies
+                //$this->authorize('delete', $loan);
+
+                // mark as archived
+                $loan->status = 'archived';
+                $loan->save();
+
+                // send notification (queued inside your Mailable)
+                $this->sendLoanNotification(
+                    $loan,
+                    'Loan Archived',
+                    [
+                        'Your loan application has been archived in our records.',
+                        'If this was a mistake you can contact support or restore it from the Archived Loans page.'
+                    ],
+                    $loan->status
+                );
 
         return redirect()->route('loans.index')->with('success', 'Loan deleted successfully.');
     }
@@ -193,7 +212,6 @@ public function create()
             'loan_term' => 12, // This could also be dynamic    
             'collateral' => $loanApplication->collateral,
             'approved_amount' => $loanApplication->loan_amount,
-            'remaining_balance' => $loanApplication->loan_amount,
             'status' => 'approved',
             'approver_id' => auth()->user()->id,
             'processed_at' => now(),
@@ -203,21 +221,31 @@ public function create()
             'installment_frequency'=>2,
 
         ]);
-// 3. Update customer account (assuming you have a Customer model)
-        $customer = $loanApplication->user->customer;
+        // 3. Update customer account (assuming you have a Customer model)
+                $customer = $loanApplication->user->customer;
 
 
-        // 4. Create disbursement (waiting for approval)
-      $payment=  LoanDisbursement::create([
-            'loan_id'     => $loan->id,
-            'disbursed_amount'      => $loanApplication->loan_amount,
-            'status'      => 'waiting_for_approval',
+                // 4. Create disbursement (waiting for approval)
+            $payment=  LoanDisbursement::create([
+                    'loan_id'     => $loan->id,
+                    'disbursed_amount'      => $loanApplication->loan_amount,
+                    'status'      => 'waiting_for_approval',
 
-            'payment_reference'=>$customer->customer_code,
-            'approver_id'  => Auth::id(),
-            'created_at'  => now(),
-        ]);
-              
+                    'payment_reference'=>$customer->customer_code,
+                    'approver_id'  => Auth::id(),
+                    'created_at'  => now(),
+                ]);
+                // 5. Send notification to the user
+
+                $this->sendLoanNotification(
+                    $loanApplication,
+                    'Loan Submitted',
+                    [
+                        'Your loan application has been successfully Approved.',
+                        'You can now check your dashboard for progress.'
+                    ],
+                    $loanApplication->status
+                );
 
             
          
@@ -246,23 +274,40 @@ public function create()
     /**
      * Reject a loan.
      */
-    public function reject(Request $request, $id)
-    {
-        $request->validate([
-            'rejection_comments' => 'nullable|string',
-        ]);
+public function reject(Request $request, $id)
+{
+    $request->validate([
+        'rejection_reason' => 'nullable|string',
+    ]);
 
-          $loanApplication = LoanApplication::findOrFail($id);
+    $loanApplication = LoanApplication::findOrFail($id);
 
-        $loanApplication->status ='rejected';
-        $loanApplication->approval_date = Now();
-        $loanApplication->reason = $request->rejection_comments;
-         $loanApplication->reviewer_id=auth()->user()->id;
+    // 1️⃣ Update the loan application status
+    $loanApplication->status = 'rejected';
+    $loanApplication->approval_date = now();
+    $loanApplication->reason = $request->rejection_reason;
+    $loanApplication->reviewer_id = auth()->id();
+    $loanApplication->save();
 
-        $loanApplication->save();
+    // 2️⃣ Update all associated repayment schedules to 'rejected'
+    $loanApplication->repaymentSchedules()->update([
+        'status' => 'rejected',
+    ]);
 
-        return redirect()->route('Admin.Loans')->with('success', 'Loan rejected successfully.');
-    }
+    // 3️⃣ Send notification to the user
+    $this->sendLoanNotification(
+        $loanApplication,
+        'Loan Rejected',
+        [   
+            'We regret to inform you that your loan application has been rejected.',
+            'Reason: ' . ($request->rejection_reason ?? 'No specific reason provided.'),
+        ],
+        $loanApplication->status
+    );
+
+    return redirect()->route('admin.loans')->with('success', 'Loan and its repayment schedule rejected successfully.');
+}
+
 
     /**
      * Disburse a loan.
@@ -273,6 +318,18 @@ public function create()
             'status' => 'disbursed',
             'disbursed_date' => now(),
         ]);
+        
+        
+            // 3️⃣ Send notification to the user
+    $this->sendLoanNotification(
+        $loan,
+        'Loan disbursed successfully.',
+        [   
+            'We regret to inform you that your loan application has been Paid.',
+            'Reason: ' . ($request->rejection_reason ?? 'No specific reason provided.'),
+        ],
+        $loan->status
+    );
 
         return redirect()->route('loans.index')->with('success', 'Loan disbursed successfully.');
     }
@@ -296,6 +353,17 @@ public function create()
     }
 
 
+protected function sendLoanNotification($application, string $subject, array $bodyLines = [], ?string $status = null)
+{
+    if ($status) {
+        array_unshift($bodyLines, "Loan Status: " . ucfirst($status));
+        // Optional: include status in subject for clarity
+        $subject .= " - " . ucfirst($status);
+    }
+
+    Mail::to($application->user->email)
+         ->queue(new \App\Mail\LoanNotificationMail($subject, $bodyLines, $application));
+}
 
 
 

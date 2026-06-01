@@ -4,12 +4,52 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+            <meta name="description" content="Liger Holding provides financial aid in times of need." />
+    <meta name="author" content="Liger Holding">
 
-    <title>{{ config('app.name', 'Liger Management') }}</title>
+    <title>{{ config('app.name', 'Liger Holding') }}</title>
 
     <!-- Icons and Fonts -->
-    <link rel="apple-touch-icon" sizes="76x76" href="../assets/img/apple-icon.png">
-    <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+       <link rel="icon" href="{{ asset('assets/img/favicon.ico') }}">
+    <link rel="icon" href="{{ asset('assets/img/favicon.png') }}">
+        <link rel="img" href="{{ asset('assets/img/favicon-16x16.png') }}">
+
+    <link rel="apple-touch-icon" href="{{ asset('assets/img/apple-touch-icon.png') }}">
+    <!-- Directly include the compiled CSS -->
+<link rel="stylesheet" href="/build/assets/app-DTUn7QGO.css">
+<link rel="stylesheet" href="/build/assets/app-DvB2Xm2x.css">
+
+<!-- Include the compiled JS -->
+<script type="module" src="/build/assets/app-CKwJ6yXA.js"></script>
+    <!-- Open Graph for social sharing -->
+    <meta property="og:site_name" content="Liger Holding">
+    <meta property="og:title" content="Liger Holding – Business Consulting & Services">
+    <meta property="og:description" content="Expert business consulting, accounting services, and innovative solutions.">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ asset('assets/img/og-image.png') }}">
+
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Liger Holding",
+      "url": "{{ url('/') }}",
+      "logo": "{{ asset('assets/img/logo.png') }}",
+      "sameAs": [
+        "https://www.facebook.com/ligerholding",
+        "https://twitter.com/ligerholding",
+        "https://www.linkedin.com/company/ligerholding"
+      ]
+    }
+    </script>
+
+
+  @vite(['resources/js/app.js', 'resources/css/app.css']) {{-- keep if you use Vite --}}
+
+  <!-- ... -->
+
 
 
     <!-- App Scripts -->
@@ -61,7 +101,7 @@
             <div class="container mx-auto px-4">
                 <div class="flex flex-col sm:flex-row justify-between items-center">
                     <div>
-                        &copy; {{ date('Y') }} {{ config('app.name', 'Liger Management') }}. All rights reserved.
+                        &copy; {{ date('Y') }} {{ config('app.name', 'Liger Holding') }}. All rights reserved.
                     </div>
                     <div class="mt-2 sm:mt-0 space-x-4">
                         <a href="/about" class="hover:text-indigo-600 transition">About</a>
@@ -73,7 +113,7 @@
         </footer>
 
         <!-- WhatsApp Chat Button -->
-        <a href="https://wa.me/27600000000" target="_blank" class="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg flex items-center space-x-2">
+        <a href="https://wa.me/27721853349" target="_blank" class="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg flex items-center space-x-2">
             <i class="fab fa-whatsapp text-xl"></i>
             <span class="hidden sm:inline">Chat</span>
         </a>
@@ -83,5 +123,8 @@
             <i class="fas fa-arrow-up"></i>
         </button>
     </div>
+    
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+
 </body>
 </html>

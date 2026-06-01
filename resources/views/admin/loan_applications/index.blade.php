@@ -57,22 +57,7 @@
                                                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
                                                 🔍 View
                                             </a>
-                                            @if($application->status === 'pending')
-                                                <form action="{{ route('loans.approve', $application->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit"
-                                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700">
-                                                        ✅ Approve
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('loans.reject', $application->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit"
-                                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700">
-                                                        ❌ Reject
-                                                    </button>
-                                                </form>
-                                            @endif
+                                        
                                         </td>
                                     </tr>
                                 @endforeach

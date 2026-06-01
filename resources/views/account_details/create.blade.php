@@ -40,7 +40,7 @@
                     <label for="account_type" class="block text-sm font-medium text-gray-700">Account Type</label>
                     <select name="account_type" id="account_type" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" required>
                         <option value="savings" {{ old('account_type') == 'savings' ? 'selected' : '' }}>Savings</option>
-                        <option value="current" {{ old('account_type') == 'current' ? 'selected' : '' }}>Current</option>
+                        <option value="current" {{ old('account_type') == 'current' ? 'selected' : '' }}>Check</option>
                     </select>
                     @error('account_type')
                         <div class="text-red-600 text-sm">{{ $message }}</div>
@@ -51,7 +51,7 @@
                     <label for="payment_method" class="block text-sm font-medium text-gray-700">Payment Method</label>
                     <select name="payment_method" id="payment_method" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" required>
                         <option value="debit_order" {{ old('payment_method') == 'debit_order' ? 'selected' : '' }}>Debit Order</option>
-                        <option value="manual" {{ old('payment_method') == 'manual' ? 'selected' : '' }}>Manual</option>
+                       
                     </select>
                     @error('payment_method')
                         <div class="text-red-600 text-sm">{{ $message }}</div>

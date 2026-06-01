@@ -18,7 +18,7 @@ return new class extends Migration
                   ->onDelete('cascade'); // Ensure repayment schedules are removed when the loan is deleted
             $table->decimal('emi_amount', 15, 2)->default(0); // EMI Amount should not be zero, default to 0 if needed
             $table->date('due_date');
-            $table->enum('status', ['pending', 'paid', 'overdue'])->default('pending'); // Default to 'pending'
+            $table->enum('status', ['pending', 'paid', 'overdue','rejected'])->default('pending'); // Default to 'pending'
             $table->timestamps();
             $table->softDeletes(); // Add soft delete column to mark records as deleted without removing them
 

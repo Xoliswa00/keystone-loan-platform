@@ -27,10 +27,7 @@ class Customer extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function invoices()
-    {
-        return $this->hasMany(arinvoices::class);
-    }
+
 
      public function payments()
     {
@@ -41,16 +38,13 @@ class Customer extends Model
     {
         return $this->hasMany(LoanApplication::class, 'user_id', 'user_id');
     }
-    public function ARFlag()
+  
+
+
+
+     public function cashbook_transactions()
     {
-        return $this->hasMany(ARFlags::class);
-    }
-
-
-
-     public function transactions()
-    {
-        return $this->hasMany(Transaction::class);
+        return $this->hasMany(cashbook_transactions::class, 'loan_id', 'user_id');
     }
 
      public function loansApproved()
@@ -66,6 +60,19 @@ class Customer extends Model
     {
         return $query->where('status', 'active');
     }
+    // Customer.php
+public function loanApplications() {
+    return $this->hasMany(LoanApplication::class, 'user_id', 'user_id');
+}
+
+// LoanApplication.php
+
+
+
+public function repaymentSchedules() {
+    return $this->hasMany(RepaymentSchedule::class,'loan_id','user_id');
+}
+
 
 
 }

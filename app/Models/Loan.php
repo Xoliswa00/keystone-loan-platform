@@ -58,9 +58,7 @@ class Loan extends Model
     {
         return $this->hasOne(LoanInterest::class);
     }
-    public function customer() {
-    return $this->belongsTo(Customer::class);
-}
+
 
 
 
@@ -72,5 +70,14 @@ class Loan extends Model
     public function fees() {
     return $this->hasOne(LoanFee::class);
 }
+public function disbursements() {
+    return $this->hasMany(LoanDisbursement::class, 'loan_id');  
+}
+public function customer()
+{
+    return $this->belongsTo(Customer::class, 'customer_id');
+}
+
+
 
 }

@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Models\Branches;
+use App\Models\branches;
 use App\Models\chart_of_accounts;
 use App\Observers\charts_of_accounts;
 use App\Observers\CreatedBranch;

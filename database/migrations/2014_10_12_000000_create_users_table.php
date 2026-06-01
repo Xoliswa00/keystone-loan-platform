@@ -26,7 +26,7 @@ return new class extends Migration
             $table->enum('salary_frequency', ['Weekly', 'Bi-weekly', 'Monthly'])->nullable();
             $table->decimal('net_salary', 10, 2);
             $table->integer('salary_payment_day');
-            $table->integer('credit_score');
+            $table->integer('credit_score')->nullable();
             $table->text('ID_copy');
 
             

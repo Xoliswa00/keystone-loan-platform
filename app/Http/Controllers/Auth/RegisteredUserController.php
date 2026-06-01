@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Redirect;
+
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log; // Import the Log facade
 
@@ -40,12 +42,13 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'phone' => ['required', 'string', 'regex:/^(\+?\d{1,3}[- ]?)?\d{10}$/', 'unique:users,phone'],
             'address' => ['nullable', 'string', 'max:700'],
-            'ID_Number' => ['required', 'string', 'max:20'],
-            'employment_status' => ['nullable', 'in:Full-time,Part-time,Self-employed,Unemployed'],
-            'salary_frequency' => ['nullable', 'in:Weekly,Bi-weekly,Monthly'],
+            'ID_Number' => ['required', 'string', 'max:20', 'unique:users,ID_Number'],
+
+            'employment_status' => ['nullable','required', 'in:Full-time,Part-time,Self-employed,Unemployed'],
+            'salary_frequency' => ['nullable', 'required','in:Weekly,Bi-weekly,Monthly'],
             'net_salary' => ['nullable', 'numeric', 'min:0'],
-            'salary_payment_day' => ['nullable', 'integer', 'between:1,31'],
-            'credit_score' => ['required', 'numeric', 'min:0'],
+            'salary_payment_day' => ['nullable','required' ,'integer', 'between:1,31'],
+            'credit_score' => ['nullable', 'numeric', 'min:0'],
             'ID_copy' => ['required', 'file'], // Accepting file uploads for ID copy
         ]);
     
@@ -58,8 +61,7 @@ class RegisteredUserController extends Controller
            
         } catch (\Exception $e) {
             // Log the error for debugging
-           dd(Log::error('User registration failed: ' . $e->getMessage()));
-    
+
             // Handle errors
             return redirect()->back()->withErrors(['error' => 'Failed to register user. Please try again.']);
         }
@@ -85,7 +87,7 @@ class RegisteredUserController extends Controller
         
 
         // Redirect to home
-        return redirect(RouteServiceProvider::HOME)->with('success', 'Registration successful.');
+        return  Redirect::route('loanapplications.create')->with('success', 'Registration successful.');
     }
     
     

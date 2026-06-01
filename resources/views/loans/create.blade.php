@@ -66,14 +66,14 @@
                                 @enderror
                             </div>
 
-                            <!-- File Uploads -->
+                            <!-- File Uploads 
                             <div class="form-group mt-4">
                                 <label for="credit_score_report" class="block text-white-700">Credit Score Report:</label>
                                 <input type="file" name="credit_score_report" id="credit_score_report" class="form-control block w-full mt-1 border-gray-300 rounded-md shadow-sm">
                                 @error('credit_score_report')
                                     <small class="text-red-500">{{ $message }}</small>
                                 @enderror
-                            </div>
+                            </div>-->
 
                             <div class="form-group mt-4">
                                 <label for="bank_statement" class="block text-white-700">Bank Statement:</label>

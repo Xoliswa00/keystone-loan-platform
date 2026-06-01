@@ -8,7 +8,7 @@
     <div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
 
-            {{-- Approve All Button --}}
+          <!--  {{-- Approve All Button --}}
             <div class="flex justify-end mb-4">
                 <form method="POST" action="{{ route('disbursements.approveAll') }}">
                     @csrf
@@ -17,7 +17,7 @@
                         ✅ Approve All Pending
                     </button>
                 </form>
-            </div>
+            </div>-->
 
             {{-- Disbursement Table --}}
             @if($disbursements->isEmpty())

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
+use App\Models\cashbook_transactions;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
@@ -12,7 +13,7 @@ class TransactionController extends Controller
      */
     public function index()
     {
-        $transactions = Transaction::all();
+        $transactions = cashbook_transactions::all();
         return view('transactions.index', compact('transactions'));
     }
 

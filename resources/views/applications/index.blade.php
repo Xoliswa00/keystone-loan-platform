@@ -7,15 +7,15 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <div class="container mx-auto mt-8">
-                        <div class="flex justify-between items-center">
+   <div class="flex justify-between items-center">
                             <h1 class="text-3xl font-bold">Loan Applications</h1>
                             <a href="{{ route('loanapplications.create') }}" class="bg-blue-500 text-white px-5 py-2 rounded-md hover:bg-blue-600 transition duration-200">
                                 Add New Application
                             </a>
-                        </div>
+                        </div>           <div class="bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
+                <div class="p-6 text-gray-900 dark:text-gray-100">
+                    <div class="container mx-auto mt-8">
+                      
 
                         @if($Applications->isEmpty())
                             <p class="mt-6 text-gray-600 dark:text-gray-400 text-center">
@@ -48,12 +48,7 @@
                                                         <span>|</span>
                                                         <a href="{{ route('loanapplications.edit', $application->id) }}" class="text-yellow-500 hover:underline" aria-label="Edit Application">Edit</a>
                                                         <span>|</span>
-                                                        <form action="{{ route('loanapplications.destroy', $application->id) }}" method="POST" class="inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="text-red-500 hover:underline" onclick="return confirm('Are you sure?')" aria-label="Delete Application">
-                                                                Delete
-                                                            </button>
+                                                   
                                                         </form>
                                                     </div>
                                                 </td>

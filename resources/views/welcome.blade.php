@@ -1,24 +1,24 @@
-@section('title', 'Welcome to Liger Management System')
+@section('title', 'Welcome to Liger Holding')
 
 <x-guest-layout>
     <!-- Hero Section -->
     <div class="py-10 px-4 sm:py-16 sm:px-6 lg:py-24 lg:px-8 text-center bg-gradient-to-b from-gray-100 to-gray-300 dark:from-gray-900 dark:to-gray-800">
 
         {{-- Logo --}}
-        <div class="mb-6" data-aos="zoom-in">
+        <div class="mb-2">
             <a href="/">
-                <x-application-logo class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 fill-current text-blue-600 dark:text-blue-400 mx-auto" />
+                <x-application-logo />
             </a>
         </div>
 
         {{-- Headline --}}
         <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight mb-4" data-aos="fade-up">
-            Welcome to <span class="text-blue-600 dark:text-blue-400">Liger Management System</span>
+            Welcome to <span class="text-blue-600 dark:text-blue-400">Liger Holding</span>
         </h1>
 
         {{-- Tagline --}}
         <p class="text-base sm:text-lg lg:text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mb-10 px-2" data-aos="fade-up" data-aos-delay="150">
-            A secure, scalable and smart way to manage your loans, clients, and repayments — all in one place.
+            Secure, smart, and scalable solutions to manage your loans, clients, and repayments — all from one intuitive platform.
         </p>
 
         {{-- CTA Buttons --}}
@@ -38,31 +38,31 @@
     <section class="bg-white dark:bg-gray-900 py-16 px-4 sm:px-6 lg:px-8">
         <div class="max-w-6xl mx-auto text-center mb-12" data-aos="fade-up">
             <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
-                How Liger Management Works
+                Why Choose Liger Holding
             </h2>
             <p class="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Manage loans efficiently from client onboarding to repayments with ease and confidence.
+                Streamline your loan management process with an all-in-one platform designed to save time and increase efficiency.
             </p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" data-aos="fade-up" data-aos-delay="100">
             <div class="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition">
-                <h3 class="text-xl font-semibold text-blue-600 mb-2">Client Profiles</h3>
-                <p class="text-gray-700 dark:text-gray-300">Capture, view, and manage all borrower details in one place.</p>
+                <h3 class="text-xl font-semibold text-blue-600 mb-2">Comprehensive Client Profiles</h3>
+                <p class="text-gray-700 dark:text-gray-300">Capture and manage all borrower information easily for faster decision-making.</p>
             </div>
             <div class="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition">
-                <h3 class="text-xl font-semibold text-blue-600 mb-2">Loan Setup</h3>
-                <p class="text-gray-700 dark:text-gray-300">Define interest rates, repayment periods, and track disbursements.</p>
+                <h3 class="text-xl font-semibold text-blue-600 mb-2">Flexible Loan Management</h3>
+                <p class="text-gray-700 dark:text-gray-300">Set up interest rates, repayment schedules, and track disbursements with precision.</p>
             </div>
             <div class="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:scale-105 transition">
                 <h3 class="text-xl font-semibold text-blue-600 mb-2">Automated Reminders</h3>
-                <p class="text-gray-700 dark:text-gray-300">Send scheduled SMS/email reminders for repayments and deadlines.</p>
+                <p class="text-gray-700 dark:text-gray-300">Keep clients on track with automated notifications for payments and deadlines.</p>
             </div>
         </div>
     </section>
 
     {{-- Footer Line --}}
     <div class="text-center mt-10 text-gray-500 dark:text-gray-400 italic text-sm px-4">
-        “Smarter lending starts here.”
+        “Smarter lending starts with Liger Holding.”
     </div>
 </x-guest-layout>

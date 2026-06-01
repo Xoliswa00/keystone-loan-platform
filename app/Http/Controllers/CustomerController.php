@@ -5,18 +5,35 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
+use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //
-        $customers = Customer::all();
-        return view('customers.index', compact('customers'));
+   public function index(Request $request)
+{
+  $query = Customer::query()
+        ->select('customers.*')
+        ->leftJoin('users', 'customers.user_id', '=', 'users.id');
+
+    if ($search = $request->input('search')) {
+        $query->where(function ($q) use ($search) {
+            $q->where('customers.customer_code', 'like', "%$search%")
+              ->orWhere('users.ID_Number', 'like', "%$search%")
+              ->orWhere('users.phone', 'like', "%$search%")
+              ->orWhere('users.name', 'like', "%$search%")
+              ->orWhere('users.email', 'like', "%$search%");
+        });
     }
+
+
+    $customers = $query->paginate(20);
+
+    return view('customer.index', compact('customers'));
+}
+
 
     /**
      * Show the form for creating a new resource.
@@ -37,10 +54,23 @@ class CustomerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Customer $customer)
-    {
-        //
-    }
+   public function show($id)
+{
+    $customer = Customer::with([
+        'loanApplications.loanfee',// assuming you have a documents relationship
+        'loanApplications.repaymentSchedules', // each loan with its repayment schedules
+        'payments',
+        'cashbook_transactions',
+        'loans',
+
+        'user' // load the associated user
+
+
+    ])->findOrFail($id);
+
+    return view('customer.show', compact('customer'));
+}
+
 
     /**
      * Show the form for editing the specified resource.

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('reason')->nullable(); // Purpose of the loan
 
             $table->text('collateral')->nullable(); // Collateral information (optional)
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending'); // Application status
+            $table->enum('status', ['pending', 'approved', 'rejected','deleted'])->default('pending'); // Application status
             $table->date('approval_date')->nullable(); // Approval date (nullable until approved)
             $table->string('credit_score_report')->nullable(); // File path for credit score report
             $table->string('bank_statement')->nullable(); // File path for bank statement

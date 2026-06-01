@@ -23,4 +23,16 @@ class RepaymentSchedule extends Model
     {
         return $this->belongsTo(LoanApplication::class);
     }
+    public function customer()
+    {
+        return $this->hasOneThrough(
+            Customer::class,
+            LoanApplication::class,
+            'id', // Foreign key on LoanApplication table...
+            'user_id', // Foreign key on Customer table...
+            'loan_id', // Local key on RepaymentSchedule table...
+            'user_id'  // Local key on LoanApplication table...
+        );
+    }
+    
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LoanRepayment;
 use App\Models\Loan;
 use Illuminate\Http\Request;
+USE App\Models\RepaymentSchedule;
 
 class LoanRepaymentController extends Controller
 {
@@ -13,7 +14,20 @@ class LoanRepaymentController extends Controller
      */
     public function index()
     {
-        $loanRepayments = LoanRepayment::with('loan')->get();
+        
+   $query = RepaymentSchedule::select('repayment_schedules.*', 'loans.user_id')
+        ->join('loans', 'repayment_schedules.loan_id', '=', 'loans.loan_application_id')
+        ->with('loan')
+        ->where('repayment_schedules.status', '!=','rejected')
+        ->orderBy('repayment_schedules.due_date', 'asc');
+
+    // If NOT admin/finance role (rule_id != 2), limit to own loans
+    if (auth()->user()->rule_id !== 2) {
+        $query->where('loans.user_id', auth()->user()->id);
+    }
+
+    $loanRepayments = $query->get();
+
         return view('loan_repayments.index', compact('loanRepayments'));
     }
 

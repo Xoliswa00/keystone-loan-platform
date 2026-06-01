@@ -11,6 +11,7 @@ use App\Http\Controllers\LoanInterestController;
 use App\Http\Controllers\RepaymentScheduleController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DisbursementController;
+use App\Http\Controllers\CustomerController;
 
 use Illuminate\Support\Facades\Gate;
 
@@ -56,12 +57,17 @@ Route::middleware('auth')->group(function () {
 
 
 
-Route::view('/about', 'pages.about')->name('about');
-Route::view('/contact', 'pages.contact')->name('contact');
+Route::view('/about', 'about')->name('about');
+Route::view('/contact', 'contact')->name('contact');
 
 
 
     
+Route::get('/loanapplications', [LoanApplicationController::class, 'index'])->name('loanapplications.show');
+Route::put('/loan-applications/{id}/note',
+    [LoanApplicationController::class, 'updateNote']
+)->name('loanapplications.updateNote');
+
 
 
 Route::middleware('auth')->group(function () {
@@ -75,7 +81,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('accountdetails', AccountDetailController::class);
     Route::resource('applications', LoanApplicationController::class);
     Route::resource('loans', LoanController::class);
-        Route::resource('loan_repayments', LoanRepaymentController::class);
+    Route::resource('customers', CustomerController::class);
+
+        Route::resource('loanrepayments', LoanRepaymentController::class);
                 Route::resource('Admin', AdminController::class);
 
 
@@ -85,7 +93,9 @@ Route::post('loans/{loan}/disburse', [LoanController::class, 'disburse'])->name(
 Route::post('loans/{loan}/update-payment', [LoanController::class, 'updatePayment'])->name('loans.updatePayment');
 // Route definitions
 Route::get('/loans', [LoanController::class, 'index'])->name('loans');
-Route::get('/loanapplications', [LoanApplicationController::class, 'index'])->name('loanapplications');
+Route::get('/loanapplications', [LoanApplicationController::class, 'index'])->name('loanapplications.index');
+Route::get('/loanapplications', [LoanApplicationController::class, 'index'])->name('loanapplications.show');
+
 Route::get('/loanrepayments', [LoanRepaymentController::class, 'index'])->name('loanrepayments');
 
 
@@ -95,7 +105,7 @@ Route::get('/loanrepayments', [LoanRepaymentController::class, 'index'])->name('
  Route::get('/Admin', [AdminController::class, 'Loans'])->name('admin.loans');
   Route::get('/Admins', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/Admind', [AdminController::class, 'Disbursement'])->name('Admin.Disbursement');
-
+      Route::get('/summary', [AdminController::class, 'summary'])->name('admin.summary');
 
 
 Route::middleware(['auth'])->prefix('admin/disbursements')->name('disbursements.')->group(function () {
@@ -111,9 +121,72 @@ Route::middleware(['auth'])->prefix('admin/disbursements')->name('disbursements.
 });
 
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\LoanNotificationMail;
+use App\Models\LoanApplication;
+
+
+// routes/web.php
+Route::get('/terms', [App\Http\Controllers\LoanApplicationController::class, 'terms'])->name('terms.show');
+
+
+use App\Http\Controllers\NupayTransactionsStagingController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/nupay/upload', [NupayTransactionsStagingController::class, 'showUploadForm'])->name('nupay.upload.form');
+    Route::post('/nupay/upload', [NupayTransactionsStagingController::class, 'handleUpload'])->name('nupay.upload');
+});
+
+use App\Http\Controllers\NupayTransactionController;
+
+Route::prefix('nu-pay/import')->group(function () {
+    Route::get('/', [NupayTransactionController::class, 'index'])->name('nu-pay.import.index');
+    Route::get('/{importRef}', [NupayTransactionController::class, 'show'])->name('nu-pay.import.show');
+    Route::post('/{importRef}/post', [NupayTransactionController::class, 'post'])->name('nu-pay.import.post');
+});
 
 
 
+Route::prefix('admin/reports')
+    ->name('reports.')
+    ->middleware(['auth']) // add admin middleware if you have one
+    ->group(function () {
+
+        Route::get('/summary', [AdminController::class, 'profitability'])
+            ->name('summary');
+
+        Route::get('/portfolio', [AdminController::class, 'portfolio'])
+            ->name('portfolio');
+
+        Route::get('/arrears', [AdminController::class, 'arrears'])
+            ->name('arrears');
+
+        Route::get('/collections', [AdminController::class, 'collections'])
+            ->name('collections');
+
+        Route::get('/disbursements', [AdminController::class, 'disbursements'])
+            ->name('disbursements');
+
+        Route::get('/gl-reconciliation', [AdminController::class, 'glReconciliation'])
+            ->name('gl-recon');
+
+        Route::get('/reversals', [AdminController::class, 'reversalAudit'])
+            ->name('reversals');
+            
+                      Route::get('/scorecard', [AdminController::class, 'scorecard'])
+            ->name('scorecard');
+
+        Route::get('/reviewer/{id}', [AdminController::class, 'reviewer'])
+            ->name('reviewer');
+
+        Route::get('/alerts', [AdminController::class, 'alerts'])
+            ->name('alerts'); 
+            
+            
+            
+            
+            
+    });
 
 
 // Authentication routes

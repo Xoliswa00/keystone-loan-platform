@@ -1,0 +1,57 @@
+[14-Nov-2025 01:44:55 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:44:55 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:09 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:09 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:10 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:10 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:14 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:14 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:15 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:15 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:18 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:45:18 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:47:36 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:47:36 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:47:38 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:47:38 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/home/ligerhn8m5j1/loan/loan/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:49:04 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:49:04 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:49:06 UTC] PHP Warning:  require(/home/ligerhn8m5j1/loan/loan/public/vendor/autoload.php): Failed to open stream: No such file or directory in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:49:06 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/ligerhn8m5j1/loan/loan/public/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home/ligerhn8m5j1/loan/loan/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/ligerhn8m5j1/loan/loan/public/index.php on line 34
+[14-Nov-2025 01:53:50 UTC] PHP Parse error:  syntax error, unexpected token "=", expecting end of file in /home/ligerhn8m5j1/loan/loan/public/index.php on line 47
+[14-Nov-2025 01:54:33 UTC] PHP Parse error:  syntax error, unexpected token "=", expecting end of file in /home/ligerhn8m5j1/loan/loan/public/index.php on line 47
+[23-Nov-2025 14:03:31 Africa/Johannesburg] PHP Fatal error:  Trait "App\Http\Controllers\Illuminate\Support\Facades\Auth" not found in /home/ligerhn8m5j1/loan/loan/app/Http/Controllers/DisbursementController.php on line 15
+[16-Jan-2026 04:11:27 Africa/Johannesburg] PHP Fatal error:  Cannot redeclare App\Http\Controllers\NupayTransactionController::show() in /home/ligerhn8m5j1/loan/loan/app/Http/Controllers/NupayTransactionController.php on line 122
+[04-Feb-2026 04:43:29 Africa/Johannesburg] PHP Fatal error:  Cannot use App\Http\Controllers\AdminController as AdminController because the name is already in use in /home/ligerhn8m5j1/loan/loan/routes/web.php on line 149
+[04-Feb-2026 04:43:35 Africa/Johannesburg] PHP Fatal error:  Cannot use App\Http\Controllers\AdminController as AdminController because the name is already in use in /home/ligerhn8m5j1/loan/loan/routes/web.php on line 149
+[04-Feb-2026 04:43:43 Africa/Johannesburg] PHP Fatal error:  Cannot use App\Http\Controllers\AdminController as AdminController because the name is already in use in /home/ligerhn8m5j1/loan/loan/routes/web.php on line 149
