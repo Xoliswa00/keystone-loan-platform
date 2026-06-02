@@ -92,12 +92,7 @@ Route::middleware('auth')->group(function () {
 // middleware class when ready; for now we use a closure middleware inline.
 // ──────────────────────────────────────────────────────────────────────────────
 
-Route::middleware(['auth', function ($request, $next) {
-    if (auth()->user()?->rule_id !== 2) {
-        abort(403, 'Admin access required.');
-    }
-    return $next($request);
-}])->group(function () {
+Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(function () {
 
     // ── Dashboards & overview ────────────────────────────────────────────────
     Route::get('/Admins',   [AdminController::class, 'index'])->name('admin.dashboard');
@@ -160,11 +155,37 @@ Route::middleware(['auth', function ($request, $next) {
         Route::get('/disbursements',    [AdminController::class, 'disbursements'])->name('disbursements');
         Route::get('/gl-reconciliation',[AdminController::class, 'glReconciliation'])->name('gl-recon');
         Route::get('/gl-summary',       [AdminController::class, 'glReconciliation'])->name('gl_summary');
-        Route::get('/reversals',        [AdminController::class, 'reversalAudit'])->name('reversals');
-        Route::get('/scorecard',        [AdminController::class, 'scorecard'])->name('scorecard');
-        Route::get('/reviewer/{id}',    [AdminController::class, 'reviewer'])->name('reviewer');
-        Route::get('/alerts',           [AdminController::class, 'alerts'])->name('alerts');
+        Route::get('/reversals',           [AdminController::class, 'reversalAudit'])->name('reversals');
+        Route::get('/scorecard',           [AdminController::class, 'scorecard'])->name('scorecard');
+        Route::get('/reviewer/{id}',       [AdminController::class, 'reviewer'])->name('reviewer');
+        Route::get('/alerts',              [AdminController::class, 'alerts'])->name('alerts');
+
+        // ── Finance-specific ──────────────────────────────────────────────────
+        Route::get('/vat-201',             [AdminController::class, 'vat201'])->name('vat201');
+        Route::get('/income-statement',    [AdminController::class, 'incomeStatement'])->name('income-statement');
+        Route::get('/balance-sheet',       [AdminController::class, 'balanceSheet'])->name('balance-sheet');
+        Route::get('/write-off-register',  [AdminController::class, 'writeOffRegister'])->name('write-off-register');
+        Route::get('/audit-log',           [AdminController::class, 'auditLog'])->name('audit-log');
     });
+
+    // ── Bank statement import ─────────────────────────────────────────────────
+    Route::get('/bank-statement/upload',   [\App\Http\Controllers\BankStatementController::class, 'showUpload'])->name('bank-statement.upload');
+    Route::post('/bank-statement/upload',  [\App\Http\Controllers\BankStatementController::class, 'handleUpload'])->name('bank-statement.store');
+    Route::get('/bank-statement/{batch}',  [\App\Http\Controllers\BankStatementController::class, 'show'])->name('bank-statement.show');
+    Route::post('/bank-statement/{batch}/reconcile', [\App\Http\Controllers\BankStatementController::class, 'reconcile'])->name('bank-statement.reconcile');
+
+    // ── Client statement PDF ──────────────────────────────────────────────────
+    Route::get('/client/statement/{user}', [\App\Http\Controllers\ClientStatementController::class, 'download'])->name('client.statement');
+    Route::get('/my-statement',            [\App\Http\Controllers\ClientStatementController::class, 'myStatement'])->name('client.my-statement');
+
+    // ── Admin operations: notes + document verification ───────────────────────
+    Route::post('/admin/notes/{application}',         [\App\Http\Controllers\AdminOpsController::class, 'addNote'])->name('admin.notes.store');
+    Route::post('/admin/assign/{application}',        [\App\Http\Controllers\AdminOpsController::class, 'assign'])->name('admin.assign');
+    Route::post('/admin/collections/log',             [\App\Http\Controllers\AdminOpsController::class, 'logContactAttempt'])->name('admin.collections.log');
+    Route::get('/admin/collections',                  [\App\Http\Controllers\AdminOpsController::class, 'collectionsQueue'])->name('admin.collections');
+
+    // ── NCR export (download) ─────────────────────────────────────────────────
+    Route::get('/admin/ncr-export',                   [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('admin.ncr-export');
 
     // ── Admin resource (legacy) ───────────────────────────────────────────────
     Route::resource('Admin', AdminController::class);

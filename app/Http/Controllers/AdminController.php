@@ -673,6 +673,182 @@ class AdminController extends Controller
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // VAT 201 — SARS VAT return extract
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function vat201(Request $request)
+    {
+        $from = $request->from_date ?? now()->startOfMonth()->toDateString();
+        $to   = $request->to_date   ?? now()->toDateString();
+
+        // Output VAT — on initiation fees + service fees (VAT-able supplies)
+        $outputVatOnFees = DB::table('loan_fees as lf')
+            ->join('loans as l', 'l.loan_application_id', '=', 'lf.loan_application_id')
+            ->whereBetween('l.disbursed_date', [$from, $to])
+            ->select(
+                DB::raw('SUM(lf.initiation_fee) as initiation_fee_incl'),
+                DB::raw('ROUND(SUM(lf.initiation_fee) / 1.15, 2) as initiation_fee_excl'),
+                DB::raw('ROUND(SUM(lf.initiation_fee) - (SUM(lf.initiation_fee) / 1.15), 2) as initiation_vat'),
+                DB::raw('SUM(lf.service_fee) as service_fee_incl'),
+                DB::raw('ROUND(SUM(lf.service_fee) / 1.15, 2) as service_fee_excl'),
+                DB::raw('ROUND(SUM(lf.service_fee) - (SUM(lf.service_fee) / 1.15), 2) as service_vat')
+            )
+            ->first();
+
+        // Interest income is VAT-exempt (financial services exemption)
+        $interestIncome = DB::table('loan_fees as lf')
+            ->join('loans as l', 'l.loan_application_id', '=', 'lf.loan_application_id')
+            ->whereBetween('l.disbursed_date', [$from, $to])
+            ->sum('lf.interest_amount');
+
+        // Input VAT — on NuPay collection fees and other business expenses
+        $inputVatOnNupay = DB::table('loan_repayments')
+            ->whereBetween('payment_date', [$from, $to])
+            ->selectRaw('ROUND(SUM(nupay_fee) / 1.15 * 0.15, 2) as input_vat')
+            ->value('input_vat') ?? 0;
+
+        $totalOutputVat = round(($outputVatOnFees->initiation_vat ?? 0) + ($outputVatOnFees->service_vat ?? 0), 2);
+        $totalInputVat  = $inputVatOnNupay;
+        $netVatPayable  = round($totalOutputVat - $totalInputVat, 2);
+
+        return view('admin.reports.vat201', compact(
+            'outputVatOnFees', 'interestIncome',
+            'totalOutputVat', 'totalInputVat', 'netVatPayable',
+            'from', 'to'
+        ));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Income Statement (IFRS-formatted P&L)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function incomeStatement(Request $request)
+    {
+        $from = $request->from_date ?? now()->startOfYear()->toDateString();
+        $to   = $request->to_date   ?? now()->toDateString();
+
+        $data = [
+            // Revenue
+            'interest_income'        => DB::table('repayment_schedules as rs')
+                ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
+                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                ->sum('rs.interest_amount'),
+
+            'fee_income_excl_vat'    => DB::table('repayment_schedules as rs')
+                ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
+                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                ->selectRaw('ROUND(SUM(rs.fee_amount) / 1.15, 2) as excl')->value('excl') ?? 0,
+
+            'penalty_income'         => DB::table('loan_repayments')
+                ->where('transaction_type', 'manual')->whereBetween('payment_date', [$from, $to])
+                ->sum('fee_amount'),
+
+            // Credit loss
+            'credit_loss_expense'    => DB::table('bad_debt_provisions')
+                ->whereBetween('provision_date', [$from, $to])
+                ->sum('provision_movement'),
+
+            // Operating expenses
+            'bank_charges'           => DB::table('loan_repayments')
+                ->whereBetween('payment_date', [$from, $to])->sum('nupay_fee'),
+
+            // Deferred income (not yet in P&L — balance sheet item)
+            'deferred_interest'      => Loan::where('status', 'disbursed')->sum('deferred_interest'),
+            'deferred_fees'          => Loan::where('status', 'disbursed')->sum('deferred_fees'),
+
+            'from' => $from,
+            'to'   => $to,
+        ];
+
+        $data['gross_income']     = $data['interest_income'] + $data['fee_income_excl_vat'] + $data['penalty_income'];
+        $data['total_expenses']   = $data['credit_loss_expense'] + $data['bank_charges'];
+        $data['net_profit']       = $data['gross_income'] - $data['total_expenses'];
+
+        return view('admin.reports.income_statement', $data);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Balance Sheet (summary)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function balanceSheet(Request $request)
+    {
+        $asAt = $request->as_at_date ?? now()->toDateString();
+
+        $loansReceivableGross = Loan::whereNotIn('status', ['settled', 'rejected', 'archived', 'written_off'])
+            ->sum('remaining_balance');
+
+        $allowanceForCreditLoss = DB::table('bad_debt_provisions as p')
+            ->join(DB::raw('(SELECT loan_id, MAX(provision_date) AS latest FROM bad_debt_provisions GROUP BY loan_id) latest'),
+                fn($j) => $j->on('p.loan_id', '=', 'latest.loan_id')->on('p.provision_date', '=', 'latest.latest'))
+            ->sum('p.provision_amount');
+
+        $deferredInterest = Loan::where('status', 'disbursed')->sum('deferred_interest');
+        $deferredFees     = Loan::where('status', 'disbursed')->sum('deferred_fees');
+
+        $cashAtBank = DB::table('gl_accounts as ga')
+            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+            ->where('coa.account_code', '1100')
+            ->value('ga.current_balance') ?? 0;
+
+        $vatOutput = DB::table('gl_accounts as ga')
+            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+            ->where('coa.account_code', '2200')
+            ->value('ga.current_balance') ?? 0;
+
+        return view('admin.reports.balance_sheet', compact(
+            'loansReceivableGross', 'allowanceForCreditLoss',
+            'deferredInterest', 'deferredFees',
+            'cashAtBank', 'vatOutput', 'asAt'
+        ));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Write-off register
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function writeOffRegister(Request $request)
+    {
+        $from = $request->from_date ?? now()->startOfYear()->toDateString();
+        $to   = $request->to_date   ?? now()->toDateString();
+
+        $writeOffs = Loan::with(['user', 'user.customer'])
+            ->where('status', 'written_off')
+            ->whereBetween('written_off_date', [$from, $to])
+            ->orderBy('written_off_date', 'desc')
+            ->get();
+
+        $totalWrittenOff = $writeOffs->sum('write_off_amount');
+
+        return view('admin.reports.write_off_register', compact('writeOffs', 'totalWrittenOff', 'from', 'to'));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Audit log viewer
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function auditLog(Request $request)
+    {
+        $query = \App\Models\AuditLog::with('user')
+            ->latest('created_at');
+
+        if ($request->filled('model')) {
+            $query->where('auditable_type', 'like', '%' . $request->model . '%');
+        }
+        if ($request->filled('event')) {
+            $query->where('event', $request->event);
+        }
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $logs  = $query->paginate(50);
+        $users = \App\Models\User::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.reports.audit_log', compact('logs', 'users'));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // Resource stubs
     // ──────────────────────────────────────────────────────────────────────────
 

@@ -92,4 +92,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(CustomerDocument::class);
     }
+
+    // ── Role helpers ──
+
+    public function hasRole(string ...$roles): bool
+    {
+        $role = $this->system_role ?? ($this->rule_id === 2 ? 'admin' : 'client');
+        return $role === 'admin' || in_array($role, $roles);
+    }
+
+    public function isAdmin(): bool       { return $this->hasRole('admin'); }
+    public function isLoanOfficer(): bool { return $this->hasRole('loan_officer'); }
+    public function isFinance(): bool     { return $this->hasRole('finance'); }
+    public function isClient(): bool      { return ($this->system_role ?? 'client') === 'client'; }
 }

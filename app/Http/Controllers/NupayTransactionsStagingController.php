@@ -2,107 +2,77 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Storenupay_transactions_stagingRequest;
-use App\Http\Requests\Updatenupay_transactions_stagingRequest;
 use App\Models\nupay_transactions_staging;
 use App\Models\import_batch;
-use App\Services\NuPayService;
-use Exception;
-use App\Models\nupay_transactions;
-use Illuminate\Http\Request;
 use App\Services\NupayImportService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
 
 class NupayTransactionsStagingController extends Controller
 {
-     protected NupayImportService $importService;
+    protected NupayImportService $importService;
 
     public function __construct(NupayImportService $importService)
     {
         $this->importService = $importService;
     }
 
-    /**
-     * Show NuPay file upload form
-     */
     public function showUploadForm()
     {
-        return view('admin.imports.nupay_upload');
+        $recentBatches = import_batch::where('source', 'nupay')
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        return view('admin.Imports.nupay_upload', compact('recentBatches'));
     }
 
     /**
-     * Handle file upload and import into staging table
+     * Handle CSV or Excel upload — replaces the Python → SQL INSERT manual process.
+     * Accepts: .csv, .xlsx, .xls
+     * Creates import_batch + stages all rows into nupay_transactions_stagings.
      */
     public function handleUpload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:20480',
         ]);
 
-        try {
-            $file = $request->file('file');
+        $file         = $request->file('file');
+        $originalName = $file->getClientOriginalName();
 
-            $cleanedRows = $this->importService->import(
-                $file->getPathname()
+        try {
+            $batch = $this->importService->importAndStage(
+                $file->getPathname(),
+                $originalName,
+                Auth::id()
             );
 
+            $warnings = $this->importService->warnings();
+            $errors   = $this->importService->errors();
+
+            $msg = "Import successful. Batch: {$batch->import_ref} — {$batch->row_count} rows staged.";
+
+            if (!empty($warnings)) {
+                $msg .= ' ' . count($warnings) . ' row(s) skipped (already imported).';
+            }
+            if (!empty($errors)) {
+                $msg .= ' ' . count($errors) . ' row(s) had errors — check logs.';
+            }
+
             return redirect()
-                ->back()
-                ->with('success', 'File uploaded successfully. Rows processed: ' . $cleanedRows->count());
+                ->route('nu-pay.import.show', $batch->import_ref)
+                ->with('success', $msg);
 
         } catch (\Throwable $e) {
-            Log::error('NuPay import failed', [
+            Log::error('NuPay upload failed', [
+                'file'  => $originalName,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
-            return redirect()
-                ->back()
-                ->with('error', 'File import failed. Please check logs.');
+            return redirect()->back()
+                ->with('error', 'Import failed: ' . $e->getMessage());
         }
-    }
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Storenupay_transactions_stagingRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(nupay_transactions_staging $nupay_transactions_staging)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Updatenupay_transactions_stagingRequest $request, nupay_transactions_staging $nupay_transactions_staging)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(nupay_transactions_staging $nupay_transactions_staging)
-    {
-        //
     }
 }

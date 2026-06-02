@@ -5,9 +5,12 @@ namespace App\Services;
 use App\Support\NupayColumnMap;
 use App\Support\NupayCleaner;
 use App\Models\nupay_transactions_staging;
+use App\Models\import_batch;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\GenericArrayImport;
 use Exception;
@@ -19,84 +22,205 @@ class NupayImportService
     protected array $skipped  = [];
 
     /**
-     * Parse and stage a NuPay Excel file.
+     * Parse, stage and persist a NuPay file (CSV or Excel).
+     * Creates an import_batch record and inserts rows into nupay_transactions_stagings.
+     * Replaces the manual Python → SQL INSERT workflow.
      *
-     * Returns a collection of staged rows.
-     * Rows with errors are skipped and logged — the import does NOT
-     * fail if some rows are bad (partial import is better than no import).
-     * DB-level duplicate detection prevents double-posting.
+     * @param  string $filePath Absolute path to uploaded file
+     * @param  string $originalName Original filename
+     * @param  int    $uploadedBy User ID
+     * @return import_batch
      */
-    public function import(string $filePath, string $importRef): Collection
+    public function importAndStage(string $filePath, string $originalName, int $uploadedBy): import_batch
     {
-        $rows = Excel::toCollection(new GenericArrayImport, $filePath)->first();
-
-        if (!$rows || $rows->isEmpty()) {
-            throw new Exception('Uploaded file contains no rows.');
+        // ── 1. Duplicate file detection (checksum) ─────────────────────────────
+        $checksum = md5_file($filePath);
+        $existing = import_batch::where('checksum', $checksum)->first();
+        if ($existing) {
+            throw new Exception("This file has already been imported. Batch: {$existing->import_ref}");
         }
 
-        // Validate headers on the first row's keys
-        $uploadedHeaders = array_keys($rows->first() ?? []);
-        $missingHeaders  = array_diff(NupayColumnMap::expectedHeaders(), $uploadedHeaders);
+        // ── 2. Generate import reference ───────────────────────────────────────
+        $importRef = 'NP-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(4));
 
-        if (!empty($missingHeaders)) {
-            throw new Exception('Missing required columns: ' . implode(', ', $missingHeaders));
+        // ── 3. Store the file permanently ──────────────────────────────────────
+        $storedPath = "nupay_imports/{$importRef}/" . basename($filePath);
+        Storage::disk('local')->put($storedPath, file_get_contents($filePath));
+
+        // ── 4. Create batch record ─────────────────────────────────────────────
+        $batch = import_batch::create([
+            'source'            => 'nupay',
+            'original_filename' => $originalName,
+            'stored_path'       => $storedPath,
+            'checksum'          => $checksum,
+            'status'            => 'UPLOADED',
+            'import_ref'        => $importRef,
+            'processed_by'      => $uploadedBy,
+            'row_count'         => 0,
+        ]);
+
+        // ── 5. Parse rows ──────────────────────────────────────────────────────
+        try {
+            $rows = $this->parseFile($filePath, $originalName);
+        } catch (Exception $e) {
+            $batch->update(['status' => 'FAILED_CAPTURE', 'error_message' => $e->getMessage()]);
+            throw $e;
         }
 
-        $staged = collect();
+        // ── 6. Stage rows ──────────────────────────────────────────────────────
+        $staged = 0;
 
-        foreach ($rows as $index => $row) {
-            try {
-                $cleanedRow = $this->cleanRow((array) $row);
-                $key        = $this->rowKey($cleanedRow);
+        DB::beginTransaction();
+        try {
+            foreach ($rows as $index => $row) {
+                try {
+                    $cleanedRow = $this->cleanRow((array) $row);
+                    $key        = $this->rowKey($cleanedRow);
 
-                // ── In-memory duplicate (current import) ──
-                if ($staged->contains('_key', $key)) {
-                    $this->warnings[] = "Row {$index}: duplicate within this file, skipped.";
-                    $this->skipped[]  = $index;
-                    continue;
+                    if ($this->existsInDatabase($cleanedRow)) {
+                        $this->warnings[] = "Row {$index}: already imported (mandate_id={$cleanedRow['mandate_id']}), skipped.";
+                        $this->skipped[]  = $index;
+                        continue;
+                    }
+
+                    nupay_transactions_staging::create(array_merge($cleanedRow, [
+                        'import_ref' => $importRef,
+                        'import_id'  => $batch->id,
+                        'raw_row_json' => json_encode($row),
+                    ]));
+
+                    $staged++;
+
+                } catch (Exception $e) {
+                    $this->errors[] = "Row {$index}: " . $e->getMessage();
+                    Log::warning("NuPay staging row {$index} failed: " . $e->getMessage(), [
+                        'import_ref' => $importRef,
+                    ]);
                 }
-
-                // ── Database duplicate (previous imports) ──
-                if ($this->existsInDatabase($cleanedRow)) {
-                    $this->warnings[] = "Row {$index}: already imported (mandate_id={$cleanedRow['mandate_id']}), skipped.";
-                    $this->skipped[]  = $index;
-                    continue;
-                }
-
-                $cleanedRow['import_ref'] = $importRef;
-                $cleanedRow['_key']       = $key;
-
-                $staged->push($cleanedRow);
-
-            } catch (Exception $e) {
-                // Log and continue — partial import
-                $this->errors[] = "Row {$index}: " . $e->getMessage();
-                Log::warning("NuPay import row {$index} skipped: " . $e->getMessage(), [
-                    'import_ref' => $importRef,
-                    'row'        => $row,
-                ]);
             }
+
+            $batch->update([
+                'row_count' => $staged,
+                'status'    => $staged > 0 ? 'CAPTURED' : 'FAILED_CAPTURE',
+                'meta'      => json_encode([
+                    'staged'   => $staged,
+                    'skipped'  => count($this->skipped),
+                    'errors'   => count($this->errors),
+                    'warnings' => count($this->warnings),
+                ]),
+            ]);
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            $batch->update(['status' => 'FAILED_CAPTURE', 'error_message' => $e->getMessage()]);
+            throw $e;
         }
 
-        if ($staged->isEmpty() && !empty($this->errors)) {
-            throw new Exception('Every row failed validation: ' . implode('; ', array_slice($this->errors, 0, 5)));
+        if ($staged === 0 && !empty($this->errors)) {
+            throw new Exception('All rows failed to stage: ' . implode('; ', array_slice($this->errors, 0, 3)));
         }
 
-        return $staged->map(fn($row) => collect($row)->except('_key')->toArray());
+        return $batch->fresh();
     }
+
+    // ── Public accessors ────────────────────────────────────────────────────────
 
     public function errors():   array { return $this->errors;   }
     public function warnings(): array { return $this->warnings; }
     public function skipped():  array { return $this->skipped;  }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // Parsing — CSV (native PHP) or Excel (Maatwebsite)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    protected function parseFile(string $filePath, string $originalName): Collection
+    {
+        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+        if ($ext === 'csv') {
+            return $this->parseCsv($filePath);
+        }
+
+        // Excel (xlsx / xls)
+        $rows = Excel::toCollection(new GenericArrayImport, $filePath)->first();
+
+        if (!$rows || $rows->isEmpty()) {
+            throw new Exception('Excel file contains no data rows.');
+        }
+
+        $this->validateHeaders(array_keys((array) $rows->first()));
+        return $rows;
+    }
+
+    /**
+     * Parse CSV using PHP's built-in fgetcsv — no external package needed.
+     * Handles the NuPay CSV export format directly.
+     */
+    protected function parseCsv(string $filePath): Collection
+    {
+        $handle = fopen($filePath, 'r');
+        if (!$handle) {
+            throw new Exception("Cannot open file for reading.");
+        }
+
+        $headers = null;
+        $rows    = collect();
+
+        while (($line = fgetcsv($handle, 0, ',', '"')) !== false) {
+            // Skip completely empty lines
+            if (empty(array_filter($line, fn($v) => $v !== null && $v !== ''))) {
+                continue;
+            }
+
+            if ($headers === null) {
+                // First non-empty row = headers
+                $headers = array_map('trim', $line);
+                $this->validateHeaders($headers);
+                continue;
+            }
+
+            // Pad or trim row to match header count
+            $line = array_slice(array_pad($line, count($headers), null), 0, count($headers));
+            $rows->push(array_combine($headers, $line));
+        }
+
+        fclose($handle);
+
+        if ($rows->isEmpty()) {
+            throw new Exception('CSV file contains no data rows after the header.');
+        }
+
+        return $rows;
+    }
+
+    protected function validateHeaders(array $uploadedHeaders): void
+    {
+        // Nu-Pay sometimes exports with slightly different header capitalisation
+        // Do a case-insensitive check for the critical fields
+        $critical = ['Mandate ID', 'Debtor ID', 'Instalment Amount', 'Action Date', 'Status'];
+        $upperUploaded = array_map('strtolower', $uploadedHeaders);
+
+        foreach ($critical as $required) {
+            if (!in_array(strtolower($required), $upperUploaded)) {
+                throw new Exception("Required column '{$required}' not found in file.");
+            }
+        }
+    }
 
     protected function cleanRow(array $row): array
     {
         $data = [];
 
         foreach (NupayColumnMap::map() as $excel => $db) {
-            $value = $row[$excel] ?? null;
+            // Case-insensitive column matching
+            $value = null;
+            foreach ($row as $k => $v) {
+                if (strtolower(trim($k)) === strtolower($excel)) {
+                    $value = $v;
+                    break;
+                }
+            }
 
             $data[$db] = match(true) {
                 str_contains($db, 'date_time') => NupayCleaner::dateTime($value),
@@ -109,9 +233,6 @@ class NupayImportService
         return $data;
     }
 
-    /**
-     * Unique business key for a row — used for both in-memory and DB duplicate checks.
-     */
     protected function rowKey(array $row): string
     {
         return implode('|', [
@@ -121,10 +242,6 @@ class NupayImportService
         ]);
     }
 
-    /**
-     * Check the database for a previously imported row with the same business keys.
-     * Prevents re-importing the same file or overlapping date ranges.
-     */
     protected function existsInDatabase(array $row): bool
     {
         return nupay_transactions_staging::where('mandate_id', $row['mandate_id'] ?? null)
