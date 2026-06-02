@@ -15,6 +15,7 @@ use App\Http\Controllers\DisbursementController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\NupayTransactionsStagingController;
 use App\Http\Controllers\NupayTransactionController;
+use App\Http\Controllers\LoanAgreementController;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Public routes
@@ -73,6 +74,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('repaymentSchedules', RepaymentScheduleController::class);
     Route::resource('loanrepayments', LoanRepaymentController::class);
 
+    // ── NCA Agreements (accessible to both client and admin) ─────────────────
+    Route::prefix('agreements')->name('agreements.')->group(function () {
+        Route::get('/application/{application}',  [LoanAgreementController::class, 'index'])->name('index');
+        Route::get('/download/{agreement}',       [LoanAgreementController::class, 'download'])->name('download');
+        Route::post('/accept/{agreement}',        [LoanAgreementController::class, 'accept'])->name('accept');
+    });
+
     // ── Transactions & interests ─────────────────────────────────────────────
     Route::resource('transactions',  TransactionController::class);
     Route::resource('loaninterests', LoanInterestController::class);
@@ -108,6 +116,16 @@ Route::middleware(['auth', function ($request, $next) {
 
     // ── Customers ────────────────────────────────────────────────────────────
     Route::resource('customers', CustomerController::class);
+
+    // ── NCA Agreement generation (admin only) ─────────────────────────────────
+    Route::post('/admin/agreements/{application}/pre-agreement',
+        [LoanAgreementController::class, 'generatePreAgreement'])->name('admin.agreements.pre-agreement');
+    Route::post('/admin/agreements/{application}/loan-agreement',
+        [LoanAgreementController::class, 'generateLoanAgreement'])->name('admin.agreements.loan-agreement');
+    Route::post('/admin/agreements/{loan}/settlement-quote',
+        [LoanAgreementController::class, 'generateSettlementQuote'])->name('admin.agreements.settlement-quote');
+    Route::get('/admin/agreements/{application}/preview/{type?}',
+        [LoanAgreementController::class, 'preview'])->name('admin.agreements.preview');
 
     // ── Disbursements ────────────────────────────────────────────────────────
     Route::prefix('admin/disbursements')->name('disbursements.')->group(function () {
