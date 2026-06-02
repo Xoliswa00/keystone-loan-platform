@@ -156,6 +156,16 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::post('/business-bank/{batch}/reconcile', [\App\Http\Controllers\BusinessBankStatementController::class, 'reconcile'])->name('business-bank.reconcile');
     });
 
+    // ── Bank Reconciliation Workspace (full allocation engine) ────────────────
+    Route::prefix('admin/finance/recon')->name('admin.finance.recon.')->group(function () {
+        Route::get('/{batch}',                 [\App\Http\Controllers\BankAllocationController::class, 'workspace'])->name('workspace');
+        Route::post('/{batch}/auto-match',     [\App\Http\Controllers\BankAllocationController::class, 'autoMatch'])->name('auto-match');
+        Route::post('/{batch}/allocate',       [\App\Http\Controllers\BankAllocationController::class, 'allocateLine'])->name('allocate');
+        Route::post('/{batch}/bulk-allocate',  [\App\Http\Controllers\BankAllocationController::class, 'bulkAllocate'])->name('bulk-allocate');
+        Route::post('/{batch}/balances',       [\App\Http\Controllers\BankAllocationController::class, 'updateBalances'])->name('balances');
+        Route::post('/{batch}/complete',       [\App\Http\Controllers\BankAllocationController::class, 'markComplete'])->name('complete');
+    });
+
     // ── Nu-Pay imports ────────────────────────────────────────────────────────
     Route::get('/nupay/upload',  [NupayTransactionsStagingController::class, 'showUploadForm'])->name('nupay.upload.form');
     Route::post('/nupay/upload', [NupayTransactionsStagingController::class, 'handleUpload'])->name('nupay.upload');

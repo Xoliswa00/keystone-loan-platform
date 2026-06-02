@@ -50,11 +50,14 @@
     <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/50 uppercase">Exceptions</p><p class="font-display text-xl font-bold {{ $summary->exceptions > 0 ? 'text-red-600' : 'text-kc-navy' }} mt-1">{{ $summary->exceptions }}</p></div>
   </div>
 
-  <div class="flex justify-end mb-4">
+  <div class="flex gap-3 justify-end mb-4">
     <form method="POST" action="{{ route('admin.finance.business-bank.reconcile', $batch->id) }}">
       @csrf
-      <button type="submit" class="kc-btn-primary">Auto-Reconcile</button>
+      <button type="submit" class="kc-btn-ghost">Quick Auto-Match</button>
     </form>
+    <a href="{{ route('admin.finance.recon.workspace', $batch->id) }}" class="kc-btn-primary">
+      Open Reconciliation Workspace →
+    </a>
   </div>
 
   <div class="kc-card">
