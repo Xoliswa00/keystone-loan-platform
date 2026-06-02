@@ -1,151 +1,96 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Customers') }}
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Client Management</span>
+    <p class="kc-page-subtitle">{{ $stats['total'] }} registered clients</p>
+  </x-slot>
 
-    <div class="py-12" x-data="customersTable()">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-
-            {{-- Flash Messages --}}
-            @foreach (['success', 'error'] as $msg)
-                @if(session($msg))
-                    <div class="mb-4 px-4 py-2 rounded {{ $msg === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                        {{ session($msg) }}
-                    </div>
-                @endif
-            @endforeach
-
-        <div class="bg-white shadow-sm sm:rounded-lg p-6">
-
-    {{-- Search & Add --}}
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
-        <input 
-            type="text" 
-            placeholder="Search by name, email, phone, or code..." 
-            x-model="search"
-            class="border-gray-300 rounded-md shadow-sm px-4 py-2 w-full sm:w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-       <!-- <a href="{{ route('customers.create') }}" 
-           class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition shadow-md">
-            + Add Customer
-        </a>-->
+  {{-- Stats --}}
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+    <div class="kc-stat-card text-center">
+      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Clients</p>
+      <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $stats['total'] }}</p>
     </div>
-
-    {{-- Responsive Table --}}
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 border rounded-lg table-auto">
-            <thead class="bg-gray-50 sticky top-0">
-                <tr>
-                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">#</th>
-                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Name</th>
-                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Email</th>
-                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Phone</th>
-                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Code</th>
-                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Balance</th>
-                    <th class="px-4 py-2 text-right text-sm font-medium text-gray-500">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-100">
-                @forelse ($customers as $customer)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2" x-html="highlight('{{ $customer->id }}')"></td>
-                        <td class="px-4 py-2" x-html="highlight('{{ $customer->user->name }}')"></td>
-<td class="px-4 py-2"
-    x-html="highlight('<a href=\'mailto:{{ $customer->user->email }}\' class=\'text-blue-600 underline\'>{{ $customer->user->email }}</a>')">
-</td>
-                        <td class="px-4 py-2 flex items-center gap-2">
-                          @php
-    $rawPhone = $customer->user->phone;
-
-    // Remove spaces, dashes, brackets, etc.
-    $phone = preg_replace('/\D/', '', $rawPhone);
-
-    // If starts with 0 → replace with 27
-    if (str_starts_with($phone, '0')) {
-        $phone = '27' . substr($phone, 1);
-    }
-
-    // If starts with +27 (already intl but with +)
-    if (str_starts_with($phone, '27') === false && strlen($phone) === 9) {
-        $phone = '27' . $phone;
-    }
-
-    $whatsMessage = urlencode("Hi {$customer->user->name},");
-@endphp
-
-<a href="https://wa.me/{{ $phone }}?text={{ $whatsMessage }}"
-   target="_blank"
-   class="text-green-600 hover:underline flex items-center gap-1">
-    {{ $customer->user->phone }}
-</a>
-
-                        </td>
-                        <td class="px-4 py-2" x-html="highlight('{{ $customer->customer_code }}')"></td>
-                        <td class="px-4 py-2">
-                            <span class="px-2 py-1 rounded-full {{ $customer->current_balance > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800' }}">
-                                {{ number_format($customer->current_balance, 2) }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-2 text-right">
-                            <div x-data="{ open: false }" class="relative inline-block text-left">
-                                <button @click="open = !open" type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
-                                    Actions
-                                    <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-
-                                <div 
-                                    x-show="open" 
-                                    @click.outside="open = false"
-                                    x-transition
-                                    class="origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
-                                >
-                                    <div class="py-1">
-                                        <a href="{{ route('customers.show', $customer) }}" class="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">View</a>
-                                       <!--- <a href="{{ route('customers.edit', $customer) }}" class="block px-4 py-2 text-sm text-green-600 hover:bg-gray-100">Edit</a>
-                                        <form action="{{ route('customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Are you sure?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Delete</button>
-                                        </form>-->
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="text-center text-gray-500 py-4">
-                            No customers found.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+    <div class="kc-stat-card text-center">
+      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Active Loans</p>
+      <p class="font-display text-2xl font-bold text-kc-gold mt-1">{{ $stats['active'] }}</p>
     </div>
-
-    {{-- Pagination --}}
-    <div class="mt-4">
-        {{ $customers->links() }}
+    <div class="kc-stat-card text-center">
+      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">With Balances</p>
+      <p class="font-display text-2xl font-bold {{ $stats['overdue'] > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ $stats['overdue'] }}</p>
     </div>
-</div>
-
-        </div>
+    <div class="kc-stat-card text-center">
+      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Restricted</p>
+      <p class="font-display text-2xl font-bold text-orange-500 mt-1">{{ $stats['restricted'] }}</p>
     </div>
+  </div>
 
-    <script>
-        function customersTable() {
-            return {
-                search: '',
-                highlight(text) {
-                    if(!this.search) return text;
-                    const regex = new RegExp(`(${this.search})`, 'gi');
-                    return text.replace(regex, `<span class="bg-yellow-200">$1</span>`);
-                }
-            }
-        }
-    </script>
+  {{-- Search + filters --}}
+  <form method="GET" class="flex flex-wrap gap-3 mb-4">
+    <div class="flex-1 min-w-48">
+      <input type="text" name="search" value="{{ request('search') }}" class="kc-input"
+        placeholder="Search by name, ID, phone, email, code...">
+    </div>
+    <select name="filter" class="kc-select w-40">
+      <option value="">All clients</option>
+      <option value="active"     {{ request('filter')==='active'     ?'selected':'' }}>Active loans</option>
+      <option value="overdue"    {{ request('filter')==='overdue'    ?'selected':'' }}>Outstanding balance</option>
+      <option value="restricted" {{ request('filter')==='restricted' ?'selected':'' }}>Restricted</option>
+    </select>
+    <button type="submit" class="kc-btn-primary">Search</button>
+    @if(request()->hasAny(['search','filter']))
+    <a href="{{ route('customers.index') }}" class="kc-btn-ghost">Clear</a>
+    @endif
+  </form>
+
+  <div class="kc-card">
+    <div class="kc-table-scroll">
+      <table class="kc-table">
+        <thead><tr>
+          <th>Code</th><th>Name</th><th>ID Number</th><th>Phone</th>
+          <th>Active Loans</th><th>Outstanding</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          @forelse($customers as $c)
+          @php
+            $hasRestriction = $c->applications_restricted || $c->blacklisted;
+            $statusClass = $c->blacklisted ? 'kc-badge-red'
+              : ($c->applications_restricted ? 'kc-badge-gold'
+              : ($c->user_status === 'active' ? 'kc-badge-green' : 'kc-badge-silver'));
+            $statusLabel = $c->blacklisted ? 'Blacklisted'
+              : ($c->applications_restricted ? 'Restricted'
+              : ucfirst($c->user_status ?? 'active'));
+          @endphp
+          <tr class="{{ $hasRestriction ? 'bg-amber-50/50' : '' }}">
+            <td data-label="Code" class="font-mono text-xs text-kc-charcoal/60">{{ $c->customer_code }}</td>
+            <td data-label="Name">
+              <div class="font-semibold">{{ $c->name }}</div>
+              <div class="text-xs text-kc-charcoal/40">{{ $c->email }}</div>
+            </td>
+            <td data-label="ID" class="font-mono text-xs">{{ $c->ID_Number }}</td>
+            <td data-label="Phone" class="text-xs">{{ $c->phone }}</td>
+            <td data-label="Loans">
+              @if($c->active_loans_count > 0)
+                <span class="kc-badge kc-badge-gold">{{ $c->active_loans_count }}</span>
+              @else
+                <span class="text-kc-charcoal/30 text-xs">—</span>
+              @endif
+            </td>
+            <td data-label="Outstanding" class="{{ $c->current_balance > 0 ? 'font-semibold text-kc-navy' : 'text-kc-charcoal/30' }}">
+              {{ $c->current_balance > 0 ? 'R '.number_format($c->current_balance,2) : '—' }}
+            </td>
+            <td data-label="Status"><span class="kc-badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
+            <td data-label="Actions">
+              <a href="{{ route('customers.show', $c) }}" class="text-xs text-kc-gold hover:underline">View →</a>
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/40">
+            @if(request('search')) No clients match "{{ request('search') }}" @else No clients yet. @endif
+          </td></tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-4">{{ $customers->withQueryString()->links() }}</div>
+  </div>
 </x-app-layout>

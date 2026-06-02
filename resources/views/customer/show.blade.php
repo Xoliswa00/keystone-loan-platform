@@ -1,136 +1,260 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Customer Profile - {{ $customer->customer_code }}
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">{{ $user->name }}</span>
+    <p class="kc-page-subtitle">{{ $customer->customer_code }} · {{ $user->ID_Number }}</p>
+  </x-slot>
 
-    <div class="py-12 max-w-7xl mx-auto sm:px-6 lg:px-8">
+  {{-- Status bar --}}
+  <div class="flex flex-wrap items-center gap-2 mb-5">
+    @if($user->blacklisted)
+      <span class="kc-badge kc-badge-red">Blacklisted</span>
+    @elseif($user->applications_restricted)
+      <span class="kc-badge kc-badge-gold">Restricted</span>
+    @else
+      <span class="kc-badge kc-badge-green">Active</span>
+    @endif
+    @if(!$limitCheck['allowed'])
+      <span class="kc-badge kc-badge-gold text-[10px]">Cannot Apply: {{ str_replace('gate:','',ucfirst(str_replace('_',' ',$limitCheck['gate']??''))) }}</span>
+    @endif
+    @if($recoveryCase)
+      <span class="kc-badge kc-badge-red text-[10px]">Recovery Case Open</span>
+    @endif
+  </div>
 
-        {{-- Flash Messages --}}
-        @if (session('success'))
-            <div class="bg-green-100 text-green-800 px-4 py-2 rounded mb-4">{{ session('success') }}</div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {{-- MAIN: Profile + Loans + History ──────────────────────────────────── --}}
+    <div class="lg:col-span-2 space-y-5">
+
+      {{-- Summary cards --}}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="kc-stat-card text-center">
+          <p class="text-xs text-kc-charcoal/50 uppercase">Outstanding</p>
+          <p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($customer->current_balance??0,2) }}</p>
+        </div>
+        <div class="kc-stat-card text-center">
+          <p class="text-xs text-kc-charcoal/50 uppercase">Active Loans</p>
+          <p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $loans->whereNotIn('status',['settled','rejected','archived','written_off'])->count() }}</p>
+        </div>
+        <div class="kc-stat-card text-center">
+          <p class="text-xs text-kc-charcoal/50 uppercase">Applications</p>
+          <p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $user->loanApplications->count() }}</p>
+        </div>
+        <div class="kc-stat-card text-center">
+          <p class="text-xs text-kc-charcoal/50 uppercase">Profile</p>
+          <p class="font-display text-xl font-bold {{ $profileStatus['percentage']===100?'text-emerald-600':'text-kc-gold' }} mt-1">{{ $profileStatus['percentage'] }}%</p>
+        </div>
+      </div>
+
+      {{-- Personal details --}}
+      <div class="kc-card">
+        <h5 class="font-display font-semibold text-kc-navy mb-3">Personal Details</h5>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          @foreach([
+            ['Name',      $user->name],
+            ['SA ID',     $user->ID_Number],
+            ['Email',     $user->email],
+            ['Phone',     $user->phone],
+            ['Address',   $user->address],
+            ['Employer',  $user->customerProfile?->employer_name ?? '—'],
+            ['Employment',ucfirst(str_replace('_',' ',$user->customerProfile?->employment_type??'—'))],
+            ['Tenure',    ucfirst(str_replace('_',' ',$user->customerProfile?->employment_tenure??'—'))],
+            ['Net Salary','R '.number_format($user->customerProfile?->net_monthly_income??0,2)],
+            ['Payday',    $user->salary_payment_day ? $user->salary_payment_day.'th' : '—'],
+          ] as [$k,$v])
+          <div class="flex gap-2">
+            <span class="text-kc-charcoal/50 text-xs flex-shrink-0 w-24">{{ $k }}</span>
+            <span class="font-medium text-xs truncate">{{ $v }}</span>
+          </div>
+          @endforeach
+        </div>
+
+        {{-- Affordability --}}
+        @if($affordability['eligible'] ?? false)
+        <div class="mt-3 pt-3 border-t border-kc-silver-light grid grid-cols-3 gap-3 text-center text-xs">
+          <div><p class="text-kc-charcoal/50">Total Income</p><p class="font-semibold">R {{ number_format($affordability['total_income']??0,2) }}</p></div>
+          <div><p class="text-kc-charcoal/50">Total Expenses</p><p class="font-semibold">R {{ number_format($affordability['total_expenses']??0,2) }}</p></div>
+          <div><p class="text-kc-charcoal/50">Disposable</p><p class="font-semibold {{ ($affordability['disposable_income']??0) > 0 ? 'text-emerald-600':'text-red-600' }}">R {{ number_format($affordability['disposable_income']??0,2) }}</p></div>
+        </div>
         @endif
-        @if (session('error'))
-            <div class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4">{{ session('error') }}</div>
+
+        {{-- Bank analysis --}}
+        @if($user->customerProfile?->bank_analysis_run_at)
+        @php $rf=$user->customerProfile->bank_statement_risk_flag??'low'; $rfCls=['low'=>'kc-badge-green','medium'=>'kc-badge-gold','high'=>'kc-badge-red','very_high'=>'kc-badge-red'][$rf]??'kc-badge-silver'; @endphp
+        <div class="mt-3 pt-3 border-t border-kc-silver-light flex flex-wrap gap-3 text-xs items-center">
+          <span class="kc-badge {{ $rfCls }}">Bank Risk: {{ strtoupper(str_replace('_',' ',$rf)) }}</span>
+          <span class="text-kc-charcoal/50">Days to R500 after payday: <strong>{{ $user->customerProfile->avg_days_to_zero ?? '—' }}</strong></span>
+          <span class="text-kc-charcoal/50">Verified salary: <strong>R {{ number_format($user->customerProfile->verified_income_amount??0,0) }}</strong></span>
+        </div>
         @endif
+      </div>
 
-        {{-- CUSTOMER SUMMARY CARDS --}}
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white shadow rounded p-4">
-                <p class="text-sm text-gray-500">Total Loans</p>
-                <p class="text-xl font-bold text-gray-800">{{ $customer->loanApplications->count() }}</p>
-            </div>
-            <div class="bg-white shadow rounded p-4">
-                <p class="text-sm text-gray-500">Total Paid</p>
-                <p class="text-xl font-bold text-green-600">
-                    R {{ number_format($customer->loanApplications->sum(fn($l) => $l->repaymentSchedules->where('status','paid')->sum('emi_amount')),2) }}
-                </p>
-            </div>
-            <div class="bg-white shadow rounded p-4">
-                <p class="text-sm text-gray-500">Outstanding</p>
-                <p class="text-xl font-bold text-red-600">
-                    R {{ number_format($customer->loanApplications->sum(fn($l) => $l->repaymentSchedules->whereIn('status',['pending','overdue','Failed'])->sum('emi_amount')),2) }}
-                </p>
-            </div>
-            <div class="bg-white shadow rounded p-4">
-                <p class="text-sm text-gray-500">Next Due Payment</p>
-                <p class="text-xl font-bold text-gray-800">
-                    @php
-                        $nextPayment = $customer->loanApplications->flatMap->repaymentSchedules
-                            ->whereIn('status',['pending','overdue'])
-                            ->sortBy('due_date')
-                            ->first();
-                    @endphp
-                    {{ $nextPayment ? \Carbon\Carbon::parse($nextPayment->due_date)->format('d M Y') : 'N/A' }}
-                </p>
-            </div>
+      {{-- Loans --}}
+      <div class="kc-card">
+        <h5 class="font-display font-semibold text-kc-navy mb-3">Loan History</h5>
+        <div class="kc-table-scroll">
+          <table class="kc-table">
+            <thead><tr><th>Loan</th><th>Amount</th><th>Status</th><th>Remaining</th><th>Disbursed</th></tr></thead>
+            <tbody>
+              @forelse($loans as $loan)
+              @php $lsc=match(strtolower($loan->status??'')){'disbursed','approved'=>'kc-badge-green','settled'=>'kc-badge-silver','written_off','rejected'=>'kc-badge-red',default=>'kc-badge-gold'}; @endphp
+              <tr>
+                <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($loan->id,6,'0',STR_PAD_LEFT) }}</td>
+                <td data-label="Amount">R {{ number_format($loan->loan_amount,2) }}</td>
+                <td data-label="Status"><span class="kc-badge {{ $lsc }}">{{ ucfirst($loan->status) }}</span></td>
+                <td data-label="Remaining" class="{{ $loan->remaining_balance>0?'font-semibold':'' }}">R {{ number_format($loan->remaining_balance??0,2) }}</td>
+                <td data-label="Disbursed" class="text-xs text-kc-charcoal/50">{{ $loan->disbursed_date ? \Carbon\Carbon::parse($loan->disbursed_date)->format('d M Y') : '—' }}</td>
+              </tr>
+              @empty
+              <tr><td colspan="5" class="text-center py-4 text-kc-charcoal/40">No loans.</td></tr>
+              @endforelse
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        {{-- PERSONAL DETAILS --}}
-        <div class="bg-white shadow-md rounded p-6 mb-6">
-            <h3 class="text-lg font-semibold mb-4">Personal Details</h3>
-            <p><strong>Name:</strong> {{ $customer->user->name }}</p>
-            <p><strong>Email:</strong> {{ $customer->user->email }}</p>
-            <p><strong>Phone:</strong> {{ $customer->user->phone }}</p>
-            <p><strong>Address:</strong> {{ $customer->user->address ?? 'N/A' }}</p>
-            <p><strong>Current Balance:</strong> R{{ number_format($customer->current_balance, 2) }}</p>
+      {{-- Recent payments --}}
+      @if($repayments->isNotEmpty())
+      <div class="kc-card">
+        <h5 class="font-display font-semibold text-kc-navy mb-3">Recent Payments</h5>
+        <div class="kc-table-scroll">
+          <table class="kc-table">
+            <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>GL Ref</th></tr></thead>
+            <tbody>
+              @foreach($repayments as $r)
+              <tr>
+                <td data-label="Date">{{ \Carbon\Carbon::parse($r->payment_date)->format('d M Y') }}</td>
+                <td data-label="Amount" class="font-semibold text-emerald-600">R {{ number_format($r->payment_amount,2) }}</td>
+                <td data-label="Method" class="text-xs">{{ ucfirst(str_replace('_',' ',$r->payment_method??'—')) }}</td>
+                <td data-label="GL" class="font-mono text-[10px] text-kc-charcoal/40">{{ $r->gl_batch_reference ?? '—' }}</td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
         </div>
+      </div>
+      @endif
 
-        {{-- LOANS AND PAYMENTS --}}
-        <div class="bg-white shadow-md rounded p-6 mb-6">
-            <h3 class="text-lg font-semibold mb-4">Loans</h3>
-
-            @forelse($customer->loanApplications as $loan)
-                <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-                    {{-- Loan Header --}}
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p><strong>Loan Type:</strong> {{ ucfirst($loan->loan_type) }}</p>
-                            <p><strong>Amount:</strong> R{{ number_format($loan->loan_amount, 2) }}</p>
-                            <p><strong>Status:</strong> 
-                                <span class="px-2 py-1 rounded text-white 
-                                    {{ $loan->status === 'approved' ? 'bg-green-600' : ($loan->status === 'pending' ? 'bg-yellow-500' : 'bg-red-600') }}">
-                                    {{ ucfirst($loan->status) }}
-                                </span>
-                            </p>
-                            <p><strong>Approval Date:</strong> {{ $loan->approval_date ?? 'Pending' }}</p>
-                        </div>
-                        <div class="text-right">
-                            <a href="{{ route('loanapplications.show', $loan->id) }}" class="text-blue-600 hover:underline">View Loan</a>
-                        </div>
-                        
-                         <a href="{{ route('Admin.show', $loan->id) }}" 
-                                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
-                                                🔍 View history
-                                            </a>
-                    </div>
-
-                    {{-- PAYMENTS (GROUPED BY MONTH) --}}
-                    @php
-                        $paymentsByMonth = $loan->repaymentSchedules
-                            ->whereIn('status',['pending','overdue','paid'])
-                            ->groupBy(fn($p) => \Carbon\Carbon::parse($p->due_date)->format('F Y'));
-                    @endphp
-
-                    @foreach($paymentsByMonth as $month => $payments)
-                        <div class="mt-4 bg-white border rounded p-3">
-                            <p class="font-semibold">{{ $month }} — Total: R {{ number_format($payments->sum('emi_amount'),2) }}</p>
-                            <table class="min-w-full text-sm mt-2 border">
-                                <thead>
-                                    <tr class="bg-gray-200">
-                                        <th class="px-3 py-2 text-left">Date</th>
-                                        <th class="px-3 py-2 text-left">Status</th>
-                                        <th class="px-3 py-2 text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($payments as $payment)
-                                        <tr class="border-t">
-                                            <td class="px-3 py-2">{{ \Carbon\Carbon::parse($payment->due_date)->format('d M Y') }}</td>
-                                            <td class="px-3 py-2">
-                                                <span class="px-2 py-1 rounded text-white
-                                                    {{ $payment->status === 'paid' ? 'bg-green-600' : ($payment->status === 'pending' ? 'bg-yellow-500' : 'bg-red-600') }}">
-                                                    {{ ucfirst($payment->status) }}
-                                                </span>
-                                            </td>
-                                            <td class="px-3 py-2 text-right">R{{ number_format($payment->emi_amount,2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endforeach
-
-                    {{-- DOCUMENTS --}}
-                    <div class="mt-4">
-                        <h4 class="font-semibold"></h4>
-                 
-                    </div>
-                </div>
-            @empty
-                <p class="text-gray-500 text-sm">No loans found for this customer.</p>
-            @endforelse
+      {{-- Notes --}}
+      @if($notes->isNotEmpty())
+      <div class="kc-card">
+        <h5 class="font-display font-semibold text-kc-navy mb-3">Admin Notes</h5>
+        <div class="space-y-2">
+          @foreach($notes as $note)
+          <div class="flex gap-2 text-sm">
+            <div class="w-5 h-5 rounded-full bg-kc-navy flex-shrink-0 flex items-center justify-center mt-0.5">
+              <span class="text-kc-gold text-[8px] font-bold">{{ strtoupper(substr($note->admin_name,0,1)) }}</span>
+            </div>
+            <div>
+              <p class="text-xs text-kc-charcoal/50">{{ $note->admin_name }} · {{ \Carbon\Carbon::parse($note->created_at)->diffForHumans() }} · <span class="kc-badge kc-badge-silver text-[9px]">{{ $note->note_type }}</span></p>
+              <p>{{ $note->note }}</p>
+            </div>
+          </div>
+          @endforeach
         </div>
+      </div>
+      @endif
     </div>
+
+    {{-- RIGHT: Actions --}}
+    <div class="space-y-5">
+
+      {{-- Documents --}}
+      <div class="kc-card">
+        <h5 class="font-semibold text-kc-navy mb-3">KYC Documents</h5>
+        @php $docs = $user->customerDocuments->keyBy('document_type'); @endphp
+        @foreach(\App\Models\CustomerDocument::TYPES as $type => $label)
+        @php $doc = $docs[$type] ?? null; @endphp
+        <div class="flex items-center justify-between py-1.5 border-b border-kc-silver-light/60 last:border-0">
+          <div class="flex items-center gap-1.5">
+            @if($doc?->verified)
+              <div class="w-4 h-4 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center">
+                <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+            @elseif($doc)
+              <div class="w-4 h-4 rounded-full bg-kc-gold/20 border border-kc-gold/40 flex-shrink-0"></div>
+            @else
+              <div class="w-4 h-4 rounded-full border border-kc-silver-light flex-shrink-0"></div>
+            @endif
+            <span class="text-xs text-kc-charcoal/70">{{ $label }}</span>
+          </div>
+          @if($doc)
+          <div class="flex items-center gap-1.5">
+            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($doc->file_path) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>
+            @if(!$doc->verified)
+            <form method="POST" action="{{ route('admin.documents.verify', $doc) }}" class="inline">
+              @csrf <input type="hidden" name="verified" value="1">
+              <button type="submit" class="text-[10px] text-emerald-600 hover:underline">Verify</button>
+            </form>
+            @endif
+          </div>
+          @else
+          <span class="text-[10px] text-kc-charcoal/20">Missing</span>
+          @endif
+        </div>
+        @endforeach
+      </div>
+
+      {{-- Limitation status --}}
+      @if(!$limitCheck['allowed'])
+      <div class="kc-card border-l-4 border-amber-400">
+        <h5 class="font-semibold text-kc-navy mb-2">Application Block</h5>
+        <p class="text-xs text-kc-charcoal/70">{{ $limitCheck['reason'] }}</p>
+        @if($limitCheck['unblock_at'])
+        <p class="text-xs text-kc-gold font-semibold mt-1">Unblocks: {{ \Carbon\Carbon::parse($limitCheck['unblock_at'])->format('d M Y') }}</p>
+        @endif
+      </div>
+      @endif
+
+      {{-- Account controls --}}
+      <div class="kc-card">
+        <h5 class="font-semibold text-kc-navy mb-3">Account Controls</h5>
+        <div class="space-y-2">
+
+          {{-- Restrict / Lift --}}
+          @if(!$user->applications_restricted)
+          <div x-data="{open:false}">
+            <button @click="open=!open" class="kc-btn-ghost w-full justify-center text-xs text-orange-600 border-orange-200">Restrict Applications</button>
+            <div x-show="open" x-transition class="mt-2 p-3 rounded-lg border border-kc-silver-light bg-kc-silver-light/30">
+              <form method="POST" action="{{ route('customers.restrict', $customer) }}" class="space-y-2">
+                @csrf
+                <textarea name="reason" rows="2" class="kc-input text-xs" placeholder="Reason for restriction" required></textarea>
+                <input type="date" name="expires_at" class="kc-input text-xs" placeholder="Expiry (optional)">
+                <button type="submit" class="kc-btn-danger w-full justify-center text-xs">Apply Restriction</button>
+              </form>
+            </div>
+          </div>
+          @else
+          <form method="POST" action="{{ route('customers.lift', $customer) }}">
+            @csrf
+            <button type="submit" class="kc-btn-primary w-full justify-center text-xs">Lift Restriction</button>
+          </form>
+          @endif
+
+          {{-- Blacklist toggle --}}
+          <form method="POST" action="{{ route('customers.blacklist', $customer) }}">
+            @csrf
+            <button type="submit" class="kc-btn-ghost w-full justify-center text-xs {{ $user->blacklisted?'text-emerald-600 border-emerald-200':'text-red-600 border-red-200' }}"
+              onclick="return confirm('{{ $user->blacklisted ? 'Remove from blacklist?' : 'Blacklist this client?' }}')">
+              {{ $user->blacklisted ? 'Remove Blacklist' : 'Add to Blacklist' }}
+            </button>
+          </form>
+
+          {{-- Statement download --}}
+          <a href="{{ route('client.statement', $user) }}" class="kc-btn-ghost w-full justify-center text-xs">Download Statement</a>
+
+          {{-- View agreements --}}
+          @php $anyApp = $user->loanApplications->first(); @endphp
+          @if($anyApp)
+          <a href="{{ route('agreements.index', $anyApp) }}" class="kc-btn-ghost w-full justify-center text-xs">View Agreements</a>
+          @endif
+
+          {{-- Recovery case --}}
+          @if($recoveryCase)
+          <a href="{{ route('admin.recovery.show', $recoveryCase) }}" class="kc-btn-ghost w-full justify-center text-xs text-kc-gold border-kc-gold/30">View Recovery Case</a>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
 </x-app-layout>

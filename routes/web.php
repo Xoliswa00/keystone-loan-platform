@@ -116,6 +116,9 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
 
     // ── Customers ────────────────────────────────────────────────────────────
     Route::resource('customers', CustomerController::class);
+    Route::post('customers/{customer}/restrict',  [CustomerController::class, 'restrict'])->name('customers.restrict');
+    Route::post('customers/{customer}/lift',      [CustomerController::class, 'lift'])->name('customers.lift');
+    Route::post('customers/{customer}/blacklist', [CustomerController::class, 'toggleBlacklist'])->name('customers.blacklist');
 
     // ── NCA Agreement generation (admin only) ─────────────────────────────────
     Route::post('/admin/agreements/{application}/pre-agreement',
@@ -194,9 +197,22 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::post('/{batch}/complete',       [\App\Http\Controllers\BankAllocationController::class, 'markComplete'])->name('complete');
     });
 
+    // ── Company Settings ──────────────────────────────────────────────────────
+    Route::get('/admin/settings/company',    [\App\Http\Controllers\CompanySettingsController::class, 'show'])->name('admin.settings.company');
+    Route::put('/admin/settings/company',    [\App\Http\Controllers\CompanySettingsController::class, 'update'])->name('admin.settings.company.update');
+
+    // ── Admin 2FA toggle ──────────────────────────────────────────────────────
+    Route::post('/admin/settings/2fa/toggle', function (\Illuminate\Http\Request $request) {
+        $user = \App\Models\User::findOrFail($request->user_id ?? \Auth::id());
+        $user->update(['two_factor_enabled' => !$user->two_factor_enabled]);
+        return back()->with('success', '2FA ' . ($user->two_factor_enabled ? 'enabled' : 'disabled') . ' for ' . $user->name . '.');
+    })->name('admin.settings.2fa.toggle');
+
     // ── Nu-Pay imports ────────────────────────────────────────────────────────
     Route::get('/nupay/upload',  [NupayTransactionsStagingController::class, 'showUploadForm'])->name('nupay.upload.form');
-    Route::post('/nupay/upload', [NupayTransactionsStagingController::class, 'handleUpload'])->name('nupay.upload');
+    Route::post('/nupay/upload', [NupayTransactionsStagingController::class, 'handleUpload'])
+        ->name('nupay.upload')
+        ->middleware('throttle:nupay_import');
 
     Route::prefix('nu-pay/import')->name('nu-pay.import.')->group(function () {
         Route::get('/',               [NupayTransactionController::class, 'index'])->name('index');

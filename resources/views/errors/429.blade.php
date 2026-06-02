@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'Too Many Requests')
+@section('code', '429')
+@section('heading', 'Too Many Requests')
+@section('message', isset($message) ? $message : 'You have made too many requests. Please wait a moment before trying again.')

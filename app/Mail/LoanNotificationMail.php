@@ -32,8 +32,15 @@ class LoanNotificationMail extends Mailable implements ShouldQueue
                          'loan'        => $this->loan,
                      ]);
 
-        // CC addresses from config — not hardcoded
-        $ccs = array_filter(explode(',', config('mail.loan_notification_cc', '')));
+        // CC from Company settings table (live, cached) → fallback to .env config
+        try {
+            $company = \App\Models\Company::settings();
+            $ccs = $company ? $company->getNotificationCcArray()
+                            : array_filter(explode(',', config('mail.loan_notification_cc', '')));
+        } catch (\Exception $e) {
+            $ccs = [];
+        }
+
         if (!empty($ccs)) {
             $mail->cc($ccs);
         }

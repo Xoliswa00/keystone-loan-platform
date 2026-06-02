@@ -225,18 +225,21 @@ class LoanAgreementService
         // NCA credit type classification
         $ncaCreditType = $this->classifyNcaCreditType($principal, $termMonths);
 
-        // Company / credit provider details
-        $company = \Illuminate\Support\Facades\DB::table('companies')->first();
+        // Company / credit provider details — loaded from the Company settings table
+        $company = \App\Models\Company::settings();
 
         return [
-            // Credit provider
-            'companyName'      => $company?->name          ?? config('app.name'),
-            'companyAddress'   => $company?->address        ?? 'South Africa',
-            'ncr_number'       => $company?->ncr_number     ?? 'NCRCP XXXXX',
-            'vat_number'       => $company?->vat_number     ?? '',
-            'company_reg'      => $company?->registration_no ?? '',
-            'contact_phone'    => $company?->phone           ?? '',
-            'contact_email'    => $company?->email           ?? '',
+            // Credit provider — all from Company settings table
+            'companyName'         => $company?->name            ?? config('app.name'),
+            'companyAddress'      => $company?->getFormattedAddress() ?? $company?->physical_address ?? $company?->address ?? 'South Africa',
+            'ncr_number'          => $company?->ncr_number       ?? '—',
+            'vat_number'          => $company?->vat_number       ?? '—',
+            'company_reg'         => $company?->registration_no  ?? '—',
+            'contact_phone'       => $company?->phone            ?? '',
+            'contact_email'       => $company?->email            ?? '',
+            'authorised_signatory'=> $company?->authorised_signatory ?? 'Authorised Representative',
+            'signatory_title'     => $company?->signatory_title  ?? 'Director',
+            'tagline'             => $company?->tagline          ?? 'Capital. Partnership. Growth.',
 
             // Consumer
             'clientName'       => $user->name,

@@ -1,51 +1,15 @@
-<!-- resources/views/loan_repayments/edit.blade.php -->
-
-@extends('layouts.app')
-
-@section('content')
-<div class="container">
-    <h1>Edit Loan Repayment</h1>
-
-    <form action="{{ route('loan_repayments.update', $loanRepayment) }}" method="POST">
-        @csrf
-        @method('PUT')
-
-        <div class="form-group">
-            <label for="loan_id">Loan</label>
-            <select name="loan_id" id="loan_id" class="form-control" required>
-                <option value="">Select a Loan</option>
-                @foreach($loans as $loan)
-                    <option value="{{ $loan->id }}" {{ $loan->id == $loanRepayment->loan_id ? 'selected' : '' }}>
-                        {{ $loan->id }} - {{ $loan->borrower_name }}
-                    </option>
-                @endforeach
-            </select>
-            @error('loan_id') <span class="text-danger">{{ $message }}</span> @enderror
-        </div>
-
-        <div class="form-group">
-            <label for="amount">Amount</label>
-            <input type="number" name="amount" id="amount" class="form-control" step="0.01" value="{{ $loanRepayment->amount }}" required>
-            @error('amount') <span class="text-danger">{{ $message }}</span> @enderror
-        </div>
-
-        <div class="form-group">
-            <label for="repayment_date">Repayment Date</label>
-            <input type="date" name="repayment_date" id="repayment_date" class="form-control" value="{{ $loanRepayment->repayment_date }}" required>
-            @error('repayment_date') <span class="text-danger">{{ $message }}</span> @enderror
-        </div>
-
-        <div class="form-group">
-            <label for="status">Status</label>
-            <select name="status" id="status" class="form-control" required>
-                <option value="paid" {{ $loanRepayment->status == 'paid' ? 'selected' : '' }}>Paid</option>
-                <option value="pending" {{ $loanRepayment->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="overdue" {{ $loanRepayment->status == 'overdue' ? 'selected' : '' }}>Overdue</option>
-            </select>
-            @error('status') <span class="text-danger">{{ $message }}</span> @enderror
-        </div>
-
-        <button type="submit" class="btn btn-warning mt-3">Update Repayment</button>
+<x-app-layout>
+  <x-slot name="header"><span class="kc-page-title">Edit Payment Record</span></x-slot>
+  <div class="kc-card max-w-lg">
+    <form method="POST" action="{{ route('loanrepayments.update', $loanRepayment) }}" class="space-y-4">
+      @csrf @method('PUT')
+      <div><label class="kc-label">Reference</label>
+        <input type="text" name="payment_reference" value="{{ $loanRepayment->payment_reference }}" class="kc-input"></div>
+      <div><label class="kc-label">Notes</label>
+        <textarea name="notes" rows="3" class="kc-input">{{ $loanRepayment->notes }}</textarea></div>
+      <p class="text-xs text-kc-charcoal/50">Only reference and notes can be edited. GL entries are immutable.</p>
+      <div class="flex gap-3"><a href="{{ route('loanrepayments.index') }}" class="kc-btn-ghost">Cancel</a>
+        <button type="submit" class="kc-btn-primary">Save</button></div>
     </form>
-</div>
-@endsection
+  </div>
+</x-app-layout>

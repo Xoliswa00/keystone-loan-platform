@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'Access Denied')
+@section('code', '403')
+@section('heading', 'Access Denied')
+@section('message', 'You don\'t have permission to access this area. If you believe this is an error, please contact your administrator.')
