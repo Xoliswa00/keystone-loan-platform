@@ -1,66 +1,55 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-semibold text-gray-800">
-            General Ledger – Account Summary
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Trial Balance / GL Summary</span>
+    <p class="kc-page-subtitle">{{ \Carbon\Carbon::parse($from)->format('d M Y') }} — {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
+  </x-slot>
 
-    <div class="max-w-6xl mx-auto py-8">
+  <form method="GET" class="flex gap-3 mb-6">
+    <div><label class="kc-label">From</label><input type="date" name="from_date" value="{{ $from }}" class="kc-input"></div>
+    <div><label class="kc-label">To</label><input type="date" name="to_date" value="{{ $to }}" class="kc-input"></div>
+    <div class="flex items-end"><button type="submit" class="kc-btn-primary">Apply</button></div>
+  </form>
 
-        {{-- Filters --}}
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <input type="date" name="from_date" value="{{ request('from_date') }}" class="input">
-            <input type="date" name="to_date" value="{{ request('to_date') }}" class="input">
-            <button class="btn btn-primary">Apply</button>
-        </form>
-
-        {{-- Summary Table --}}
-        <div class="bg-white shadow rounded-lg overflow-x-auto">
-            <table class="min-w-full text-sm divide-y divide-gray-200">
-                <thead class="bg-gray-100 text-gray-700">
-                    <tr>
-                        <th class="px-4 py-2 text-left">Account</th>
-                        <th class="px-4 py-2 text-left">Type</th>
-                        <th class="px-4 py-2 text-right">Debit</th>
-                        <th class="px-4 py-2 text-right">Credit</th>
-                        <th class="px-4 py-2 text-right">Closing Balance</th>
-                        <th class="px-4 py-2 text-center">Action</th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y">
-                    @foreach($accounts as $acc)
-                        @php
-                            $balance = $acc->normal_balance === 'debit'
-                                ? $acc->total_debit - $acc->total_credit
-                                : $acc->total_credit - $acc->total_debit;
-                        @endphp
-
-                        <tr>
-                            <td class="px-4 py-2 font-medium">
-                                {{ $acc->code }} – {{ $acc->name }}
-                            </td>
-                            <td class="px-4 py-2 capitalize">{{ $acc->type }}</td>
-                            <td class="px-4 py-2 text-right">
-                                {{ number_format($acc->total_debit,2) }}
-                            </td>
-                            <td class="px-4 py-2 text-right">
-                                {{ number_format($acc->total_credit,2) }}
-                            </td>
-                            <td class="px-4 py-2 text-right font-semibold">
-                                {{ number_format($balance,2) }}
-                            </td>
-                            <td class="px-4 py-2 text-center">
-                                <a href="{{ route('gl.detail', ['account' => $acc->id]) }}"
-                                   class="text-blue-600 hover:underline">
-                                    View Details
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="kc-stat-card text-center">
+      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Debits</p>
+      <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalDebits ?? 0, 2) }}</p>
     </div>
+    <div class="kc-stat-card text-center">
+      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Credits</p>
+      <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalCredits ?? 0, 2) }}</p>
+    </div>
+    <div class="kc-stat-card text-center">
+      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Balanced</p>
+      <p class="font-display text-2xl font-bold {{ ($balanced ?? true) ? 'text-emerald-600' : 'text-red-600' }} mt-1">
+        {{ ($balanced ?? true) ? 'Yes' : 'No' }}
+      </p>
+    </div>
+  </div>
+
+  <div class="kc-card">
+    <div class="kc-table-scroll">
+      <table class="kc-table">
+        <thead><tr>
+          <th>Account Code</th><th>Type</th><th>Category</th><th>Total Debit</th><th>Total Credit</th><th>Net Balance</th>
+        </tr></thead>
+        <tbody>
+          @forelse($accounts as $acct)
+          <tr>
+            <td data-label="Code" class="font-mono font-semibold">{{ $acct->account_code }}</td>
+            <td data-label="Type" class="text-xs"><span class="kc-badge kc-badge-silver">{{ ucfirst($acct->account_type) }}</span></td>
+            <td data-label="Category" class="text-xs text-kc-charcoal/60">{{ ucfirst($acct->account_category) }}</td>
+            <td data-label="Debit">R {{ number_format($acct->total_debit, 2) }}</td>
+            <td data-label="Credit">R {{ number_format($acct->total_credit, 2) }}</td>
+            <td data-label="Net" class="font-semibold {{ $acct->net_balance > 0 ? 'text-kc-navy' : 'text-red-600' }}">
+              R {{ number_format($acct->net_balance, 2) }}
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/40">No GL entries in this period.</td></tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+  </div>
 </x-app-layout>

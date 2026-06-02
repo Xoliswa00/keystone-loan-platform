@@ -1,239 +1,245 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-white-800 dark:text-white-200 leading-tight">
-            {{ __('Loan Applications') }}
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">New Loan Application</span>
+    <p class="kc-page-subtitle">Complete all fields — your application is reviewed within 1 business day</p>
+  </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-blue-100 dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-white">
-                    <div class="container mx-auto mt-8">
-                        <h1 class="text-3xl font-semibold">Create Loan Application</h1>
+  {{-- Profile status warning --}}
+  @if(!($profileStatus['complete'] ?? false))
+  <div class="kc-alert-warning mb-6 flex items-start gap-2">
+    <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+    </svg>
+    <div>
+      <p class="font-semibold">Profile {{ $profileStatus['percentage'] ?? 0 }}% complete</p>
+      <p class="text-xs mt-0.5">
+        Missing: {{ implode(', ', array_map(fn($m)=>ucfirst(str_replace('_',' ',$m)), $profileStatus['missing'] ?? [])) }}
+        · <a href="{{ route('customer-profile.show') }}" class="underline font-medium">Complete now →</a>
+      </p>
+    </div>
+  </div>
+  @endif
 
-                     <!--   <div class="mb-4">
-                            <span class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                                Loyalty Status: {{ ucfirst($loyaltyStatus) }}
-                            </span>
-                        </div>-->
+  {{-- Pre-qual widget --}}
+  @if(($affordabilityResult['eligible'] ?? false))
+  <div class="kc-card-navy mb-6 relative overflow-hidden">
+    <div class="absolute -top-6 -right-6 w-32 h-32 bg-kc-gold opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="relative z-10 flex items-center justify-between">
+      <div>
+        <p class="text-white/60 text-xs uppercase tracking-widest">Pre-Qualified Limit</p>
+        <p class="font-display text-3xl font-bold text-kc-gold mt-1">R {{ number_format($affordabilityResult['max_instalment'] ?? 0, 2) }} <span class="text-sm font-normal text-white/50">/ month</span></p>
+        <p class="text-white/40 text-xs mt-1">Disposable: R{{ number_format($affordabilityResult['disposable_income'] ?? 0, 2) }} · 30% threshold</p>
+      </div>
+    </div>
+  </div>
+  @endif
 
-                        <form action="{{ route('loanapplications.store') }}" method="POST" enctype="multipart/form-data">
-                            @csrf
+  <form method="POST" action="{{ route('loanapplications.store') }}" enctype="multipart/form-data"
+    x-data="loanCalc()" class="space-y-6">
+    @csrf
 
-                            <div class="form-group mt-4">
-                                <label for="loan_type" class="block text-white-700">Loan Type:</label>
-                                <select name="loan_type" id="loan_type" class="form-control text-black block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
-                                    <option value="">-- Select Loan Type --</option>
-                                    <option value="personal">Personal</option>
-                                    <option value="home">Home</option>
-                                    <option value="business">Business</option>
-                                </select>
-                            </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                            <div class="form-group mt-4">
-                                <label for="purpose" class="block text-white-700">Purpose:</label>
-                                <select name="purpose" id="purpose" class="form-control block w-full mt-1 border-gray-300 text-black rounded-md shadow-sm" onchange="handlePurposeChange(this)" required>
-                                    <option value="">-- Select Purpose --</option>
-                                    <option value="Debt Consolidation">Debt Consolidation</option>
-                                    <option value="Emergency Medical Expenses">Emergency Medical Expenses</option>
-                                    <option value="Home Repairs">Home Repairs</option>
-                                    <option value="Car Repairs">Car Repairs</option>
-                                    <option value="Education Expenses">Education Expenses</option>
-                                    <option value="Business Needs">Business Needs</option>
-                                    <option value="Moving or Relocation">Moving or Relocation</option>
-                                    <option value="Unexpected Bills">Unexpected Bills</option>
-                                    <option value="Travel or Vacation">Travel or Vacation</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
+      {{-- LEFT: Loan details --}}
+      <div class="lg:col-span-2 space-y-5">
 
-                            <div id="other_purpose_div" class="form-group mt-4 hidden">
-                                <label for="other_purpose" class="block text-white-700">Specify Other Purpose:</label>
-                                <input type="text" id="other_purpose" name="other_purpose" class="form-control block rw-full mt-1 border-gray-300 text-blackrounded-md shadow-sm">
-                            </div>
+        {{-- Product selection --}}
+        <div class="kc-card">
+          <h4 class="font-display font-semibold text-kc-navy mb-4">Loan Product</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-{{ $products->count() > 1 ? '2' : '1' }} gap-3">
+            @foreach($products as $product)
+            <label class="cursor-pointer">
+              <input type="radio" name="loan_product_id" value="{{ $product->id }}"
+                x-model="productId"
+                @change="updateProduct({{ $product->id }}, {{ $product->min_amount }}, {{ $product->max_amount }}, {{ $product->min_months }}, {{ $product->max_months }}, {{ $product->monthly_interest_rate }})"
+                class="sr-only peer" {{ $loop->first ? 'checked' : '' }}>
+              <div class="p-4 rounded-xl border-2 border-kc-silver-light peer-checked:border-kc-gold peer-checked:bg-kc-gold/5 transition">
+                <p class="font-semibold text-kc-navy">{{ $product->name }}</p>
+                <p class="text-xs text-kc-charcoal/50 mt-1">
+                  R{{ number_format($product->min_amount,0) }}–R{{ number_format($product->max_amount,0) }} ·
+                  {{ $product->min_months }}–{{ $product->max_months }} month{{ $product->max_months > 1 ? 's' : '' }} ·
+                  {{ round($product->monthly_interest_rate*100,1) }}% p/m
+                </p>
+              </div>
+            </label>
+            @endforeach
+          </div>
+          @error('loan_product_id')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+        </div>
 
-                          <!--  <div class="form-group mt-4">
-                                <label for="collateral" class="block text-white-700">Collateral:</label>
-                                <input type="text" name="collateral" id="collateral" class="form-control block w-full mt-1 text-black border-gray-300 rounded-md shadow-sm">
-                            </div> -->
+        {{-- Amount & term --}}
+        <div class="kc-card">
+          <h4 class="font-display font-semibold text-kc-navy mb-4">Loan Amount & Term</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="kc-label">Loan Type</label>
+              <select name="loan_type" class="kc-select" required>
+                <option value="personal" {{ old('loan_type') === 'personal' ? 'selected' : '' }}>Personal</option>
+                <option value="business" {{ old('loan_type') === 'business' ? 'selected' : '' }}>Business</option>
+              </select>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="kc-label mb-0">Amount</label>
+                <span class="text-sm font-bold text-kc-navy">R <span x-text="amount.toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2})"></span></span>
+              </div>
+              <input type="range" name="loan_amount" :min="minAmount" :max="maxAmount" step="50"
+                x-model="amount" @input="recalculate()"
+                class="w-full h-1.5 appearance-none bg-kc-silver-light rounded-full accent-kc-gold cursor-pointer">
+              <div class="flex justify-between text-[10px] text-kc-charcoal/40 mt-0.5">
+                <span>R <span x-text="minAmount.toLocaleString()"></span></span>
+                <span>R <span x-text="maxAmount.toLocaleString()"></span></span>
+              </div>
+              <input type="hidden" name="loan_amount" :value="amount">
+              @error('loan_amount')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <div x-show="maxMonths > 1">
+              <label class="kc-label">Repayment Term</label>
+              <select name="loan_term_months" x-model="months" @change="recalculate()" class="kc-select">
+                <template x-for="m in Array.from({length:maxMonths-minMonths+1},(_,i)=>i+minMonths)" :key="m">
+                  <option :value="m" x-text="m + ' month' + (m>1?'s':'')"></option>
+                </template>
+              </select>
+            </div>
+            <input x-show="maxMonths === 1" type="hidden" name="loan_term_months" value="1">
+            <div>
+              <label class="kc-label">Purpose</label>
+              <select name="purpose" class="kc-select" required>
+                <option value="">Select...</option>
+                @foreach(\App\Models\NcrPurposeCode::where('active',true)->get() as $pc)
+                  <option value="{{ $pc->code }}">{{ $pc->description }}</option>
+                @endforeach
+                <option value="Other">Other</option>
+              </select>
+              @error('purpose')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+          </div>
+        </div>
 
-                         <div class="form-group mt-4">
-    <label for="loan_amount" class="block text-white-700">Loan Amount:</label>
-    <input 
-        type="number" 
-        name="loan_amount" 
-        id="loan_amount" 
-        class="form-control block w-full mt-1 text-black border-gray-300 rounded-md shadow-sm" 
-        value="{{ old('loan_amount') }}" 
-        required
-        min="500" 
-        max="3000"
-        step="1"
-        oninput="validateLoanAmount(this)"
-    >
-    <p id="loan_amount_error" class="text-red-600 text-sm mt-1 hidden">Loan amount must be between R500 and R3000.</p>
-</div>
+        {{-- Documents --}}
+        <div class="kc-card">
+          <h4 class="font-display font-semibold text-kc-navy mb-4">Required Documents</h4>
+          <p class="text-xs text-kc-charcoal/50 mb-4">Required under NCA s.81 for affordability assessment. PDF, JPG, PNG — max 5MB each.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="kc-label">Latest Payslip <span class="text-red-500">*</span></label>
+              <input type="file" name="payslips" accept=".pdf,.jpg,.jpeg,.png" required class="kc-input py-2 cursor-pointer @error('payslips') border-red-400 @enderror">
+              @error('payslips')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <div>
+              <label class="kc-label">Bank Statement (3 months) <span class="text-red-500">*</span></label>
+              <input type="file" name="bank_statement" accept=".pdf,.jpg,.jpeg,.png,.csv" required class="kc-input py-2 cursor-pointer @error('bank_statement') border-red-400 @enderror">
+              <p class="text-[10px] text-kc-charcoal/40 mt-0.5">CSV format enables automatic affordability analysis</p>
+              @error('bank_statement')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+          </div>
+        </div>
+
+        {{-- Terms --}}
+        <div class="kc-card">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" name="terms_conditions" value="1" required
+              class="mt-0.5 w-4 h-4 rounded border-kc-silver text-kc-gold focus:ring-kc-gold/30 cursor-pointer @error('terms_conditions') border-red-400 @enderror">
+            <span class="text-sm text-kc-charcoal/70">
+              I confirm all information is accurate. I consent to an affordability assessment and credit bureau check (NCA s.81).
+              I have read and accept the <a href="{{ route('terms') }}" target="_blank" class="text-kc-gold hover:underline">Terms & Conditions</a>.
+            </span>
+          </label>
+          @error('terms_conditions')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+        </div>
+      </div>
+
+      {{-- RIGHT: Summary --}}
+      <div>
+        <div class="kc-card sticky top-20">
+          <h4 class="font-display font-semibold text-kc-navy mb-4">Repayment Summary</h4>
+
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-kc-charcoal/60">Principal</span><span class="font-semibold">R <span x-text="amount.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="flex justify-between"><span class="text-kc-charcoal/60">Initiation Fee (incl. VAT)</span><span>R <span x-text="initFee.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="flex justify-between"><span class="text-kc-charcoal/60">Service Fee (incl. VAT)</span><span>R <span x-text="serviceFee.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="flex justify-between"><span class="text-kc-charcoal/60">Total Interest (<span x-text="monthlyRate"></span>% p/m)</span><span>R <span x-text="totalInterest.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="border-t border-kc-silver-light pt-3 flex justify-between font-bold">
+              <span>Total Repayable</span>
+              <span class="text-kc-gold font-display text-base">R <span x-text="totalDue.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span>
+            </div>
+            <div class="flex justify-between text-kc-navy font-bold">
+              <span>Monthly Instalment</span>
+              <span class="font-display text-lg">R <span x-text="instalment.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span>
+            </div>
+          </div>
+
+          {{-- Affordability check --}}
+          @if($affordabilityResult['eligible'] ?? false)
+          <div x-bind:class="instalment <= {{ $affordabilityResult['max_instalment'] }} ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'"
+               class="mt-4 p-3 rounded-lg border text-xs transition">
+            <p x-show="instalment <= {{ $affordabilityResult['max_instalment'] }}" class="text-emerald-700 font-semibold">
+              ✓ Within your affordability limit (R{{ number_format($affordabilityResult['max_instalment'],2) }})
+            </p>
+            <p x-show="instalment > {{ $affordabilityResult['max_instalment'] }}" class="text-red-600 font-semibold">
+              ✗ Exceeds your limit (R{{ number_format($affordabilityResult['max_instalment'],2) }}) — reduce the amount
+            </p>
+          </div>
+          @endif
+
+          {{-- Hidden fields for server-side calculation --}}
+          <input type="hidden" name="interest_rate"    :value="monthlyRate/100">
+          <input type="hidden" name="initiation_fee"   :value="initFee">
+          <input type="hidden" name="service_fee"      :value="serviceFee">
+          <input type="hidden" name="total_repayment"  :value="totalDue">
+
+          <button type="submit" class="kc-btn-primary w-full justify-center mt-5">
+            Submit Application
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</x-app-layout>
 
 <script>
-function validateLoanAmount(input) {
-    const errorEl = document.getElementById('loan_amount_error');
-    const value = parseFloat(input.value);
-    if (value < 500 || value > 3000) {
-        errorEl.classList.remove('hidden');
-    } else {
-        errorEl.classList.add('hidden');
-    }
+function loanCalc() {
+  return {
+    productId: {{ $products->first()?->id ?? 0 }},
+    amount: {{ old('loan_amount', $products->first()?->min_amount ?? 500) }},
+    months: {{ old('loan_term_months', 1) }},
+    minAmount: {{ $products->first()?->min_amount ?? 500 }},
+    maxAmount: {{ $products->first()?->max_amount ?? 3000 }},
+    minMonths: {{ $products->first()?->min_months ?? 1 }},
+    maxMonths: {{ $products->first()?->max_months ?? 1 }},
+    monthlyRate: {{ round(($products->first()?->monthly_interest_rate ?? 0.05)*100, 2) }},
+    vatRate: 0.15,
+    initFeeFlat: {{ $products->first()?->initiation_fee_flat ?? 165 }},
+    initFeeRate: {{ $products->first()?->initiation_fee_rate ?? 0.10 }},
+    initFeeCap:  {{ $products->first()?->initiation_fee_cap ?? 1207.50 }},
+    serviceFeeMo: {{ $products->first()?->monthly_service_fee ?? 69 }},
+
+    get initFee() {
+      let base = this.initFeeFlat + this.initFeeRate * Math.max(0, this.amount - 1000);
+      return Math.round(Math.min(base, this.initFeeCap) * (1 + this.vatRate) * 100) / 100;
+    },
+    get serviceFee() {
+      return Math.round(this.serviceFeeMo * (1 + this.vatRate) * this.months * 100) / 100;
+    },
+    get totalInterest() {
+      return Math.round(this.amount * (this.monthlyRate/100) * this.months * 100) / 100;
+    },
+    get totalDue() {
+      return Math.round((this.amount + this.totalInterest + this.initFee + this.serviceFee) * 100) / 100;
+    },
+    get instalment() {
+      return Math.round((this.totalDue / this.months) * 100) / 100;
+    },
+
+    updateProduct(id, minA, maxA, minM, maxM, rate) {
+      this.productId  = id;
+      this.minAmount  = minA; this.maxAmount = maxA;
+      this.minMonths  = minM; this.maxMonths = maxM;
+      this.monthlyRate = Math.round(rate * 100 * 100) / 100;
+      this.amount  = Math.max(minA, Math.min(this.amount, maxA));
+      this.months  = Math.max(minM, Math.min(this.months, maxM));
+    },
+    recalculate() {}
+  }
 }
 </script>
-
-                            <div class="form-group mt-4">
-                                <label for="months" class="block text-white-700">Repayment Period (Months):</label>
-                                <select name="months" id="months" class="form-control block w-full mt-1 text-black border-gray-300 rounded-md shadow-sm" required>
-                                    <option value="">-- Select Months --</option>
-                                    <option value="1">1 Month</option>
-                                                       <!--         <option value="2">2 Months</option>  
-                                                                 <option value="3">3 Months</option>  -->
-
-
-                                </select>
-                            </div>
-                            <div class="form-group mt-4">
- <!--   <label for="bank_account_id" class="block text-white-700">Bank Account:</label>
-
-    @if($hasBankAccounts)
-        <select name="bank_account_id" id="bank_account_id" class="form-control block text-black w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
-            <option value="">-- Select Bank Account --</option>
-            @foreach($userBankAccounts as $account)
-                <option value="{{ $account->id }}">
-                    {{ $account->bank_name }} - {{ $account->account_number }} ({{ $account->account_holder_name }})
-                </option>
-            @endforeach
-        </select>
-
-        <a href="{{ route('accountdetails.index') }}" class="text-blue-600 text-sm mt-1 inline-block">
-            + Add a new bank account
-        </a>
-    @else
-        <p class="text-red-600 text-sm">⚠️ You don’t have a bank account linked yet.</p>
-        <a href="{{ route('accountdetails.index') }}" class="btn btn-primary mt-2">
-            Add Bank Account
-        </a>
-    @endif
-</div> -->
-
-
-
-                            <div id="loan_summary" class="mt-6 bg-white-800 text-dark rounded-lg shadow-lg hidden">
-                                <h3 class="text-2xl font-semibold mb-4">Loan Details Summary</h3>
-                                <div class="mb-2"><strong>Loan Amount:</strong> R<span id="summaryAmount">0.00</span></div>
-                                <div class="mb-2"><strong>Interest:</strong> R<span id="summaryInterest">0.00</span></div>
-                                <div class="mb-2"><strong>Initiation Fee:</strong> R<span id="summaryInitiation">0.00</span></div>
-                                <div class="mb-2"><strong>Service Fee:</strong> R<span id="summaryService">0.00</span></div>
-                                <div class="mb-2 font-bold text-lg"><strong>Total Repayment:</strong> R<span id="summaryTotal">0.00</span></div>
-                                <div class="mt-4">
-                                    <h4 class="text-lg font-semibold mb-2">Repayment Schedule Estimate</h4>
-                                    <ul id="repaymentSchedule" class="list-disc pl-6"></ul>
-                                </div>
-                            </div>
-
-                            <input type="hidden" name="interest_rate" id="interest_rate">
-                            <input type="hidden" name="initiation_fee" id="initiation_fee">
-                            <input type="hidden" name="service_fee" id="service_fee">
-                            <input type="hidden" name="total_repayment" id="total_repayment">
-
-                           <!-- <div class="form-group mt-4">
-                                <label for="credit_score_report" class="block text-white-700">Credit Score Report:</label>
-                                <input type="file" name="credit_score_report" id="credit_score_report" class="form-control block w-full mt-1 border-gray-300 rounded-md shadow-sm">
-                            </div> --->
-                            <div class="form-group mt-4">
-                                <label for="bank_statement" class="block text-white-700"> 3 Months Bank Statement:</label>
-                                <input type="file" name="bank_statement" id="bank_statement" class="form-control block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
-                            </div>
-                            <div class="form-group mt-4">
-                                <label for="payslips" class="block text-white-700">Payslips:</label>
-                                <input type="file" name="payslips" id="payslips" class="form-control block w-full mt-1 border-gray-300 rounded-md shadow-sm">
-                            </div>
-
-                   <div class="form-group mt-4">
-    <div class="flex items-center">
-        <input type="checkbox" name="terms_conditions" value="1" id="terms_conditions" class="form-check-input" required>
-        <label for="terms_conditions" class="ml-2 text-white-700">
-            I accept the 
-            <a href="{{ route('terms.show') }}" target="_blank" rel="noopener" class="text-blue-500">
-                loan application terms &amp; conditions (pre-contract)
-            </a>
-        </label>
-    </div>
-</div>
-
-
-                            <div class="form-group mt-6">
-                                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                                    Submit Loan Application
-                                </button>
-                            </div>
-                        </form>
-
-                        <script>
-                            const baseInitiation = {{ $feeRules['initiation']?->flat_fee ?? 165 }};
-                            const initiationRate = {{ $feeRules['initiation']?->rate ?? 0.10 }};
-                            const maxInitiation = {{ $feeRules['initiation']?->cap ?? 1050 }};
-                            const serviceFee = {{ $feeRules['service']?->flat_fee ?? 60 }};
-                            const interestRate = {{ $feeRules['interest']?->rate ?? 0.05 }};
-
-                            const amountField = document.getElementById('loan_amount');
-                            const monthsField = document.getElementById('months');
-
-                            function updateLoanSummary() {
-                                const amount = parseFloat(amountField.value);
-                                const months = parseInt(monthsField.value);
-                                if (!amount || !months) return;
-
-                                const interest = amount * interestRate*months;
-                                const excess = amount > 1000 ? amount - 1000 : 0;
-                                let initiation = baseInitiation + (excess * initiationRate);
-                                initiation = Math.min(initiation, maxInitiation);
-                                const total = amount + interest + initiation + serviceFee;
-                                const monthly = (total / months).toFixed(2);
-
-                                document.getElementById('loan_summary').classList.remove('hidden');
-                                document.getElementById('summaryAmount').innerText = amount.toFixed(2);
-                                document.getElementById('summaryInterest').innerText = interest.toFixed(2);
-                                document.getElementById('summaryInitiation').innerText = initiation.toFixed(2);
-                                document.getElementById('summaryService').innerText = serviceFee.toFixed(2);
-                                document.getElementById('summaryTotal').innerText = total.toFixed(2);
-
-                                document.getElementById('interest_rate').value = interestRate;
-                                document.getElementById('initiation_fee').value = initiation.toFixed(2);
-                                document.getElementById('service_fee').value = serviceFee.toFixed(2);
-                                document.getElementById('total_repayment').value = total.toFixed(2);
-
-                                const schedule = document.getElementById('repaymentSchedule');
-                                schedule.innerHTML = '';
-                                for (let i = 1; i <= months; i++) {
-                                    const li = document.createElement('li');
-                                    li.innerText = `Month ${i}: R${monthly}`;
-                                    schedule.appendChild(li);
-                                }
-                            }
-
-                            amountField.addEventListener('input', updateLoanSummary);
-                            monthsField.addEventListener('change', updateLoanSummary);
-
-                            function handlePurposeChange(select) {
-                                const otherDiv = document.getElementById('other_purpose_div');
-                                if (select.value === 'Other') {
-                                    otherDiv.classList.remove('hidden');
-                                } else {
-                                    otherDiv.classList.add('hidden');
-                                    document.getElementById('other_purpose').value = '';
-                                }
-                            }
-                        </script>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</x-app-layout>

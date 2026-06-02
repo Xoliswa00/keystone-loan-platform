@@ -162,3 +162,78 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
+
+/* ── Mobile-responsive tables ───────────────────────────────────────────────
+   On mobile (< 640px): rows collapse into labelled cards.
+   Usage: add data-label="Column Name" to every <td>.
+   ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .kc-table-wrap { overflow-x: visible !important; }
+
+    .kc-table thead { display: none; }
+
+    .kc-table tbody tr {
+        display: block;
+        border: 1px solid #E8E9EC;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        padding: 4px 0;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(7,27,52,0.06);
+    }
+
+    .kc-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 8px 14px;
+        border-bottom: 1px solid #F5F5F2;
+        font-size: 13px;
+        gap: 8px;
+    }
+    .kc-table tbody td:last-child { border-bottom: none; }
+
+    .kc-table tbody td::before {
+        content: attr(data-label);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #B8BDC7;
+        flex-shrink: 0;
+        padding-top: 2px;
+        min-width: 90px;
+    }
+
+    /* Actions column — full width button row */
+    .kc-table tbody td[data-label="Actions"],
+    .kc-table tbody td[data-label="Action"] {
+        justify-content: flex-end;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    .kc-table tbody td[data-label="Actions"]::before,
+    .kc-table tbody td[data-label="Action"]::before {
+        display: none;
+    }
+}
+
+/* ── Responsive scroll wrapper for tables that can't collapse ── */
+.kc-table-scroll {
+    overflow-x: auto;
+    border-radius: 8px;
+}
+@media (max-width: 640px) {
+    .kc-table-scroll { border: 1px solid #E8E9EC; }
+}
+
+/* ── Stat card grid responsive ── */
+@media (max-width: 640px) {
+    .kc-stats-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── Page header on mobile ── */
+@media (max-width: 640px) {
+    .kc-page-title { font-size: 1.25rem; }
+    .kc-topbar     { padding-left: 1rem; padding-right: 1rem; }
+}

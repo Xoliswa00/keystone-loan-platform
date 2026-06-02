@@ -1,25 +1,7 @@
 @component('mail::message')
-{{-- Email Header --}}
-# {{ $subject ?? 'Loan Update' }}
 
-{{-- Highlighted Status --}}
-@if(isset($loan) && $loan->status)
-@php
-    $statusColors = [
-        'pending' => 'yellow',
-        'approved' => 'green',
-        'rejected' => 'red',
-        'archived' => 'gray',
-    ];
-    $color = $statusColors[strtolower($loan->status)] ?? 'blue';
-@endphp
+# {{ $subjectLine ?? $subject ?? 'Notification' }}
 
-@component('mail::panel', ['color' => $color])
-**Loan Status:** {{ ucfirst($loan->status) }}
-@endcomponent
-@endif
-
-{{-- Body Lines --}}
 @isset($bodyLines)
 @foreach($bodyLines as $line)
 {{ $line }}
@@ -27,21 +9,17 @@
 @endforeach
 @endisset
 
-{{-- Loan Details --}}
-@if(isset($loan))
+@if(isset($loan) && $loan->loan_amount ?? false)
 ---
-**Loan Reference:** #{{ $loan->id }}  
-**Amount:** R{{ number_format($loan->loan_amount, 2) }}  
-**Type:** {{ ucfirst($loan->loan_type) }}
+**Reference:** #{{ str_pad($loan->id ?? 0, 6, '0', STR_PAD_LEFT) }}
+&nbsp;|&nbsp; **Amount:** R{{ number_format($loan->loan_amount ?? 0, 2) }}
 @endif
 
-{{-- Optional button --}}
-@if(isset($actionUrl) && isset($actionText))
-@component('mail::button', ['url' => $actionUrl])
-{{ $actionText }}
+@component('mail::button', ['url' => config('app.url')])
+Open Dashboard
 @endcomponent
-@endif
 
-Thanks,<br>
-{{ config('app.name') }}
+**Keystone Capital Partners** — Capital. Partnership. Growth.
+*NCR Registered Credit Provider*
+
 @endcomponent

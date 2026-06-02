@@ -1,90 +1,75 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            NuPay Import Batch: {{ $batch->import_ref }}
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Import Batch: {{ $batch->import_ref }}</span>
+    <p class="kc-page-subtitle">{{ $batch->original_filename }} · {{ $batch->row_count }} rows · {{ $batch->status }}</p>
+  </x-slot>
 
-    <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
-        {{-- Post batch button --}}
-        <div class="bg-white shadow-sm rounded-lg p-4 mb-4">
-            <form method="POST" action="{{ route('nu-pay.import.post', $batch->import_ref) }}">
-                @csrf
-                <input type="hidden" name="user_id" value="{{ auth()->id() }}">
-                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Post Batch</button>
-            </form>
+  {{-- Summary by type --}}
+  @isset($summary)
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    @foreach($summary as $month => $types)
+    <div class="kc-card">
+      <h5 class="font-semibold text-kc-navy mb-3">{{ $month }}</h5>
+      @foreach($types as $type => $data)
+      <div class="flex items-center justify-between py-1.5 border-b border-kc-silver-light/60 last:border-0">
+        <div>
+          <span class="kc-badge {{ str_contains(strtolower($type),'success') ? 'kc-badge-green' : (str_contains(strtolower($type),'fail') ? 'kc-badge-red' : 'kc-badge-silver') }}">
+            {{ $type }}
+          </span>
+          <span class="text-xs text-kc-charcoal/50 ml-1">{{ $data['count'] }} txn</span>
         </div>
-
-        {{-- Summary by action date --}}
-<div class="bg-white shadow-sm rounded-lg p-4 mb-4">
-    <h3 class="font-semibold mb-3">Monthly Summary (By Transaction Type)</h3>
-
-    <table class="table-auto w-full border-collapse border border-gray-200 text-sm">
-        <thead>
-            <tr class="bg-gray-100">
-                <th class="border px-3 py-2">Month</th>
-                <th class="border px-3 py-2">Transaction Type</th>
-                <th class="border px-3 py-2 text-right">Total Amount</th>
-                <th class="border px-3 py-2 text-right">NuPay Fee (2%)</th>
-                <th class="border px-3 py-2 text-right">Net Amount</th>
-                <th class="border px-3 py-2 text-center">Count</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($summary as $month => $types)
-                @foreach($types as $type => $totals)
-                    <tr>
-                        <td class="border px-3 py-2">
-                            {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->format('F Y') }}
-                        </td>
-                        <td class="border px-3 py-2 font-medium capitalize">
-                            {{ str_replace('_', ' ', $type) }}
-                        </td>
-                        <td class="border px-3 py-2 text-right">
-                            {{ number_format($totals['total_amount'], 2) }}
-                        </td>
-                        <td class="border px-3 py-2 text-right">
-                            {{ number_format($totals['total_fee'], 2) }}
-                        </td>
-                        <td class="border px-3 py-2 text-right">
-                            {{ number_format($totals['net_amount'], 2) }}
-                        </td>
-                        <td class="border px-3 py-2 text-center">
-                            {{ $totals['count'] }}
-                        </td>
-                    </tr>
-                @endforeach
-            @endforeach
-        </tbody>
-    </table>
-</div>
-
-
-
-        {{-- Transactions table --}}
-        <div class="bg-white shadow-sm rounded-lg p-4">
-            <table class="table-auto w-full border-collapse border border-gray-200">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border px-4 py-2">ID</th>
-                        <th class="border px-4 py-2">Debtor</th>
-                        <th class="border px-4 py-2">Amount</th>
-                        <th class="border px-4 py-2">Status</th>
-                        <th class="border px-4 py-2">Posted At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($transactions as $txn)
-                        <tr>
-                            <td class="border px-4 py-2">{{ $txn->id }}</td>
-                            <td class="border px-4 py-2">{{ $txn->debtor_name }}</td>
-                            <td class="border px-4 py-2">{{ number_format($txn->instalment_amount, 2) }}</td>
-                            <td class="border px-4 py-2">{{ $txn->status }}</td>
-                            <td class="border px-4 py-2">{{ $txn->posted_at ?? '-' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        <span class="text-sm font-semibold">R {{ number_format($data['total_amount'],2) }}</span>
+      </div>
+      @endforeach
     </div>
+    @endforeach
+  </div>
+  @endisset
+
+  {{-- Post button --}}
+  @if($batch->status === 'CAPTURED')
+  <div class="flex justify-end mb-4">
+    <form method="POST" action="{{ route('nu-pay.import.post', $batch->import_ref) }}">
+      @csrf
+      <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+      <button type="submit" class="kc-btn-primary"
+        onclick="return confirm('Post all staged transactions to GL?')">
+        Post to GL ({{ $transactions->count() }} transactions)
+      </button>
+    </form>
+  </div>
+  @endif
+
+  {{-- Transactions --}}
+  <div class="kc-card">
+    <div class="kc-table-scroll">
+      <table class="kc-table">
+        <thead><tr>
+          <th>Debtor ID</th><th>Name</th><th>Amount</th><th>Type</th><th>Action Date</th><th>Status</th><th>Posted</th>
+        </tr></thead>
+        <tbody>
+          @forelse($transactions as $txn)
+          @php $tc = str_contains(strtolower($txn->transaction_type??''),'success') ? 'kc-badge-green' : (str_contains(strtolower($txn->transaction_type??''),'fail') ? 'kc-badge-red' : 'kc-badge-silver'); @endphp
+          <tr>
+            <td data-label="Debtor ID" class="font-mono text-xs">{{ $txn->debtor_id }}</td>
+            <td data-label="Name" class="text-sm">{{ $txn->debtor_name }}</td>
+            <td data-label="Amount" class="font-semibold">R {{ number_format($txn->instalment_amount,2) }}</td>
+            <td data-label="Type"><span class="kc-badge {{ $tc }}">{{ $txn->transaction_type }}</span></td>
+            <td data-label="Date" class="text-xs">{{ $txn->action_date }}</td>
+            <td data-label="Status" class="text-xs">{{ $txn->status }}</td>
+            <td data-label="Posted">
+              @if($txn->posted_at)
+                <span class="kc-badge kc-badge-green text-[10px]">Posted</span>
+              @else
+                <span class="kc-badge kc-badge-silver text-[10px]">Pending</span>
+              @endif
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="7" class="text-center py-8 text-kc-charcoal/40">No transactions staged.</td></tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+  </div>
 </x-app-layout>

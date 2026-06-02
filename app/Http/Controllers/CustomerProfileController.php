@@ -5,17 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\CustomerProfile;
 use App\Models\CustomerDocument;
 use App\Services\AffordabilityService;
+use App\Services\BankStatementAnalysisService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class CustomerProfileController extends Controller
 {
-    protected AffordabilityService $affordability;
+    protected AffordabilityService         $affordability;
+    protected BankStatementAnalysisService $bankAnalysis;
 
-    public function __construct(AffordabilityService $affordability)
-    {
+    public function __construct(
+        AffordabilityService         $affordability,
+        BankStatementAnalysisService $bankAnalysis
+    ) {
         $this->affordability = $affordability;
+        $this->bankAnalysis  = $bankAnalysis;
     }
 
     /**
@@ -72,6 +77,7 @@ class CustomerProfileController extends Controller
 
     /**
      * Upload a KYC document (replace existing of same type).
+     * Bank statements are automatically analysed after upload.
      */
     public function uploadDocument(Request $request)
     {
@@ -91,18 +97,33 @@ class CustomerProfileController extends Controller
         $file = $request->file('document');
         $path = $file->store("customer_documents/{$user->id}", 'public');
 
-        CustomerDocument::create([
-            'user_id'       => $user->id,
-            'document_type' => $validated['document_type'],
-            'file_path'     => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type'     => $file->getMimeType(),
+        $doc = CustomerDocument::create([
+            'user_id'         => $user->id,
+            'document_type'   => $validated['document_type'],
+            'file_path'       => $path,
+            'original_name'   => $file->getClientOriginalName(),
+            'mime_type'       => $file->getMimeType(),
             'file_size_bytes' => $file->getSize(),
-            'document_date' => $validated['document_date'] ?? null,
-            'verified'      => false,
+            'document_date'   => $validated['document_date'] ?? null,
+            'verified'        => false,
         ]);
 
-        return back()->with('success', ucfirst(str_replace('_', ' ', $validated['document_type'])) . ' uploaded successfully.');
+        $successMsg = ucfirst(str_replace('_', ' ', $validated['document_type'])) . ' uploaded successfully.';
+
+        // Auto-analyse bank statements for affordability intelligence
+        if ($validated['document_type'] === 'bank_statement'
+            && in_array($file->getMimeType(), ['text/csv', 'text/plain'])
+        ) {
+            try {
+                $this->bankAnalysis->analyseForUser($user->id);
+                $successMsg .= ' Bank statement analysed — affordability updated.';
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Bank statement analysis failed: ' . $e->getMessage());
+                $successMsg .= ' (Statement uploaded but analysis could not run — only CSV statements are analysed.)';
+            }
+        }
+
+        return back()->with('success', $successMsg);
     }
 
     /**

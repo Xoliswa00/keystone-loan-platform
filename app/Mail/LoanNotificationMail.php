@@ -5,61 +5,42 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class LoanNotificationMail extends Mailable
+class LoanNotificationMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
-    public $subjectLine;
-    public $bodyLines; // array of paragraphs
-    public $loan;
-      // Default CCs for all loan emails
-    protected $defaultCCs = [
-        'ligerholdings672@gmail.com',
-        'bester12@outlook.com',
-        'info@ligerholding.co.za',
-    ];
-    /**
-     * Create a new message instance.
-     */
-    
-public function __construct(string $subject, array $bodyLines = [], $loan = null)
+
+    public string $subjectLine;
+    public array  $bodyLines;
+    public mixed  $loan;
+
+    public function __construct(string $subject, array $bodyLines = [], mixed $loan = null)
     {
         $this->subjectLine = $subject;
-        $this->bodyLines = $bodyLines;
-        $this->loan = $loan;
+        $this->bodyLines   = $bodyLines;
+        $this->loan        = $loan;
     }
 
-        public function build()
+    public function build(): self
     {
-        $email = $this->subject($this->subject)
-                      ->markdown('mail.status')
-                      ->with([
-                          'subject' => $this->subject,
-                          'bodyLines' => $this->bodyLines,
-                          'loan' => $this->loan,
-                      ]);
+        $mail = $this->subject($this->subjectLine)
+                     ->markdown('mail.status')
+                     ->with([
+                         'subjectLine' => $this->subjectLine,
+                         'bodyLines'   => $this->bodyLines,
+                         'loan'        => $this->loan,
+                     ]);
 
-        // Automatically add default CCs to all LoanNotificationMail
-        if (!empty($this->defaultCCs)) {
-            $email->cc($this->defaultCCs);
+        // CC addresses from config — not hardcoded
+        $ccs = array_filter(explode(',', config('mail.loan_notification_cc', '')));
+        if (!empty($ccs)) {
+            $mail->cc($ccs);
         }
 
-        return $email;
+        return $mail;
     }
 
-    /**
-     * Get the message envelope.
-     */
-   
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];
