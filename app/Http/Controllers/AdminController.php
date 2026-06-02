@@ -824,6 +824,75 @@ class AdminController extends Controller
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // NPL (Non-Performing Loan) Report — DPD staging + provision summary
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function nplReport(Request $request)
+    {
+        $asAt = $request->as_at_date ?? now()->toDateString();
+
+        // All loans with any overdue schedules, staged by IFRS 9 DPD bucket
+        $nplLoans = DB::table('loans as l')
+            ->join('users as u', 'u.id', '=', 'l.user_id')
+            ->leftJoin('customers as c', 'c.user_id', '=', 'l.user_id')
+            ->leftJoin(DB::raw('(
+                SELECT loan_id, SUM(emi_amount) as arrears, COUNT(*) as missed_count,
+                       MIN(due_date) as earliest_due,
+                       DATEDIFF(CURDATE(), MIN(due_date)) as dpd
+                FROM repayment_schedules
+                WHERE status IN ("pending","payment_failed") AND due_date < CURDATE()
+                GROUP BY loan_id
+            ) rs'), 'rs.loan_id', '=', 'l.loan_application_id')
+            ->leftJoin(DB::raw('(
+                SELECT loan_id, SUM(provision_amount) as latest_provision
+                FROM bad_debt_provisions p
+                INNER JOIN (SELECT loan_id, MAX(provision_date) as md FROM bad_debt_provisions GROUP BY loan_id) lp
+                ON p.loan_id = lp.loan_id AND p.provision_date = lp.md
+                GROUP BY loan_id
+            ) prov'), 'prov.loan_id', '=', 'l.id')
+            ->whereNotNull('rs.dpd')
+            ->where('rs.dpd', '>', 0)
+            ->select(
+                'l.id as loan_id', 'l.loan_application_id',
+                'u.name as client_name', 'c.customer_code',
+                'l.loan_amount', 'l.remaining_balance',
+                'rs.arrears', 'rs.missed_count', 'rs.earliest_due', 'rs.dpd',
+                DB::raw('CASE WHEN rs.dpd >= 90 THEN 3 WHEN rs.dpd >= 30 THEN 2 ELSE 1 END as ifrs9_stage'),
+                DB::raw('CASE WHEN rs.dpd >= 90 THEN "90+ DPD" WHEN rs.dpd >= 60 THEN "60-89 DPD" WHEN rs.dpd >= 30 THEN "30-59 DPD" ELSE "1-29 DPD" END as dpd_bucket'),
+                DB::raw('COALESCE(prov.latest_provision, 0) as provision_amount'),
+                'l.status as loan_status'
+            )
+            ->orderByDesc('rs.dpd')
+            ->paginate(50);
+
+        // Stage summary
+        $stageSummary = DB::table('loans as l')
+            ->join(DB::raw('(
+                SELECT loan_id, DATEDIFF(CURDATE(), MIN(due_date)) as dpd, SUM(emi_amount) as arrears
+                FROM repayment_schedules WHERE status IN ("pending","payment_failed") AND due_date < CURDATE()
+                GROUP BY loan_id
+            ) rs'), 'rs.loan_id', '=', 'l.loan_application_id')
+            ->leftJoin(DB::raw('(
+                SELECT loan_id, SUM(provision_amount) as prov
+                FROM bad_debt_provisions p
+                INNER JOIN (SELECT loan_id, MAX(provision_date) as md FROM bad_debt_provisions GROUP BY loan_id) lp
+                ON p.loan_id = lp.loan_id AND p.provision_date = lp.md GROUP BY loan_id
+            ) prov'), 'prov.loan_id', '=', 'l.id')
+            ->select(
+                DB::raw('CASE WHEN rs.dpd >= 90 THEN "Stage 3 (90+ DPD)" WHEN rs.dpd >= 30 THEN "Stage 2 (30-89 DPD)" ELSE "Stage 1 (1-29 DPD)" END as stage'),
+                DB::raw('COUNT(*) as loan_count'),
+                DB::raw('SUM(l.remaining_balance) as total_outstanding'),
+                DB::raw('SUM(rs.arrears) as total_arrears'),
+                DB::raw('SUM(COALESCE(prov.prov,0)) as total_provision')
+            )
+            ->groupBy('stage')
+            ->orderByDesc('stage')
+            ->get();
+
+        return view('admin.reports.npl', compact('nplLoans', 'stageSummary', 'asAt'));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // Audit log viewer
     // ──────────────────────────────────────────────────────────────────────────
 

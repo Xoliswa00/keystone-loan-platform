@@ -106,6 +106,9 @@ return new class extends Migration
 
             // Bank charges
             ['key' => 'bank_charges',            'account_code' => '5200', 'description' => 'Bank Charges (Nu-Pay collection fees)'],
+
+            // Recovery income — separate from normal interest/fee income
+            ['key' => 'recovery_income_cr',      'account_code' => '4400', 'description' => 'Recovery Income (cash received on written-off accounts)'],
         ];
 
         foreach ($mappings as $m) {

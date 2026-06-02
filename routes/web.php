@@ -166,6 +166,7 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::get('/balance-sheet',       [AdminController::class, 'balanceSheet'])->name('balance-sheet');
         Route::get('/write-off-register',  [AdminController::class, 'writeOffRegister'])->name('write-off-register');
         Route::get('/audit-log',           [AdminController::class, 'auditLog'])->name('audit-log');
+        Route::get('/npl',                 [AdminController::class, 'nplReport'])->name('npl');
     });
 
     // ── Bank statement import ─────────────────────────────────────────────────
@@ -185,7 +186,16 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
     Route::get('/admin/collections',                  [\App\Http\Controllers\AdminOpsController::class, 'collectionsQueue'])->name('admin.collections');
 
     // ── NCR export (download) ─────────────────────────────────────────────────
-    Route::get('/admin/ncr-export',                   [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('admin.ncr-export');
+    Route::get('/admin/ncr-export', [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('admin.ncr-export');
+
+    // ── Debt recovery ─────────────────────────────────────────────────────────
+    Route::prefix('admin/recovery')->name('admin.recovery.')->group(function () {
+        Route::get('/',                  [\App\Http\Controllers\DebtRecoveryController::class, 'index'])->name('index');
+        Route::get('/{recovery}',        [\App\Http\Controllers\DebtRecoveryController::class, 'show'])->name('show');
+        Route::post('/open',             [\App\Http\Controllers\DebtRecoveryController::class, 'open'])->name('open');
+        Route::post('/{recovery}/payment',[\App\Http\Controllers\DebtRecoveryController::class, 'recordPayment'])->name('payment');
+        Route::patch('/{recovery}',      [\App\Http\Controllers\DebtRecoveryController::class, 'update'])->name('update');
+    });
 
     // ── Admin resource (legacy) ───────────────────────────────────────────────
     Route::resource('Admin', AdminController::class);

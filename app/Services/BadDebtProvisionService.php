@@ -248,6 +248,25 @@ class BadDebtProvisionService
 
             $customer->decrement('current_balance', $outstanding);
 
+            // Auto-open a recovery case — write-off doesn't mean stop chasing
+            $existingCase = \App\Models\DebtRecovery::where('loan_id', $loan->id)
+                ->whereNotIn('status', ['recovered', 'closed'])
+                ->first();
+
+            if (!$existingCase) {
+                \App\Models\DebtRecovery::create([
+                    'loan_id'                   => $loan->id,
+                    'user_id'                   => $loan->user_id,
+                    'status'                    => 'open',
+                    'original_write_off_amount' => $outstanding,
+                    'total_recovered'           => 0,
+                    'outstanding_recovery'      => $outstanding,
+                    'notes'                     => "Auto-opened on write-off: {$reason}",
+                    'opened_at'                 => now()->toDateString(),
+                    'next_action_date'          => now()->addDays(14)->toDateString(),
+                ]);
+            }
+
             Log::info("Loan #{$loan->id} written off. Amount: R{$outstanding}. Reason: {$reason}");
         });
     }
