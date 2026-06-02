@@ -109,6 +109,9 @@ return new class extends Migration
 
             // Recovery income — separate from normal interest/fee income
             ['key' => 'recovery_income_cr',      'account_code' => '4400', 'description' => 'Recovery Income (cash received on written-off accounts)'],
+
+            // Year-end close
+            ['key' => 'retained_earnings_cr',    'account_code' => '3200', 'description' => 'Retained Earnings — net profit/loss transferred at year-end'],
         ];
 
         foreach ($mappings as $m) {

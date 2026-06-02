@@ -156,6 +156,20 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::post('/business-bank/{batch}/reconcile', [\App\Http\Controllers\BusinessBankStatementController::class, 'reconcile'])->name('business-bank.reconcile');
     });
 
+    // ── Financial Periods ─────────────────────────────────────────────────────
+    Route::prefix('admin/periods')->name('admin.periods.')->group(function () {
+        Route::get('/',                            [\App\Http\Controllers\FinancialPeriodController::class, 'index'])->name('index');
+        Route::post('/',                           [\App\Http\Controllers\FinancialPeriodController::class, 'store'])->name('store');
+        Route::get('/{period}',                    [\App\Http\Controllers\FinancialPeriodController::class, 'show'])->name('show');
+        Route::post('/{period}/start-close',       [\App\Http\Controllers\FinancialPeriodController::class, 'startClose'])->name('start-close');
+        Route::post('/{period}/provisioning',      [\App\Http\Controllers\FinancialPeriodController::class, 'runProvisioning'])->name('provisioning');
+        Route::post('/{period}/facility-interest', [\App\Http\Controllers\FinancialPeriodController::class, 'runFacilityInterest'])->name('facility-interest');
+        Route::post('/{period}/bank-recon',        [\App\Http\Controllers\FinancialPeriodController::class, 'markBankRecon'])->name('bank-recon');
+        Route::post('/{period}/trial-balance',     [\App\Http\Controllers\FinancialPeriodController::class, 'generateTrialBalance'])->name('trial-balance');
+        Route::post('/{period}/close',             [\App\Http\Controllers\FinancialPeriodController::class, 'close'])->name('close');
+        Route::post('/{period}/lock',              [\App\Http\Controllers\FinancialPeriodController::class, 'lock'])->name('lock');
+    });
+
     // ── Bank Reconciliation Workspace (full allocation engine) ────────────────
     Route::prefix('admin/finance/recon')->name('admin.finance.recon.')->group(function () {
         Route::get('/{batch}',                 [\App\Http\Controllers\BankAllocationController::class, 'workspace'])->name('workspace');

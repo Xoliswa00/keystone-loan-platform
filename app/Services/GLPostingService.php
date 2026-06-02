@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\{arbatch, glbatch, glentry, glpost, gl_accounts, chart_of_accounts};
+use App\Models\{arbatch, glbatch, glentry, glpost, gl_accounts};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -27,6 +27,24 @@ class GLPostingService
 
             if ($arBatch->status === 'posted') {
                 throw new Exception("AR batch #{$arBatch->id} already posted.");
+            }
+
+            // ── Period guard ──────────────────────────────────────────────────
+            // Check the posting date against the financial period status.
+            // Locked periods reject all postings (closed periods still accept adjustments).
+            $postDate = $arBatch->approved_at ?? now();
+            $period   = \App\Models\FinancialPeriod::forDate($postDate->toDateString());
+
+            if ($period && $period->isLocked()) {
+                throw new Exception(
+                    "Period {$period->displayLabel()} is locked — no GL postings allowed. " .
+                    "Contact your finance administrator."
+                );
+            }
+
+            // Auto-create the period as open if it doesn't exist yet
+            if (!$period) {
+                \App\Models\FinancialPeriod::ensure($postDate->format('Y-m'));
             }
 
             $arBatch->loadMissing('entries');
