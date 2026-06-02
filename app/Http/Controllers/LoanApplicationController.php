@@ -8,6 +8,7 @@ use App\Models\LoanFee;
 use App\Models\Customer;
 use App\Models\RepaymentSchedule;
 use App\Services\AffordabilityService;
+use App\Services\CustomerLimitationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +19,15 @@ use Carbon\Carbon;
 
 class LoanApplicationController extends Controller
 {
-    protected AffordabilityService $affordability;
+    protected AffordabilityService      $affordability;
+    protected CustomerLimitationService $limitations;
 
-    public function __construct(AffordabilityService $affordability)
-    {
+    public function __construct(
+        AffordabilityService      $affordability,
+        CustomerLimitationService $limitations
+    ) {
         $this->affordability = $affordability;
+        $this->limitations   = $limitations;
     }
 
     // ── List ──────────────────────────────────────────────────────────────────
@@ -53,24 +58,16 @@ class LoanApplicationController extends Controller
     {
         $user = Auth::user();
 
-        // Block if already has an active application
-        $existing = LoanApplication::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'under_review'])
-            ->first();
+        // ── Comprehensive limitation check (NCR compliance) ───────────────────
+        $limitCheck = $this->limitations->canApply($user);
 
-        if ($existing) {
-            return redirect()->route('loanapplications.show', $existing->id)
-                ->with('error', 'You already have a pending application.');
-        }
-
-        // Block if active undisbursed/disbursed loan
-        $activeLoan = \App\Models\Loan::where('user_id', $user->id)
-            ->whereNotIn('status', ['settled', 'rejected', 'archived'])
-            ->first();
-
-        if ($activeLoan) {
-            return redirect()->route('loan.index')
-                ->with('error', 'You have an active loan that must be settled before applying again.');
+        if (!$limitCheck['allowed']) {
+            return view('applications.blocked', [
+                'reason'      => $limitCheck['reason'],
+                'unblock_at'  => $limitCheck['unblock_at'],
+                'gate'        => $limitCheck['gate'],
+                'action_url'  => $limitCheck['action_url'] ?? null,
+            ]);
         }
 
         // Load available products
@@ -120,27 +117,14 @@ class LoanApplicationController extends Controller
         DB::beginTransaction();
 
         try {
-            // ── 1. Lock user row (prevent concurrent applications) ────────────
+            // ── 1. Lock user row + re-check all limitations inside transaction ──
             DB::table('users')->where('id', $user->id)->lockForUpdate()->first();
+            $freshUser = \App\Models\User::find($user->id); // re-read after lock
 
-            // Duplicate check inside transaction
-            $existing = LoanApplication::where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'under_review'])
-                ->first();
-
-            if ($existing) {
+            $limitCheck = $this->limitations->canApply($freshUser);
+            if (!$limitCheck['allowed']) {
                 DB::rollBack();
-                return redirect()->route('loanapplications.show', $existing->id)
-                    ->with('error', 'You already have a pending application.');
-            }
-
-            $activeLoan = \App\Models\Loan::where('user_id', $user->id)
-                ->whereNotIn('status', ['settled', 'rejected', 'archived'])
-                ->exists();
-
-            if ($activeLoan) {
-                DB::rollBack();
-                return back()->with('error', 'You have an active loan that must be settled first.');
+                return back()->withInput()->with('error', $limitCheck['reason']);
             }
 
             // ── 2. Load and validate product ──────────────────────────────────

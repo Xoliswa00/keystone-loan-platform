@@ -84,6 +84,11 @@ Route::middleware('auth')->group(function () {
     // ── Transactions & interests ─────────────────────────────────────────────
     Route::resource('transactions',  TransactionController::class);
     Route::resource('loaninterests', LoanInterestController::class);
+
+    // ── Statement download (async) ────────────────────────────────────────────
+    Route::get('/my-statement',                              [\App\Http\Controllers\ClientStatementController::class, 'myStatement'])->name('client.my-statement');
+    Route::get('/my-statement/status',                       [\App\Http\Controllers\ClientStatementController::class, 'checkStatus'])->name('client.statement.status');
+    Route::get('/statements/{user}/{period}',                [\App\Http\Controllers\ClientStatementController::class, 'serveFile'])->name('client.statement.file');
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -154,6 +159,15 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::post('/business-bank',             [\App\Http\Controllers\BusinessBankStatementController::class, 'handleUpload'])->name('business-bank.store');
         Route::get('/business-bank/{batch}',      [\App\Http\Controllers\BusinessBankStatementController::class, 'show'])->name('business-bank.show');
         Route::post('/business-bank/{batch}/reconcile', [\App\Http\Controllers\BusinessBankStatementController::class, 'reconcile'])->name('business-bank.reconcile');
+    });
+
+    // ── System Logs ───────────────────────────────────────────────────────────
+    Route::prefix('admin/system')->name('admin.system.')->group(function () {
+        Route::get('/logs',               [\App\Http\Controllers\SystemLogController::class, 'index'])->name('logs');
+        Route::post('/logs/retry',        [\App\Http\Controllers\SystemLogController::class, 'retryJob'])->name('logs.retry');
+        Route::post('/logs/clear-failed', [\App\Http\Controllers\SystemLogController::class, 'clearFailed'])->name('logs.clear-failed');
+        Route::get('/logs/download',      [\App\Http\Controllers\SystemLogController::class, 'download'])->name('logs.download');
+        Route::post('/logs/clear',        [\App\Http\Controllers\SystemLogController::class, 'clearLog'])->name('logs.clear');
     });
 
     // ── Financial Periods ─────────────────────────────────────────────────────

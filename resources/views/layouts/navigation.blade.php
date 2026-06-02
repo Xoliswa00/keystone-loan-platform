@@ -123,8 +123,34 @@
                         class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.gl_summary') ? 'active' : '' }}">
                         GL Summary
                     </a>
+                    <a href="{{ route('reports.income-statement') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.income-statement') ? 'active' : '' }}">
+                        Income Statement
+                    </a>
+                    <a href="{{ route('reports.balance-sheet') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.balance-sheet') ? 'active' : '' }}">
+                        Balance Sheet
+                    </a>
+                    <a href="{{ route('reports.vat201') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.vat201') ? 'active' : '' }}">
+                        VAT 201
+                    </a>
+                    <a href="{{ route('reports.npl') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.npl') ? 'active' : '' }}">
+                        NPL / Arrears
+                    </a>
                 </div>
             </div>
+
+            <p class="kc-nav-section">IT & System</p>
+
+            <a href="{{ route('admin.system.logs') }}"
+                class="kc-nav-item {{ request()->routeIs('admin.system.*') ? 'active' : '' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                System Logs
+            </a>
 
         @else
             {{-- ── CLIENT NAVIGATION ── --}}
@@ -153,6 +179,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
                 Repayment Schedule
+            </a>
+
+            <a href="{{ route('client.my-statement') }}"
+                class="kc-nav-item {{ request()->routeIs('client.my-statement') ? 'active' : '' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+                Statement
             </a>
 
             <a href="{{ route('loanapplications.create') }}"
