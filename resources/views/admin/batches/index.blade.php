@@ -1,40 +1,36 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            NuPay Import Batches
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Import Batches</span>
+    <p class="kc-page-subtitle">Nu-Pay transaction imports</p>
+  </x-slot>
 
-    <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white shadow-sm rounded-lg p-4">
-            <table class="table-auto w-full border-collapse border border-gray-200">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border px-4 py-2">Import Ref</th>
-                        <th class="border px-4 py-2">Row Count</th>
-                        <th class="border px-4 py-2">Status</th>
-                        <th class="border px-4 py-2">Created At</th>
-                        <th class="border px-4 py-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($batches as $batch)
-                        <tr>
-                            <td class="border px-4 py-2">{{ $batch->import_ref }}</td>
-                            <td class="border px-4 py-2">{{ $batch->row_count }}</td>
-                            <td class="border px-4 py-2">{{ $batch->status }}</td>
-                            <td class="border px-4 py-2">{{ $batch->created_at }}</td>
-                            <td class="border px-4 py-2">
-                                <a href="{{ route('nu-pay.import.show', $batch->import_ref) }}" class="bg-blue-500 text-white px-3 py-1 rounded">View</a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+  <div class="flex justify-end mb-4">
+    <a href="{{ route('nupay.upload.form') }}" class="kc-btn-primary">New Import</a>
+  </div>
 
-            <div class="mt-4">
-                {{ $batches->links() }}
-            </div>
-        </div>
+  <div class="kc-card">
+    <div class="kc-table-scroll">
+      <table class="kc-table">
+        <thead><tr><th>Ref</th><th>File</th><th>Rows</th><th>Status</th><th>Imported</th><th>Actions</th></tr></thead>
+        <tbody>
+          @forelse($batches as $batch)
+          @php $bsc = match($batch->status){'PROCESSED'=>'kc-badge-green','CAPTURED'=>'kc-badge-gold','FAILED_CAPTURE','FAILED_VALIDATION'=>'kc-badge-red',default=>'kc-badge-silver'}; @endphp
+          <tr>
+            <td data-label="Ref" class="font-mono text-xs">{{ $batch->import_ref }}</td>
+            <td data-label="File" class="text-xs text-kc-charcoal/70">{{ $batch->original_filename }}</td>
+            <td data-label="Rows" class="font-semibold">{{ $batch->row_count }}</td>
+            <td data-label="Status"><span class="kc-badge {{ $bsc }}">{{ $batch->status }}</span></td>
+            <td data-label="Imported" class="text-xs text-kc-charcoal/50">{{ $batch->created_at->format('d M Y H:i') }}</td>
+            <td data-label="Actions">
+              <a href="{{ route('nu-pay.import.show', $batch->import_ref) }}" class="text-xs text-kc-gold hover:underline">View</a>
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/40">No imports yet. <a href="{{ route('nupay.upload.form') }}" class="text-kc-gold hover:underline">Upload now →</a></td></tr>
+          @endforelse
+        </tbody>
+      </table>
     </div>
+    <div class="mt-4">{{ $batches->links() }}</div>
+  </div>
 </x-app-layout>

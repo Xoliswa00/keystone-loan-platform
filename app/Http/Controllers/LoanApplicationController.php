@@ -3,387 +3,281 @@
 namespace App\Http\Controllers;
 
 use App\Models\LoanApplication;
-use App\Models\Loan;
-use App\Models\Loan_fee_rules;
+use App\Models\LoanProduct;
 use App\Models\LoanFee;
 use App\Models\Customer;
-
-use Illuminate\Support\Facades\DB;
-
-use App\Models\Loans;
+use App\Models\RepaymentSchedule;
+use App\Services\AffordabilityService;
+use App\Services\CustomerLimitationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use App\Models\RepaymentSchedule;
-use App\Models\LoanFeeRules;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-    use App\Mail\LoanNotificationMail;
 use Illuminate\Support\Facades\Mail;
-
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
-
-
 
 class LoanApplicationController extends Controller
 {
-    // Display a list of loan applications
+    protected AffordabilityService      $affordability;
+    protected CustomerLimitationService $limitations;
+
+    public function __construct(
+        AffordabilityService      $affordability,
+        CustomerLimitationService $limitations
+    ) {
+        $this->affordability = $affordability;
+        $this->limitations   = $limitations;
+    }
+
+    // ── List ──────────────────────────────────────────────────────────────────
+
     public function index()
     {
-        $applications = LoanApplication::where('user_id', auth()->id())
-       -> where('status','<>','deleted')
-        ->with('user') // Include user relationship
-        ->paginate(10);
-        
+        $applications = LoanApplication::where('user_id', Auth::id())
+            ->where('status', '<>', 'deleted')
+            ->with('user', 'product')
+            ->latest()
+            ->paginate(10);
+
         return view('applications.index', ['Applications' => $applications]);
     }
 
-public function create(): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
-{
-    $user = Auth::user();
+    public function adminIndex()
+    {
+        $applications = LoanApplication::with(['user.customer', 'product', 'loanfee'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-    /*
-    |--------------------------------------------------------------------------
-    | 1. Prevent Duplicate / Pending Applications
-    |--------------------------------------------------------------------------
-    | If the user already has an application still being processed,
-    | block creation of a new one.
-    */
-
-  // Check applications still being processed
-$existingApplication = LoanApplication::where('user_id', $user->id)
-    ->whereIn('status', ['pending', 'under_review'])
-    ->first();
-
-if ($existingApplication) {
-    return redirect()
-        ->route('applications.show', $existingApplication->id)
-        ->with('error', 'You currently have a pending loan application.');
-}
-
-// Check approved applications
-$approvedApplication = Loan::where('user_id', $user->id)
-    ->whereNotIn('status', ['Settled','rejected'])
-    ->first();
-
-if ($approvedApplication) {
-    return redirect()
-        ->route('applications.show', $approvedApplication->id)
-        ->with('error', 'You have an active loan that hasnt been settled. In a case it was debited today, please wait for the transactions to reflect in the system.');
-}
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | 2. Load User Bank Accounts
-    |--------------------------------------------------------------------------
-    */
-
-    $userBankAccounts = $user->relationLoaded('accountDetails')
-        ? $user->accountDetails
-        : ($user->accountDetails()->exists()
-            ? $user->accountDetails()->get()
-            : collect());
-
-    $hasBankAccounts = $userBankAccounts->isNotEmpty();
-
-    /*
-    |--------------------------------------------------------------------------
-    | 3. Loyalty Calculation
-    |--------------------------------------------------------------------------
-    */
-
-    $createdAt = $user->created_at instanceof Carbon
-        ? $user->created_at
-        : Carbon::parse($user->created_at ?? now()->subYears(1));
-
-    $monthsSince = now()->diffInMonths($createdAt);
-
-    $loyaltyStatus = $monthsSince >= 12
-        ? 'loyal_returnee'
-        : 'first_timer';
-
-    /*
-    |--------------------------------------------------------------------------
-    | 4. Fetch Applicable Fee Rules
-    |--------------------------------------------------------------------------
-    */
-
-    $rulesQuery = Loan_fee_rules::query()
-        ->where('active', true)
-        ->whereIn('applicability', [$loyaltyStatus, 'general'])
-        ->orderByRaw("FIELD(applicability, ?, ?)", [$loyaltyStatus, 'general']);
-
-    $rules = $rulesQuery->get()
-        ->groupBy('fee_type')
-        ->map(fn($group) => $group->first())
-        ->toArray();
-
-    /*
-    |--------------------------------------------------------------------------
-    | 5. Normalize Fee Rules for Blade / JS
-    |--------------------------------------------------------------------------
-    */
-
-    $feeRules = [];
-
-    foreach ($rules as $feeType => $ruleModel) {
-        $feeRules[$feeType] = [
-            'id' => $ruleModel['id'] ?? null,
-            'applicability' => $ruleModel['applicability'] ?? null,
-            'fee_type' => $ruleModel['fee_type'] ?? $feeType,
-            'flat_fee' => isset($ruleModel['flat_fee']) ? (float) $ruleModel['flat_fee'] : null,
-            'rate' => isset($ruleModel['rate']) ? (float) $ruleModel['rate'] : null,
-            'cap' => isset($ruleModel['cap']) ? (float) $ruleModel['cap'] : null,
-        ];
+        return view('admin.loan_applications.index', compact('applications'));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 6. Return View
-    |--------------------------------------------------------------------------
-    */
+    // ── Create (show form) ───────────────────────────────────────────────────
 
-    return view('applications.create', [
-        'feeRules' => $feeRules,
-        'loyaltyStartDate' => $createdAt,
-        'loyaltyStatus' => $loyaltyStatus,
-        'userBankAccounts' => $userBankAccounts,
-        'hasBankAccounts' => $hasBankAccounts,
-    ]);
-}
+    public function create()
+    {
+        $user = Auth::user();
 
+        // ── Comprehensive limitation check (NCR compliance) ───────────────────
+        $limitCheck = $this->limitations->canApply($user);
 
+        if (!$limitCheck['allowed']) {
+            return view('applications.blocked', [
+                'reason'      => $limitCheck['reason'],
+                'unblock_at'  => $limitCheck['unblock_at'],
+                'gate'        => $limitCheck['gate'],
+                'action_url'  => $limitCheck['action_url'] ?? null,
+            ]);
+        }
 
-    // Store a new loan application
-  
+        // Load available products
+        $products = LoanProduct::active()->get();
 
-    // Show a specific loan application
+        if ($products->isEmpty()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'No loan products are currently available. Please contact support.');
+        }
+
+        // Affordability snapshot for pre-qualification widget
+        $affordabilityResult = $this->affordability->calculate($user);
+        $profileStatus       = $this->affordability->profileStatus($user);
+
+        // Warn if profile incomplete — but still allow access so they can see the form
+        $userBankAccounts = $user->accountDetails()->get();
+
+        return view('applications.create', [
+            'products'           => $products,
+            'affordabilityResult'=> $affordabilityResult,
+            'profileStatus'      => $profileStatus,
+            'userBankAccounts'   => $userBankAccounts,
+            'hasBankAccounts'    => $userBankAccounts->isNotEmpty(),
+        ]);
+    }
+
+    // ── Store (submit application) ───────────────────────────────────────────
+
+    public function store(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'loan_product_id'  => 'required|exists:loan_products,id',
+            'loan_type'        => 'required|in:personal,home,business',
+            'loan_amount'      => 'required|numeric|min:1',
+            'loan_term_months' => 'required|integer|min:1|max:12',
+            'purpose'          => 'nullable|string|max:500',
+            'other_purpose'    => 'nullable|string|max:500',
+            'collateral'       => 'nullable|string|max:500',
+            'bank_statement'   => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'payslips'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'credit_score_report' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'terms_conditions' => 'accepted',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // ── 1. Lock user row + re-check all limitations inside transaction ──
+            DB::table('users')->where('id', $user->id)->lockForUpdate()->first();
+            $freshUser = \App\Models\User::find($user->id); // re-read after lock
+
+            $limitCheck = $this->limitations->canApply($freshUser);
+            if (!$limitCheck['allowed']) {
+                DB::rollBack();
+                return back()->withInput()->with('error', $limitCheck['reason']);
+            }
+
+            // ── 2. Load and validate product ──────────────────────────────────
+            $product = LoanProduct::findOrFail($validated['loan_product_id']);
+
+            if (!$product->active) {
+                DB::rollBack();
+                return back()->with('error', 'This loan product is not currently available.');
+            }
+
+            $loanAmount = (float) $validated['loan_amount'];
+            $months     = (int)   $validated['loan_term_months'];
+
+            if ($loanAmount < $product->min_amount || $loanAmount > $product->max_amount) {
+                DB::rollBack();
+                return back()->withInput()
+                    ->with('error', "Loan amount must be between R{$product->min_amount} and R{$product->max_amount} for this product.");
+            }
+
+            if ($months < $product->min_months || $months > $product->max_months) {
+                DB::rollBack();
+                return back()->withInput()
+                    ->with('error', "Term must be between {$product->min_months} and {$product->max_months} months for this product.");
+            }
+
+            // ── 3. Affordability gate ─────────────────────────────────────────
+            $canApply = $this->affordability->canApply($user, $product);
+
+            if (!$canApply['allowed']) {
+                DB::rollBack();
+                return back()->withInput()
+                    ->with('error', 'Affordability check failed: ' . $canApply['reason']);
+            }
+
+            $affordResult = $this->affordability->calculate($user);
+
+            // ── 4. Calculate repayment using product rules ────────────────────
+            $repayment = $product->calculateRepayment($loanAmount, $months);
+
+            // Verify the requested instalment is affordable
+            if (!$this->affordability->passes($user, $repayment['base_instalment'])) {
+                DB::rollBack();
+                return back()->withInput()
+                    ->with('error',
+                        'The monthly instalment of R' . number_format($repayment['base_instalment'], 2) .
+                        ' exceeds your maximum affordable instalment of R' .
+                        number_format($affordResult['max_instalment'], 2) . '.');
+            }
+
+            // ── 5. Create application ─────────────────────────────────────────
+            $application = LoanApplication::create([
+                'user_id'          => $user->id,
+                'loan_product_id'  => $product->id,
+                'loan_type'        => $validated['loan_type'],
+                'loan_term_months' => $months,
+                'loan_amount'      => $loanAmount,
+                'purpose'          => $validated['purpose'] ?? $validated['other_purpose'] ?? 'Personal',
+                'collateral'       => $validated['collateral'] ?? null,
+                'terms_conditions' => true,
+                'status'           => 'pending',
+                'reviewer_id'      => null, // assigned when admin reviews
+                // Affordability snapshot — immutable audit record
+                'affordability_checked'               => true,
+                'affordability_disposable_income'     => $affordResult['disposable_income'],
+                'affordability_max_instalment'        => $affordResult['max_instalment'],
+                'affordability_instalment_requested'  => $repayment['base_instalment'],
+                'credit_score_report' => $request->hasFile('credit_score_report')
+                    ? $request->file('credit_score_report')->store('credit_reports', 'public')
+                    : null,
+                'bank_statement' => $request->file('bank_statement')->store('bank_statements', 'public'),
+                'payslips'       => $request->file('payslips')->store('payslips', 'public'),
+            ]);
+
+            // ── 6. Save fee snapshot ──────────────────────────────────────────
+            LoanFee::create([
+                'loan_application_id' => $application->id,
+                'interest_rate'       => $product->monthly_interest_rate,
+                'interest_amount'     => $repayment['total_interest'],
+                'initiation_fee'      => $repayment['initiation_fee'],
+                'service_fee'         => $repayment['service_fee_total'],
+                'total_due'           => $repayment['total_due'],
+            ]);
+
+            // ── 7. Generate repayment schedule with correct splits ────────────
+            $this->generateSchedule($application, $product, $loanAmount, $months, $repayment);
+
+            // ── 8. Auto-create customer record if first application ───────────
+            $this->ensureCustomerRecord($user);
+
+            // ── 9. Notify ─────────────────────────────────────────────────────
+            $this->sendLoanNotification(
+                $application,
+                'Application Received',
+                [
+                    'Your loan application has been submitted and is under review.',
+                    'Application reference: #' . str_pad($application->id, 6, '0', STR_PAD_LEFT),
+                    'Amount requested: R' . number_format($loanAmount, 2),
+                    'Monthly instalment: R' . number_format($repayment['base_instalment'], 2),
+                    'You will be notified once a decision is made.',
+                ],
+                'pending'
+            );
+
+            DB::commit();
+
+            return redirect()->route('loan.index')
+                ->with('success', 'Application submitted successfully. Reference #' . str_pad($application->id, 6, '0', STR_PAD_LEFT));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Loan application store failed', [
+                'user_id' => $user->id,
+                'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return back()->withInput()
+                ->with('error', 'Submission failed. Please try again or contact support.');
+        }
+    }
+
+    // ── Show / Edit / Update ─────────────────────────────────────────────────
+
     public function show($id)
     {
-       
-            $loanApplication= LoanApplication::with('user')->findOrFail($id);
+        $loanApplication = LoanApplication::with('user', 'product', 'loanfee', 'repaymentSchedules')
+            ->findOrFail($id);
         return view('loans.show', compact('loanApplication'));
     }
 
-    // Show the form for editing a loan application
     public function edit($id)
     {
-            $loanApplication= LoanApplication::with('user')->findOrFail($id);
+        $loanApplication = LoanApplication::with('user')->findOrFail($id);
         return view('applications.edit', compact('loanApplication'));
-        
     }
 
-
-public function update(Request $request, $id)
-{
-    $request->validate([
-        'loan_type' => 'required|in:personal,home,business',
-        'loan_amount' => 'required|numeric|min:0',
-        'purpose' => 'required|string',
-        'collateral' => 'nullable|string',
-        'status' => 'required|in:pending,approved,rejected',
-        'approval_date' => 'nullable|date',
-        'arrears' => 'required|boolean',
-        'bank_statement' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        'payslips' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-    ]);
-
-    $loanApplication = LoanApplication::findOrFail($id);
-
-    // Update basic loan details
-    $loanApplication->fill([
-        'loan_type' => $request->loan_type,
-        'loan_amount' => $request->loan_amount,
-        'purpose' => $request->purpose,
-        'collateral' => $request->collateral,
-        'status' => $request->status,
-        'approval_date' => $request->approval_date,
-        'arrears' => $request->arrears,
-    ]);
-
-    // Handle File Uploads
-    if ($request->hasFile('bank_statement')) {
-        $bankStatementPath = $request->file('bank_statement')->store('loan_documents', 'public');
-        $loanApplication->bank_statement_path = $bankStatementPath;
-    }
-
-    if ($request->hasFile('payslips')) {
-        $payslipPath = $request->file('payslips')->store('loan_documents', 'public');
-        $loanApplication->payslip_path = $payslipPath;
-    }
-
-    $loanApplication->save();
-
-    return redirect()
-        ->route('applications.index')
-        ->with('success', 'Loan application updated successfully with uploaded documents.');
-}
-
-
-
-
-public function updateNote(Request $request, $id)
-{
-    $request->validate([
-        'reason' => 'required|string|max:1000',
-    ]);
-
-    $loanApplication = LoanApplication::findOrFail($id);
-    $loanApplication->reason = $request->reason;
-    $loanApplication->save();
-
-    return back()->with('success', 'Note saved successfully.');
-}
-
-
-
-
-
-    // Delete a specific loan application
-    public function destroy($id)
+    public function update(Request $request, $id)
     {
-            $application = LoanApplication::findOrFail($id);
+        $request->validate([
+            'loan_type'    => 'required|in:personal,home,business',
+            'loan_amount'  => 'required|numeric|min:0',
+            'purpose'      => 'required|string',
+            'collateral'   => 'nullable|string',
+            'status'       => 'required|in:pending,approved,rejected',
+            'approval_date'=> 'nullable|date',
+            'arrears'      => 'required|boolean',
+        ]);
 
-            // Delete associated files if they exist
-            $files = [
-                $application->credit_score_report,
-                $application->bank_statement,
-                $application->payslips,
-            ];
+        $application = LoanApplication::findOrFail($id);
+        $application->fill($request->only([
+            'loan_type', 'loan_amount', 'purpose',
+            'collateral', 'status', 'approval_date', 'arrears',
+        ]));
 
-            foreach ($files as $file) {
-                if ($file && Storage::exists($file)) {
-                    Storage::delete($file);
-                }
-            }
-
-            // Delete the record
-            $application->status = 'deleted';
-            $application->save();
-            // Send notification before deletion
-            $this->sendLoanNotification(
-                $application,
-                'Loan Application Deleted',
-                [
-                    'Your loan application has been successfully deleted from our records.',
-                    'If this was a mistake, please contact our support team or reapply.'
-                ],
-                $application->status
-            );
-
-    return redirect()->back()->with('success', 'Loan archived successfully.');
-
-    }
-
-
-
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'loan_type' => 'required|in:personal,home,business',
-        'loan_amount' => 'required|numeric|min:500|max:5000',
-        'months' => 'required|integer|min:1|max:12',
-        'purpose' => 'nullable|string',
-        'other_purpose' => 'nullable|string',
-        'collateral' => 'nullable|string',
-        'credit_score_report' => 'nullable|file',
-        'bank_statement' => 'required|file',
-        'payslips' => 'required|file',
-        'terms_conditions' => 'accepted',
-
-        'interest_rate' => 'required|numeric|min:0',
-        'initiation_fee' => 'required|numeric|min:0',
-        'service_fee' => 'required|numeric|min:0',
-        'total_repayment' => 'required|numeric|min:0',
-    ]);
-
-    $user = Auth::user();
-
-    DB::beginTransaction();
-
-    try {
-
-
-        // 🔒 LOCK USER ROW (STRONGER THAN LOAN LOCK)
-        DB::table('users')
-            ->where('id', $user->id)
-            ->lockForUpdate()
-            ->first();
-
-             $existingApplication = LoanApplication::where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'under_review'])
-                ->first();
-            
-            if ($existingApplication) {
-                return redirect()
-                    ->route('applications.show', $existingApplication->id)
-                    ->with('error', 'You currently have a pending loan application.');
-            }
-            
-            // Check approved applications
-            $approvedApplication = Loan::where('user_id', $user->id)
-                ->whereNotIn('status', ['Settled','rejected'])
-                ->first();
-            
-            if ($approvedApplication) {
-                return redirect()
-                    ->route('applications.show', $approvedApplication->id)
-                    ->with('error', 'You have an active loan that hasnt been settled. In a case it was debited today, please wait for the transactions to reflect in the system.');
-            }
-        // =========================
-        // FINANCIAL CALCULATIONS
-        // =========================
-        $loanAmount = (float) $validated['loan_amount'];
-        $months = max(1, (int) $validated['months']);
-
-        $interestRatePosted   = (float) $validated['interest_rate'] * $months;
-        $initiationFeePosted  = round((float) $validated['initiation_fee'], 2);
-        $serviceFeePosted     = round((float) $validated['service_fee'], 2);
-        $totalRepaymentPosted = round((float) $validated['total_repayment'], 2);
-
-        if ($totalRepaymentPosted < $loanAmount) {
-            throw new \Exception('Total repayment cannot be less than loan amount.');
-        }
-
-        $interestAmountPosted = round(
-            $totalRepaymentPosted - $loanAmount - $initiationFeePosted - $serviceFeePosted,
-            2
-        );
-
-        if ($interestAmountPosted < 0) {
-            throw new \Exception('Invalid interest calculation.');
-        }
-
-        // =========================
-        // CENT DISTRIBUTION
-        // =========================
-        $totalCents = (int) round($totalRepaymentPosted * 100);
-        $baseCents = intdiv($totalCents, $months);
-        $remainder = $totalCents - ($baseCents * $months);
-
-        $monthlyAmounts = [];
-        for ($i = 0; $i < $months; $i++) {
-            $cents = $baseCents + ($i < $remainder ? 1 : 0);
-            $monthlyAmounts[] = $cents / 100.0;
-        }
-
-        // =========================
-        // CREATE APPLICATION
-        // =========================
-        $application = new LoanApplication();
-        $application->user_id = $user->id;
-        $application->loan_type = $validated['loan_type'];
-        $application->loan_amount = $loanAmount;
-        $application->purpose = $validated['purpose'] ?? $validated['other_purpose'] ?? 'N/A';
-        $application->collateral = $validated['collateral'] ?? null;
-        $application->terms_conditions = true;
-        $application->status = 'pending';
-        $application->reviewer_id = $user->id;
-
-        if ($request->hasFile('credit_score_report')) {
-            $application->credit_score_report = $request->file('credit_score_report')->store('credit_score_reports', 'public');
-        }
         if ($request->hasFile('bank_statement')) {
             $application->bank_statement = $request->file('bank_statement')->store('bank_statements', 'public');
         }
@@ -393,200 +287,145 @@ public function store(Request $request)
 
         $application->save();
 
-        // =========================
-        // SAVE FEES
-        // =========================
-        LoanFee::create([
-            'loan_application_id' => $application->id,
-            'interest_rate' => $interestRatePosted,
-            'interest_amount' => $interestAmountPosted,
-            'initiation_fee' => $initiationFeePosted,
-            'service_fee' => $serviceFeePosted,
-            'total_due' => $totalRepaymentPosted,
-        ]);
+        return redirect()->route('applications.index')
+            ->with('success', 'Application updated.');
+    }
 
-        // =========================
-        // SCHEDULE
-        // =========================
-        if (method_exists($this, 'generateRepaymentScheduleFromArray')) {
-            $this->generateRepaymentScheduleFromArray($application, $monthlyAmounts);
-        } else {
-            $this->generateRepaymentSchedule($application, $monthlyAmounts[0], $months);
+    public function updateNote(Request $request, $id)
+    {
+        $request->validate(['reason' => 'required|string|max:1000']);
+
+        LoanApplication::findOrFail($id)->update(['reason' => $request->reason]);
+
+        return back()->with('success', 'Note saved.');
+    }
+
+    public function destroy($id)
+    {
+        $application = LoanApplication::findOrFail($id);
+
+        foreach ([$application->credit_score_report, $application->bank_statement, $application->payslips] as $file) {
+            if ($file && Storage::exists($file)) {
+                Storage::delete($file);
+            }
         }
 
-        // =========================
-        // CUSTOMER LOCK + CREATE
-        // =========================
-        DB::table('customers')
-            ->where('user_id', $user->id)
-            ->lockForUpdate()
-            ->first();
+        $application->update(['status' => 'deleted']);
 
-        $existingCustomer = Customer::where('user_id', $user->id)->first();
-
-        if (!$existingCustomer) {
-            $idNumber = preg_replace('/[^0-9]/', '', $user->ID_Number ?? '000000');
-            $shortId = substr($idNumber, 0, 6);
-
-            $prefix = $user->role == 'admin' ? 'ADM' : 'CLF';
-            $customerType = $user->role == 'admin' ? 'internal' : 'individual';
-
-            Customer::create([
-                'user_id' => $user->id,
-                'customer_code' => $prefix . $user->id . '-' . $shortId,
-                'customer_type' => $customerType,
-                'payment_terms' => 'monthly',
-            ]);
-        }
-
-        // =========================
-        // NOTIFICATION
-        // =========================
         $this->sendLoanNotification(
-            $application,
-            'Loan Application Created',
-            [
-                'Your loan application has been successfully submitted.',
-                'You will be notified once reviewed.'
-            ],
-            $application->status
+            $application, 'Application Withdrawn',
+            ['Your loan application has been withdrawn from our system.'],
+            'deleted'
         );
 
-        DB::commit();
-
-        return redirect()->route('loan.index')
-            ->with('success', 'Loan application submitted successfully.');
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        Log::error('Loan store error: ' . $e->getMessage(), [
-            'user_id' => $user->id
-        ]);
-
-        return back()->withInput()->with('error', 'Failed to submit application.');
-    }
-}
-
-protected function sendLoanNotification($application, string $subject, array $bodyLines = [], ?string $status = null)
-{
-    if ($status) {
-        array_unshift($bodyLines, "Loan Status: " . ucfirst($status));
-        // Optional: include status in subject for clarity
-        $subject .= " - " . ucfirst($status);
+        return redirect()->back()->with('success', 'Application withdrawn.');
     }
 
-    Mail::to($application->user->email)
-         ->queue(new \App\Mail\LoanNotificationMail($subject, $bodyLines, $application));
-}
+    public function terms()
+    {
+        return view('terms');
+    }
 
+    // ── Private helpers ──────────────────────────────────────────────────────
 
+    /**
+     * Generate repayment schedule rows with correct principal / interest / fee splits.
+     * For single-month loans the full amount is in one row.
+     * For multi-month, each row carries its earned slice.
+     */
+    private function generateSchedule(
+        LoanApplication $application,
+        LoanProduct     $product,
+        float           $loanAmount,
+        int             $months,
+        array           $repayment
+    ): void {
+        $user    = Auth::user();
+        $repayDay= $user->salary_payment_day ?? 25;
+        $today   = now();
 
+        // SA public holidays (month-day format)
+        $holidays = ['01-01','03-21','04-27','05-01','06-16','08-09','09-24','12-16','12-25','12-26'];
 
+        $resolveDate = function (Carbon $base) use ($today, $holidays): Carbon {
+            // Move weekend to preceding Friday
+            if ($base->isSaturday())     { $base->subDay(); }
+            elseif ($base->isSunday())   { $base->subDays(2); }
+            elseif ($base->isMonday())   { $base->subDays(3); }
 
+            // Move holiday backwards
+            while (in_array($base->format('m-d'), $holidays)) {
+                $base->subDay();
+            }
 
-private function generateRepaymentSchedule($loanApplication, $monthlyRepayment, $months)
-{
-    $user = Auth::user();
-    $startDate = now();
-    $repayDay = $user->salary_payment_day ?? 1;
+            // If we're within 3 days of payday, push to next month
+            if ($today->gte($base->copy()->subDays(3))) {
+                $base->addMonthNoOverflow();
+                if ($base->isSaturday())    { $base->subDay(); }
+                elseif ($base->isSunday())  { $base->subDays(2); }
+                elseif ($base->isMonday())  { $base->subDays(3); }
+                while (in_array($base->format('m-d'), $holidays)) { $base->subDay(); }
+            }
 
-    // 🔥 Centralized resolver
-    $resolveDueDate = function ($baseDate) use ($startDate) {
-
-        // --- Public holidays (SA basic set) ---
-        $holidays = [
-            '01-01','03-21','04-27','05-01','06-16',
-            '08-09','09-24','12-16','12-25','12-26',
-        ];
-
-        // --- Helper: check holiday ---
-        $isHoliday = function ($date) use ($holidays) {
-            return in_array($date->format('m-d'), $holidays);
+            return $base;
         };
 
-        // --- Step 1: Weekend adjustment ---
-        if ($baseDate->isSaturday()) {
-            $baseDate->subDay(); // Friday
-        } elseif ($baseDate->isSunday()) {
-            $baseDate->subDays(2); // Friday
-        } elseif ($baseDate->isMonday()) {
-            $baseDate->subDays(3); // Friday
+        $firstDue = $resolveDate($today->copy()->day($repayDay)->isPast()
+            ? $today->copy()->addMonthNoOverflow()->day($repayDay)
+            : $today->copy()->day($repayDay));
+
+        for ($i = 0; $i < $months; $i++) {
+            $dueDate = $resolveDate($firstDue->copy()->addMonthsNoOverflow($i));
+
+            $split = $product->installmentSplit(
+                $loanAmount, $months, $i,
+                $repayment['base_instalment'],
+                $repayment['rounding_remainder']
+            );
+
+            RepaymentSchedule::create([
+                'loan_id'            => $application->id,
+                'user_id'            => $user->id,
+                'installment_number' => $i + 1,
+                'due_date'           => $dueDate->toDateString(),
+                'emi_amount'         => $split['emi_amount'],
+                'principal_amount'   => $split['principal_amount'],
+                'interest_amount'    => $split['interest_amount'],
+                'fee_amount'         => $split['fee_amount'],
+                'status'             => 'pending',
+            ]);
         }
-
-        // --- Step 2: Holiday adjustment (move backwards) ---
-        while ($isHoliday($baseDate)) {
-            $baseDate->subDay();
-        }
-
-        // --- Step 3: Buffer logic (3 days before payday) ---
-        $bufferDays = 3;
-        $bufferDate = $baseDate->copy()->subDays($bufferDays);
-
-        if ($startDate->gte($bufferDate)) {
-            $baseDate->addMonth();
-
-            // Re-adjust again after shifting month
-            if ($baseDate->isSaturday()) {
-                $baseDate->subDay();
-            } elseif ($baseDate->isSunday()) {
-                $baseDate->subDays(2);
-            } elseif ($baseDate->isMonday()) {
-                $baseDate->subDays(3);
-            }
-
-            while ($isHoliday($baseDate)) {
-                $baseDate->subDay();
-            }
-        }
-
-        return $baseDate;
-    };
-
-    // Step 1: Initial base payday
-    $dueDate = $startDate->copy()->day($repayDay);
-
-    if ($dueDate->isPast()) {
-        $dueDate->addMonth();
     }
 
-    // Step 2: Resolve first due date
-    $dueDate = $resolveDueDate($dueDate);
+    private function ensureCustomerRecord(\App\Models\User $user): void
+    {
+        if (Customer::where('user_id', $user->id)->exists()) {
+            return;
+        }
 
-    // Step 3: Generate schedule
-    for ($i = 0; $i < $months; $i++) {
+        $idDigits = preg_replace('/[^0-9]/', '', $user->ID_Number ?? '000000');
+        $shortId  = substr($idDigits, 0, 6);
+        $prefix   = ($user->rule_id === 2) ? 'ADM' : 'CLF';
 
-        $installmentDate = $resolveDueDate(
-            $dueDate->copy()->addMonthsNoOverflow($i)
-        );
-
-        RepaymentSchedule::create([
-            'loan_id' => $loanApplication->id,
-            'user_id' => $user->id,
-            'due_date' => $installmentDate,
-            'emi_amount' => $monthlyRepayment,
-            'status' => 'pending',
+        Customer::create([
+            'user_id'       => $user->id,
+            'customer_code' => $prefix . $user->id . '-' . $shortId,
+            'customer_type' => ($user->rule_id === 2) ? 'internal' : 'individual',
+            'payment_terms' => 'monthly',
         ]);
     }
-}
 
-
-    public function adminIndex()
-{
-    $applications = LoanApplication::with(['user.customer'])
-        ->orderBy('created_at', 'desc')
-        ->paginate(15);
-
-    return view('admin.loan_applications.index', compact('applications'));
-}
-
-
-  public function terms()
+    protected function sendLoanNotification($application, string $subject, array $bodyLines = [], ?string $status = null): void
     {
-        return view('terms'); // create resources/views/terms.blade.php
+        if ($status) {
+            array_unshift($bodyLines, 'Status: ' . ucfirst($status));
+        }
+
+        try {
+            Mail::to($application->user->email)
+                ->queue(new \App\Mail\LoanNotificationMail($subject, $bodyLines, $application));
+        } catch (\Exception $e) {
+            Log::warning('Loan notification failed: ' . $e->getMessage());
+        }
     }
-
-
-
 }

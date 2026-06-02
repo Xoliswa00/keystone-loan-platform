@@ -1,96 +1,123 @@
-@section('title', 'Login - Liger Management System')
+@section('title', 'Sign In — Keystone Capital Partners')
 
 <x-guest-layout>
 
-    <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-900 dark:to-gray-800">
-
-        <div class="sm:mx-auto sm:w-full sm:max-w-md">
-            <a href="/">
-                <x-application-logo class="mx-auto h-16 w-auto fill-current text-blue-600 dark:text-blue-400" />
-            </a>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white" data-aos="fade-down">
-                Welcome Back to <span class="text-blue-600 dark:text-blue-400">Liger Management</span>
-            </h2>
-            <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-300 max-w">
-                Please sign in to access your loan dashboard and manage your clients.
-            </p>
-        </div>
-
-        {{-- Validation Errors --}}
-        @if ($errors->any())
-            <div class="max-w-md mx-auto mt-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative shadow-md" role="alert" data-aos="fade-down">
-                <strong class="font-bold">Whoops!</strong>
-                <span class="block sm:inline"> There were some problems with your input:</span>
-                <ul class="mt-2 list-disc list-inside text-sm">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md" data-aos="fade-up" data-aos-delay="150">
-            <form method="POST" action="{{ route('login') }}" class="bg-white dark:bg-gray-800 py-8 px-6 shadow-lg rounded-lg space-y-6">
-                @csrf
-
-                <!-- Email Address -->
-                <div>
-                    <x-input-label for="email" :value="__('Email')" />
-                    <x-text-input
-                        id="email"
-                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-400 transition"
-                        type="email"
-                        name="email"
-                        :value="old('email')"
-                        required
-                        autofocus
-                        autocomplete="username"
-                    />
-                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                </div>
-
-                <!-- Password -->
-                <div>
-                    <x-input-label for="password" :value="__('Password')" />
-                    <x-text-input
-                        id="password"
-                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-400 transition"
-                        type="password"
-                        name="password"
-                        required
-                        autocomplete="current-password"
-                    />
-                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                </div>
-
-                <!-- Remember Me -->
-                <div class="flex items-center">
-                    <input
-                        id="remember_me"
-                        name="remember"
-                        type="checkbox"
-                        class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-blue-600 shadow-sm focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800"
-                    />
-                    <label for="remember_me" class="ml-2 block text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-                        {{ __('Remember me') }}
-                    </label>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex items-center justify-between">
-                    @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}"
-                            class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-600 underline rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition">
-                            {{ __('Forgot your password?') }}
-                        </a>
-                    @endif
-
-                    <x-primary-button class="ml-3 px-6 py-2 text-base">
-                        {{ __('Log in') }}
-                    </x-primary-button>
-                </div>
-            </form>
-        </div>
+    {{-- Heading --}}
+    <div class="mb-8">
+        <h2 class="font-display text-2xl font-semibold text-kc-navy">Welcome back</h2>
+        <p class="mt-1 text-sm text-kc-charcoal/50">Sign in to access your lending dashboard</p>
     </div>
+
+    {{-- Gold divider --}}
+    <div class="flex items-center gap-3 mb-8">
+        <div class="h-px flex-1 bg-kc-gold/30"></div>
+        <div class="w-1.5 h-1.5 rounded-full bg-kc-gold"></div>
+        <div class="h-px w-6 bg-kc-gold/30"></div>
+    </div>
+
+    {{-- Error messages --}}
+    @if ($errors->any())
+        <div class="kc-alert-error mb-6 flex items-start gap-2">
+            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                @foreach ($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    {{-- Session status (e.g. password reset success) --}}
+    @if (session('status'))
+        <div class="kc-alert-success mb-6">{{ session('status') }}</div>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}" class="space-y-5">
+        @csrf
+
+        {{-- Email --}}
+        <div>
+            <label for="email" class="kc-label">Email address</label>
+            <input
+                id="email"
+                type="email"
+                name="email"
+                value="{{ old('email') }}"
+                required
+                autofocus
+                autocomplete="username"
+                class="kc-input @error('email') border-red-400 focus:ring-red-300 @enderror"
+                placeholder="you@example.com"
+            />
+            @error('email')
+                <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+
+        {{-- Password --}}
+        <div x-data="{ show: false }">
+            <label for="password" class="kc-label">Password</label>
+            <div class="relative">
+                <input
+                    id="password"
+                    :type="show ? 'text' : 'password'"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    class="kc-input pr-10 @error('password') border-red-400 focus:ring-red-300 @enderror"
+                    placeholder="••••••••"
+                />
+                <button type="button" @click="show = !show"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-kc-silver hover:text-kc-charcoal/60 transition">
+                    <svg x-show="!show" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    <svg x-show="show" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                    </svg>
+                </button>
+            </div>
+            @error('password')
+                <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+
+        {{-- Remember + Forgot --}}
+        <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="remember" id="remember_me"
+                    class="w-3.5 h-3.5 rounded border-kc-silver text-kc-gold focus:ring-kc-gold/30 cursor-pointer">
+                <span class="text-xs text-kc-charcoal/60">Remember me</span>
+            </label>
+
+            @if (Route::has('password.request'))
+                <a href="{{ route('password.request') }}"
+                    class="text-xs text-kc-gold hover:text-kc-gold-muted transition underline underline-offset-2">
+                    Forgot password?
+                </a>
+            @endif
+        </div>
+
+        {{-- Submit --}}
+        <button type="submit" class="kc-btn-primary w-full justify-center py-3 text-sm mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+            </svg>
+            Sign In
+        </button>
+
+        {{-- Register link --}}
+        @if (Route::has('register'))
+            <p class="text-center text-xs text-kc-charcoal/50 pt-2">
+                Don't have an account?
+                <a href="{{ route('register') }}" class="text-kc-gold hover:text-kc-gold-muted transition font-medium">
+                    Apply now
+                </a>
+            </p>
+        @endif
+    </form>
 
 </x-guest-layout>

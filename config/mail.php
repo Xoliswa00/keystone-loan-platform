@@ -108,9 +108,12 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'info@ligerholding.co.za'),
-        'name' => env('MAIL_FROM_NAME', 'Liger Holdings'),
+        'address' => env('MAIL_FROM_ADDRESS', 'info@keystonecapitalpartners.co.za'),
+        'name'    => env('MAIL_FROM_NAME', 'Keystone Capital Partners'),
     ],
+
+    // Loan notification CC — comma-separated, set in .env as LOAN_NOTIFICATION_CC
+    'loan_notification_cc' => env('LOAN_NOTIFICATION_CC', ''),
 
     /*
     |--------------------------------------------------------------------------

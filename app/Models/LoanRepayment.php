@@ -11,14 +11,56 @@ class LoanRepayment extends Model
 
     protected $fillable = [
         'loan_id',
+        'user_id',
+        'repayment_schedule_id',
+        'nupay_staging_id',
         'payment_amount',
+        'principal_amount',
+        'interest_amount',
+        'fee_amount',
+        'nupay_fee',
         'payment_date',
-        'status',
-        'payment_method',
+        'due_date',
+        'status',                   // paid | payment_failed | reversed
+        'payment_method',           // nupay | bank_transfer | cash | card
+        'payment_reference',
+        'total_paid',
+        'notes',
+        'payment_received_by',
+        'gl_batch_reference',
+        'transaction_type',         // success | failed | canceled | reversed
     ];
+
+    protected $casts = [
+        'payment_amount'  => 'decimal:2',
+        'principal_amount'=> 'decimal:2',
+        'interest_amount' => 'decimal:2',
+        'fee_amount'      => 'decimal:2',
+        'nupay_fee'       => 'decimal:2',
+        'total_paid'      => 'decimal:2',
+        'payment_date'    => 'date',
+        'due_date'        => 'date',
+    ];
+
+    // ── Relationships ──
 
     public function loan()
     {
         return $this->belongsTo(Loan::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function repaymentSchedule()
+    {
+        return $this->belongsTo(RepaymentSchedule::class);
+    }
+
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'payment_received_by');
     }
 }

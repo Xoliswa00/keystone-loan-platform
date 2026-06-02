@@ -1,44 +1,38 @@
-@extends('layouts.app')
+{{-- Redirect to loan_repayments/index which has the full schedule --}}
+<x-app-layout>
+  <x-slot name="header">
+    <span class="kc-page-title">Repayment Schedule</span>
+  </x-slot>
 
-@section('content')
-    <div class="container">
-        <h1>Repayment Schedules</h1>
-        
-        @if (session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-
-        <a href="{{ route('repayment_schedules.create') }}" class="btn btn-primary mb-3">Create New Repayment Schedule</a>
-
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Loan</th>
-                    <th>Due Date</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($repaymentSchedules as $schedule)
-                    <tr>
-                        <td>{{ $schedule->loan->name }}</td>
-                        <td>{{ $schedule->due_date->format('Y-m-d') }}</td>
-                        <td>{{ number_format($schedule->amount, 2) }}</td>
-                        <td>{{ ucfirst($schedule->status) }}</td>
-                        <td>
-                            <a href="{{ route('repayment_schedules.show', $schedule->id) }}" class="btn btn-info btn-sm">View</a>
-                            <a href="{{ route('repayment_schedules.edit', $schedule->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                            <form action="{{ route('repayment_schedules.destroy', $schedule->id) }}" method="POST" style="display: inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+  <div class="kc-card">
+    <div class="kc-table-scroll">
+      <table class="kc-table">
+        <thead><tr>
+          <th>#</th><th>Due Date</th><th>Instalment</th><th>Principal</th><th>Interest</th><th>Fees</th><th>Status</th><th>Paid At</th>
+        </tr></thead>
+        <tbody>
+          @forelse($loanRepayments ?? [] as $s)
+          @php
+            $ssc = match($s->status??''){'paid'=>'kc-badge-green','payment_failed'=>'kc-badge-red','rejected'=>'kc-badge-silver',default=>'kc-badge-gold'};
+            $isOverdue = $s->status === 'pending' && \Carbon\Carbon::parse($s->due_date)->isPast();
+          @endphp
+          <tr class="{{ $isOverdue ? 'bg-red-50' : '' }}">
+            <td data-label="#">{{ $s->installment_number ?? '—' }}</td>
+            <td data-label="Due Date" class="{{ $isOverdue ? 'text-red-600 font-semibold' : '' }}">
+              {{ \Carbon\Carbon::parse($s->due_date)->format('d M Y') }}
+            </td>
+            <td data-label="Instalment" class="font-semibold">R {{ number_format($s->emi_amount,2) }}</td>
+            <td data-label="Principal">R {{ number_format($s->principal_amount??0,2) }}</td>
+            <td data-label="Interest">R {{ number_format($s->interest_amount??0,2) }}</td>
+            <td data-label="Fees">R {{ number_format($s->fee_amount??0,2) }}</td>
+            <td data-label="Status"><span class="kc-badge {{ $ssc }}">{{ ucfirst(str_replace('_',' ',$s->status)) }}</span></td>
+            <td data-label="Paid" class="text-xs text-kc-charcoal/50">{{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}</td>
+          </tr>
+          @empty
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/40">No schedule yet.</td></tr>
+          @endforelse
+        </tbody>
+      </table>
     </div>
-@endsection
+  </div>
+</x-app-layout>

@@ -1,107 +1,58 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            💰 Pending Loan Disbursements
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Disbursement Approvals</span>
+    <p class="kc-page-subtitle">{{ $disbursements->count() }} loan(s) waiting for fund release</p>
+  </x-slot>
 
-    <div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+  @if($disbursements->isNotEmpty())
+  <div class="flex justify-end mb-4">
+    <form method="POST" action="{{ route('disbursements.approveAll') }}">
+      @csrf
+      <button type="submit" class="kc-btn-primary"
+        onclick="return confirm('Approve ALL {{ $disbursements->count() }} disbursements and post to GL?')">
+        Approve All + GL Post
+      </button>
+    </form>
+  </div>
+  @endif
 
-          <!--  {{-- Approve All Button --}}
-            <div class="flex justify-end mb-4">
-                <form method="POST" action="{{ route('disbursements.approveAll') }}">
-                    @csrf
-                    <button type="submit" 
-                        class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 shadow">
-                        ✅ Approve All Pending
-                    </button>
+  <div class="kc-card">
+    <div class="kc-table-scroll">
+      <table class="kc-table">
+        <thead><tr><th>ID</th><th>Client</th><th>Loan</th><th>Amount</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody>
+          @forelse($disbursements as $disb)
+          <tr>
+            <td data-label="ID" class="font-mono text-xs">#{{ str_pad($disb->id,6,'0',STR_PAD_LEFT) }}</td>
+            <td data-label="Client">
+              <div class="font-semibold">{{ $disb->loan?->user?->name ?? '—' }}</div>
+              <div class="text-xs text-kc-charcoal/40">{{ $disb->payment_reference }}</div>
+            </td>
+            <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($disb->loan_id,6,'0',STR_PAD_LEFT) }}</td>
+            <td data-label="Amount" class="font-semibold text-kc-gold">R {{ number_format($disb->disbursed_amount,2) }}</td>
+            <td data-label="Status"><span class="kc-badge kc-badge-gold">{{ ucfirst(str_replace('_',' ',$disb->status)) }}</span></td>
+            <td data-label="Created" class="text-xs text-kc-charcoal/50">{{ $disb->created_at->format('d M Y') }}</td>
+            <td data-label="Actions">
+              <div class="flex gap-2 flex-wrap">
+                <form method="POST" action="{{ route('disbursements.approve', $disb->id) }}" class="inline">
+                  @csrf
+                  <button type="submit" class="kc-btn-primary text-xs py-1 px-3"
+                    onclick="return confirm('Approve and post to GL?')">Approve</button>
                 </form>
-            </div>-->
-
-            {{-- Disbursement Table --}}
-            @if($disbursements->isEmpty())
-                <p class="text-gray-500 dark:text-gray-400">No loan disbursements found.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Loan ID</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Customer</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Amount</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">status</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Created</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                            @foreach($disbursements as $disbursement)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-                                        #{{ $disbursement->loan_id }}
-                                    </td>
-                                    <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-                                        {{ $disbursement->loan->user->name ?? 'N/A' }} 
-                                        <span class="text-xs text-gray-500">({{ $disbursement->loan->user->customer->customer_code ?? 'N/A' }})</span>
-                                    </td>
-                                    <td class="px-4 py-2 text-sm text-green-600 dark:text-green-400 font-bold">
-                                        R{{ number_format($disbursement->disbursed_amount, 2) }}
-                                    </td>
-                                    <td class="px-4 py-2 text-sm">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                                            @if($disbursement->status === 'waiting_for_approval') bg-yellow-100 text-yellow-800
-                                            @elseif($disbursement->Satus === 'approved') bg-green-100 text-green-800
-                                            @elseif($disbursement->status === 'released') bg-blue-100 text-blue-800
-                                            @else bg-red-100 text-red-800 @endif">
-                                            {{ ucfirst($disbursement->status) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {{ $disbursement->created_at->format('d M Y') }}
-                                    </td>
-                                    <td class="px-4 py-2 flex gap-2 text-sm">
-
-                                        {{-- Approve --}}
-                                        @if($disbursement->status === 'waiting_for_approval')
-                                            <form action="{{ route('disbursements.approve', $disbursement->id) }}" method="POST">
-                                                @csrf
-                                                <button type="submit"
-                                                    class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-                                                    ✅ Approve
-                                                </button>
-                                            </form>
-
-                                            {{-- Reject --}}
-                                            <form action="{{ route('disbursements.reject', $disbursement->id) }}" method="POST">
-                                                @csrf
-                                                <input type="text" name="rejection_reason" placeholder="Reason"
-                                                       class="border rounded px-2 py-1 text-xs w-32">
-                                                <button type="submit"
-                                                    class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
-                                                    ❌ Reject
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                        {{-- Release Funds --}}
-                                        @if($disbursement->status === 'approved')
-                                            <form action="{{ route('disbursements.release', $disbursement->id) }}" method="POST">
-                                                @csrf
-                                                <button type="submit"
-                                                    class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                    💸 Release Funds
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-        </div>
+                <form method="POST" action="{{ route('disbursements.reject', $disb->id) }}" class="inline">
+                  @csrf
+                  <input type="hidden" name="rejection_reason" id="rej_{{ $disb->id }}" value="">
+                  <button type="button" class="kc-btn-ghost text-xs py-1 px-3 border-red-200 text-red-600"
+                    onclick="let r=prompt('Rejection reason:');if(r){document.getElementById('rej_{{ $disb->id }}').value=r;this.closest('form').submit()}">Reject</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/40">No pending disbursements.</td></tr>
+          @endforelse
+        </tbody>
+      </table>
     </div>
+  </div>
 </x-app-layout>

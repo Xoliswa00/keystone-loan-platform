@@ -1,36 +1,42 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Loan Application Terms & Conditions') }}
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Terms & Conditions</span>
+    <p class="kc-page-subtitle">Keystone Capital Partners — NCR Registered Credit Provider</p>
+  </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-2xl font-semibold mb-4">Terms & Conditions</h3>
-                
-                <p class="mb-4">
-                    By submitting a loan application, you agree to the following terms and conditions. These terms are binding and must be accepted prior to loan approval:
-                </p>
-
-                <ol class="list-decimal list-inside mb-4 space-y-2">
-                    <li><strong>Eligibility:</strong> You must be at least 18 years old, a legal resident, and provide valid identification and proof of income.</li>
-                    <li><strong>Truthful Information:</strong> All information provided in the application must be true and complete. Any misrepresentation may lead to application denial or legal action.</li>
-                    <li><strong>Credit Check:</strong> We reserve the right to perform credit assessments and background checks before approving your loan.</li>
-                    <li><strong>Loan Purpose:</strong> The loan must be used for the purpose indicated in your application. Misuse may result in penalties or loan recall.</li>
-                    <li><strong>Fees & Interest:</strong> Applicable fees, interest rates, and repayment schedules are disclosed in the loan summary. You agree to comply with all repayment terms.</li>
-                    <li><strong>Confidentiality:</strong> Your personal and financial information will be treated with strict confidentiality and used solely for loan processing purposes.</li>
-                    <li><strong>Default:</strong> Failure to make timely payments may result in additional charges, legal action, and reporting to credit bureaus.</li>
-                    <li><strong>Amendments:</strong> These terms may be updated from time to time. Continued use of our services constitutes acceptance of any changes.</li>
-                    <li><strong>Governing Law:</strong> All loans are governed by the laws of [Your Country/Region]. Any disputes will be subject to the appropriate courts.</li>
-                    <li><strong>Pre-Contract Acknowledgment:</strong> By reading and accepting these terms, you acknowledge understanding of the rules and conditions of your loan prior to signing the official contract.</li>
-                </ol>
-
-                <p class="mt-4">
-                    Please read carefully. You must accept these terms before proceeding with your loan application. If you do not agree with these terms, do not submit a loan application.
-                </p>
-            </div>
-        </div>
+  <div class="kc-card max-w-3xl">
+    <div class="mb-5 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-kc-gold/15 border border-kc-gold/30 flex items-center justify-center">
+        <span class="font-display font-bold text-kc-gold text-sm">KC</span>
+      </div>
+      <div>
+        <p class="font-semibold text-kc-navy">Keystone Capital Partners</p>
+        <p class="text-xs text-kc-charcoal/50">Registered Credit Provider · National Credit Act 34 of 2005</p>
+      </div>
     </div>
+
+    <div class="space-y-5 text-sm text-kc-charcoal/80">
+      @foreach([
+        ['1. Parties & Application', 'These terms govern the relationship between Keystone Capital Partners (Pty) Ltd ("the Credit Provider") and any person applying for or receiving credit. By submitting a loan application, you accept these terms unconditionally.'],
+        ['2. Affordability Assessment (NCA s.81)', 'We are required under Section 81 of the National Credit Act to conduct an affordability assessment before approving credit. You must provide true, complete, and current information. Providing false information constitutes fraud and may result in immediate loan recall and legal action.'],
+        ['3. Credit Fees and Costs (NCA s.102)', 'All applicable fees — initiation fee, monthly service fee, and interest — are disclosed in the Pre-Agreement Statement before signing. These comply with prescribed NCA maximums. VAT (15%) applies to initiation and service fees. Interest income is VAT-exempt.'],
+        ['4. Right of Rescission (NCA s.121)', 'You may cancel this agreement without penalty within 5 business days of signing. All funds received must be returned to effect cancellation.'],
+        ['5. Early Settlement (NCA s.125)', 'You may settle early at any time. Request a settlement quote showing the outstanding balance and applicable interest/fee rebate.'],
+        ['6. Default and Collections', 'Failure to pay on the due date may result in a dishonour fee and adverse credit bureau listing. After 20 business days, we may issue a Section 129 notice and proceed with debt enforcement.'],
+        ['7. Credit Bureau Reporting', 'Your repayment behaviour will be reported monthly to registered credit bureaux. Positive payment history improves your credit score.'],
+        ['8. Privacy and POPIA', 'Your personal information is processed in accordance with POPIA. It is used solely for credit assessment and management. You have rights to access, correct, and request deletion of your data.'],
+        ['9. Debt Review (NCA s.86)', 'If over-indebted, you may apply to a registered debt counsellor for debt review. Contact the NCR: 0860 627 627.'],
+        ['10. Governing Law', 'These terms are governed by the laws of South Africa, including the NCA 34 of 2005, CPA 68 of 2008, and POPIA 4 of 2013.'],
+      ] as [$heading, $content])
+      <div class="border-b border-kc-silver-light pb-4 last:border-0">
+        <h5 class="font-semibold text-kc-navy mb-1">{{ $heading }}</h5>
+        <p>{{ $content }}</p>
+      </div>
+      @endforeach
+    </div>
+
+    <div class="mt-5 pt-4 border-t border-kc-silver-light text-xs text-kc-charcoal/40">
+      NCR Registration: {{ \App\Models\Company::settings()?->ncr_number ?? 'Contact us for details' }} · <em>Capital. Partnership. Growth.</em>
+    </div>
+  </div>
 </x-app-layout>

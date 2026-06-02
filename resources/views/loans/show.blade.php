@@ -1,221 +1,129 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            {{ __('Loan Application Details') }}
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Loan Details</span>
+    <p class="kc-page-subtitle">Application #{{ str_pad($loanApplication->id, 6, '0', STR_PAD_LEFT) }}</p>
+  </x-slot>
 
-    <div class="py-10">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-5">
 
-            <div class="bg-white shadow-md rounded-lg p-6">
-
-                {{-- SYSTEM ALERTS --}}
-                @if(session('success'))
-                    <div class="mb-6 p-4 rounded-md bg-green-100 border border-green-300 text-green-800">
-                        {{ session('success') }}
-                    </div>
-                @endif
-
-                @if(session('error'))
-                    <div class="mb-6 p-4 rounded-md bg-red-100 border border-red-300 text-red-800">
-                        {{ session('error') }}
-                    </div>
-                @endif
-
-                @if ($errors->any())
-                    <div class="mb-6 p-4 rounded-md bg-red-100 border border-red-300 text-red-800">
-                        <strong class="block mb-2">Please fix the following:</strong>
-                        <ul class="list-disc ml-5 text-sm">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-
-                {{-- APPLICATION SUMMARY --}}
-                <h3 class="text-2xl font-bold mb-6 text-gray-700">
-                    Application Summary
-                </h3>
-
-                @php
-                    $statusColors = [
-                        'approved' => 'bg-green-200 text-green-800',
-                        'pending' => 'bg-yellow-200 text-yellow-800',
-                        'rejected' => 'bg-red-200 text-red-800',
-                        'under_review' => 'bg-blue-200 text-blue-800',
-                    ];
-                @endphp
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
-
-                    <p><strong>User ID:</strong> {{ $loanApplication->user_id }}</p>
-
-                    <p><strong>Loan Type:</strong> {{ $loanApplication->loan_type }}</p>
-
-                    <p>
-                        <strong>Loan Amount:</strong>
-                        R{{ number_format($loanApplication->loan_amount, 2) }}
-                    </p>
-
-                    <p><strong>Purpose:</strong> {{ $loanApplication->purpose }}</p>
-
-                    <p><strong>Collateral:</strong> {{ $loanApplication->collateral }}</p>
-
-                    <p>
-                        <strong>Status:</strong>
-
-                        <span class="px-3 py-1 rounded text-sm font-medium
-                        {{ $statusColors[$loanApplication->status] ?? 'bg-gray-200 text-gray-800' }}">
-                            {{ ucfirst(str_replace('_',' ',$loanApplication->status)) }}
-                        </span>
-                    </p>
-
-                    <p>
-                        <strong>Approval Date:</strong>
-                        {{ $loanApplication->approval_date ?? 'N/A' }}
-                    </p>
-
-                    <p>
-                        <strong>Created At:</strong>
-                        {{ $loanApplication->created_at->format('Y-m-d H:i') }}
-                    </p>
-
-                </div>
-
-
-                {{-- ACTION BUTTONS --}}
-                <div class="mt-8 flex items-center gap-4">
-
-                <!--    {{-- DELETE --}}
-                    <form action="{{ route('loanapplications.destroy', $loanApplication->id) }}"
-                          method="POST"
-                          onsubmit="return confirm('Are you sure you want to delete this application?')">
-
-                        @csrf
-                        @method('DELETE')
-
-                        <button type="submit"
-                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
-                            Delete
-                        </button>
-                    </form>   -->
-
-                </div>
-
-
-                {{-- DOCUMENT UPLOAD --}}
-                <div class="mt-10 border-t pt-6">
-
-                    <h3 class="text-xl font-semibold text-gray-700 mb-4">
-                        Upload Supporting Documents
-                    </h3>
-
-                    <form action="{{ route('loanapplications.update', $loanApplication->id) }}"
-                          method="POST"
-                          enctype="multipart/form-data">
-
-                        @csrf
-                        @method('PUT')
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">
-                                    Bank Statement
-                                </label>
-
-                                <input type="file"
-                                       name="bank_statement"
-                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm
-                                       focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">
-                                    Payslip
-                                </label>
-
-                                <input type="file"
-                                       name="payslip"
-                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm
-                                       focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">
-                                    ID Copy
-                                </label>
-
-                                <input type="file"
-                                       name="id_copy"
-                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm
-                                       focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-
-                        </div>
-
-                        <div class="mt-6">
-                            <button type="submit"
-                                class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 shadow">
-                                Upload Documents
-                            </button>
-                        </div>
-
-                    </form>
-
-
-                    {{-- DOCUMENT LIST --}}
-                    @if($loanApplication->documents && $loanApplication->documents->count())
-
-                        <div class="mt-8">
-
-                            <h4 class="text-md font-semibold mb-3">
-                                Uploaded Documents
-                            </h4>
-
-                            <div class="space-y-3">
-
-                                @foreach ($loanApplication->documents as $doc)
-
-                                    <div class="flex items-center justify-between
-                                                border rounded-md p-3 bg-gray-50">
-
-                                        <div>
-                                            <span class="font-medium">
-                                                {{ ucfirst($doc->document_type) }}
-                                            </span>
-
-                                            <span class="text-sm text-gray-500 ml-2">
-                                                {{ $doc->created_at->diffForHumans() }}
-                                            </span>
-                                        </div>
-
-                                        <a href="{{ asset('storage/' . $doc->path) }}"
-                                           target="_blank"
-                                           class="text-blue-600 hover:underline text-sm">
-                                           View
-                                        </a>
-
-                                    </div>
-
-                                @endforeach
-
-                            </div>
-
-                        </div>
-
-                    @endif
-
-                </div>
-
-            </div>
-
+      {{-- Status + summary --}}
+      @php
+        $sc = match(strtolower($loanApplication->status ?? 'pending')) {
+          'approved','disbursed','settled' => 'kc-badge-green',
+          'rejected','written_off'         => 'kc-badge-red',
+          'pending','under_review'         => 'kc-badge-gold',
+          default                          => 'kc-badge-silver',
+        };
+      @endphp
+      <div class="kc-card">
+        <div class="flex items-center justify-between mb-4">
+          <span class="kc-badge {{ $sc }} text-sm">{{ ucfirst($loanApplication->status) }}</span>
+          @if($loanApplication->loanfee)
+          <span class="text-xs text-kc-charcoal/50">Total due: <strong>R {{ number_format($loanApplication->loanfee->total_due, 2) }}</strong></span>
+          @endif
         </div>
-    </div>
-</x-app-layout>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div><p class="text-xs text-kc-charcoal/50">Amount</p><p class="font-display text-lg font-bold text-kc-navy">R {{ number_format($loanApplication->loan_amount, 2) }}</p></div>
+          <div><p class="text-xs text-kc-charcoal/50">Term</p><p class="font-semibold">{{ $loanApplication->loan_term_months ?? 1 }} month(s)</p></div>
+          <div><p class="text-xs text-kc-charcoal/50">Applied</p><p class="font-semibold text-xs">{{ $loanApplication->created_at->format('d M Y') }}</p></div>
+          <div><p class="text-xs text-kc-charcoal/50">Purpose</p><p class="font-semibold text-xs truncate">{{ $loanApplication->purpose ?? '—' }}</p></div>
+        </div>
+      </div>
 
+      {{-- Repayment schedule --}}
+      @if($loanApplication->repaymentSchedules->isNotEmpty())
+      <div class="kc-card">
+        <h5 class="font-display font-semibold text-kc-navy mb-3">Repayment Schedule</h5>
+        <div class="kc-table-scroll">
+          <table class="kc-table">
+            <thead><tr><th>#</th><th>Due Date</th><th>Instalment</th><th>Status</th><th>Paid</th></tr></thead>
+            <tbody>
+              @foreach($loanApplication->repaymentSchedules->sortBy('installment_number') as $s)
+              @php $ssc = match($s->status??''){'paid'=>'kc-badge-green','payment_failed'=>'kc-badge-red','rejected'=>'kc-badge-silver',default=>'kc-badge-gold'}; @endphp
+              <tr class="{{ $s->status==='payment_failed'?'bg-red-50':'' }}">
+                <td data-label="#">{{ $s->installment_number ?? '—' }}</td>
+                <td data-label="Due">{{ \Carbon\Carbon::parse($s->due_date)->format('d M Y') }}</td>
+                <td data-label="Amount" class="font-semibold">R {{ number_format($s->emi_amount, 2) }}</td>
+                <td data-label="Status"><span class="kc-badge {{ $ssc }}">{{ ucfirst(str_replace('_',' ',$s->status)) }}</span></td>
+                <td data-label="Paid" class="text-xs text-kc-charcoal/50">{{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}</td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+      @endif
+
+      {{-- Loan fee breakdown --}}
+      @if($loanApplication->loanfee)
+      <div class="kc-card">
+        <h5 class="font-display font-semibold text-kc-navy mb-3">Cost of Credit</h5>
+        <table class="kc-table">
+          <tbody>
+            <tr><td class="text-kc-charcoal/50 text-xs">Principal</td><td class="font-semibold">R {{ number_format($loanApplication->loan_amount, 2) }}</td></tr>
+            <tr><td class="text-kc-charcoal/50 text-xs">Initiation Fee (incl. VAT)</td><td>R {{ number_format($loanApplication->loanfee->initiation_fee, 2) }}</td></tr>
+            <tr><td class="text-kc-charcoal/50 text-xs">Service Fee</td><td>R {{ number_format($loanApplication->loanfee->service_fee, 2) }}</td></tr>
+            <tr><td class="text-kc-charcoal/50 text-xs">Interest</td><td>R {{ number_format($loanApplication->loanfee->interest_amount, 2) }}</td></tr>
+            <tr class="border-t-2 border-kc-gold/30 font-bold"><td>Total Repayable</td><td class="text-kc-gold">R {{ number_format($loanApplication->loanfee->total_due, 2) }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      @endif
+
+    </div>
+
+    {{-- Sidebar --}}
+    <div class="space-y-4">
+      <div class="kc-card">
+        <h5 class="font-semibold text-kc-navy mb-3">Actions</h5>
+        <div class="space-y-2">
+          <a href="{{ route('repaymentSchedules.index') }}" class="kc-btn-ghost w-full justify-center text-sm">
+            View Full Schedule
+          </a>
+          <a href="{{ route('client.my-statement') }}" class="kc-btn-ghost w-full justify-center text-sm">
+            Download Statement
+          </a>
+
+          {{-- Early settlement request --}}
+          @if($loanApplication->loan && in_array($loanApplication->loan->status, ['disbursed']))
+          <div class="pt-2 border-t border-kc-silver-light">
+            <p class="text-xs text-kc-charcoal/50 mb-2">Want to pay off early?</p>
+            <form method="POST" action="{{ route('admin.agreements.settlement-quote', $loanApplication->loan) }}">
+              @csrf
+              <button type="submit" class="kc-btn-ghost w-full justify-center text-xs text-kc-gold border-kc-gold/30">
+                Request Settlement Quote (NCA s.125)
+              </button>
+            </form>
+          </div>
+          @endif
+
+          {{-- Agreements --}}
+          @php $agreements = \App\Models\NcaAgreement::where('loan_application_id', $loanApplication->id)->get(); @endphp
+          @if($agreements->isNotEmpty())
+          <div class="pt-2 border-t border-kc-silver-light">
+            <p class="text-xs text-kc-charcoal/50 mb-2">NCA Documents</p>
+            @foreach($agreements as $ag)
+            <div class="flex items-center justify-between py-1">
+              <span class="text-xs truncate">{{ $ag->getTypeLabel() }}</span>
+              <a href="{{ route('agreements.download', $ag) }}" class="text-xs text-kc-gold hover:underline ml-2 flex-shrink-0">PDF</a>
+            </div>
+            @endforeach
+          </div>
+          @endif
+        </div>
+      </div>
+
+      @if($loanApplication->loan)
+      <div class="kc-card">
+        <h5 class="font-semibold text-kc-navy mb-3">Loan Account</h5>
+        <table class="w-full text-xs">
+          <tr class="border-b border-kc-silver-light/60"><td class="py-1.5 text-kc-charcoal/50">Remaining</td><td class="font-bold text-kc-navy">R {{ number_format($loanApplication->loan->remaining_balance ?? 0, 2) }}</td></tr>
+          <tr class="border-b border-kc-silver-light/60"><td class="py-1.5 text-kc-charcoal/50">Disbursed</td><td>{{ $loanApplication->loan->disbursed_date ? \Carbon\Carbon::parse($loanApplication->loan->disbursed_date)->format('d M Y') : '—' }}</td></tr>
+          <tr><td class="py-1.5 text-kc-charcoal/50">Next payment</td><td class="{{ $loanApplication->loan->next_payment_date && \Carbon\Carbon::parse($loanApplication->loan->next_payment_date)->isPast() ? 'text-red-600 font-semibold' : '' }}">{{ $loanApplication->loan->next_payment_date ? \Carbon\Carbon::parse($loanApplication->loan->next_payment_date)->format('d M Y') : '—' }}</td></tr>
+        </table>
+      </div>
+      @endif
+    </div>
+  </div>
+</x-app-layout>
