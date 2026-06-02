@@ -234,6 +234,7 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::get('/scorecard',           [AdminController::class, 'scorecard'])->name('scorecard');
         Route::get('/reviewer/{id}',       [AdminController::class, 'reviewer'])->name('reviewer');
         Route::get('/alerts',              [AdminController::class, 'alerts'])->name('alerts');
+        Route::get('/ncr-export',          [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('ncr-export');
 
         // ── Finance-specific ──────────────────────────────────────────────────
         Route::get('/vat-201',             [AdminController::class, 'vat201'])->name('vat201');

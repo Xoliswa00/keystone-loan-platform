@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -26,6 +27,15 @@ class AppServiceProvider extends ServiceProvider
 
         Loan::observe(LoanObserver::class);
         LoanApplication::observe(LoanApplicationObserver::class);
+
+        // ── Password policy ────────────────────────────────────────────────────
+        // Min 8 chars, at least 1 letter + 1 number. Applied everywhere Rules\Password::defaults() is used.
+        Password::defaults(function () {
+            return Password::min(8)
+                ->letters()
+                ->numbers()
+                ->uncompromised();
+        });
 
         // ── Rate limiters ──────────────────────────────────────────────────────
 

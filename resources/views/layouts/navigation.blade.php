@@ -139,6 +139,10 @@
                         class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.npl') ? 'active' : '' }}">
                         NPL / Arrears
                     </a>
+                    <a href="{{ route('reports.ncr-export') . '?quarter=' . now()->format('Y') . '-Q' . ceil(now()->month/3) }}"
+                        class="kc-nav-item text-xs py-2">
+                        NCR Quarterly Export
+                    </a>
                 </div>
             </div>
 

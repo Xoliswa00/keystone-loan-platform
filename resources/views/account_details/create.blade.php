@@ -1,80 +1,67 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Create Account Detail') }}
-        </h2>
-    </x-slot>
+  <x-slot name="header">
+    <span class="kc-page-title">Add Bank Account</span>
+    <p class="kc-page-subtitle">This account will be used for debit order collections</p>
+  </x-slot>
 
-    <div class="container mx-auto py-6 px-4">
+  <div class="kc-card max-w-lg">
+    <form action="{{ route('accountdetails.store') }}" method="POST" class="space-y-4">
+      @csrf
+      <div>
+        <label class="kc-label">Account Holder Name <span class="text-red-500">*</span></label>
+        <input type="text" name="account_holder_name" value="{{ old('account_holder_name', Auth::user()->name) }}"
+          class="kc-input @error('account_holder_name') border-red-400 @enderror" required>
+        @error('account_holder_name')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+      </div>
 
-        <!-- Center the form and limit its width -->
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8  bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-            <form action="{{ route('accountdetails.store') }}" method="POST" class="space-y-4">
-                @csrf
+      <div>
+        <label class="kc-label">Bank <span class="text-red-500">*</span></label>
+        <select name="bank_name" class="kc-select" required>
+          <option value="">Select your bank...</option>
+          @foreach(['ABSA','African Bank','Capitec Bank','Discovery Bank','FNB (First National Bank)','Nedbank','Standard Bank','TymeBank','Old Mutual','Investec','Bidvest Bank'] as $bank)
+            <option value="{{ $bank }}" {{ old('bank_name') === $bank ? 'selected' : '' }}>{{ $bank }}</option>
+          @endforeach
+        </select>
+        @error('bank_name')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+      </div>
 
-                <div>
-                    <label for="account_holder_name" class="block text-sm font-medium text-gray-700">Account Holder Name</label>
-                    <input type="text" name="account_holder_name" id="account_holder_name" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" value="{{ old('account_holder_name') }}" required>
-                    @error('account_holder_name')
-                        <div class="text-red-600 text-sm">{{ $message }}</div>
-                    @enderror
-                </div>
+      <div>
+        <label class="kc-label">Account Number <span class="text-red-500">*</span></label>
+        <input type="text" name="account_number" value="{{ old('account_number') }}"
+          class="kc-input font-mono @error('account_number') border-red-400 @enderror" required>
+        @error('account_number')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+      </div>
 
-                <div>
-                    <label for="bank_name" class="block text-sm font-medium text-gray-700">Bank Name</label>
-                    <input type="text" name="bank_name" id="bank_name" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" value="{{ old('bank_name') }}" required>
-                    @error('bank_name')
-                        <div class="text-red-600 text-sm">{{ $message }}</div>
-                    @enderror
-                </div>
+      <div>
+        <label class="kc-label">Branch Code</label>
+        <input type="text" name="branch_code" value="{{ old('branch_code') }}" class="kc-input font-mono" placeholder="e.g. 632005">
+      </div>
 
-                <div>
-                    <label for="account_number" class="block text-sm font-medium text-gray-700">Account Number</label>
-                    <input type="text" name="account_number" id="account_number" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" value="{{ old('account_number') }}" required>
-                    @error('account_number')
-                        <div class="text-red-600 text-sm">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="account_type" class="block text-sm font-medium text-gray-700">Account Type</label>
-                    <select name="account_type" id="account_type" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" required>
-                        <option value="savings" {{ old('account_type') == 'savings' ? 'selected' : '' }}>Savings</option>
-                        <option value="current" {{ old('account_type') == 'current' ? 'selected' : '' }}>Check</option>
-                    </select>
-                    @error('account_type')
-                        <div class="text-red-600 text-sm">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="payment_method" class="block text-sm font-medium text-gray-700">Payment Method</label>
-                    <select name="payment_method" id="payment_method" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" required>
-                        <option value="debit_order" {{ old('payment_method') == 'debit_order' ? 'selected' : '' }}>Debit Order</option>
-                       
-                    </select>
-                    @error('payment_method')
-                        <div class="text-red-600 text-sm">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                    <select name="status" id="status" class="form-control border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full" required>
-                        <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                    </select>
-                    @error('status')
-                        <div class="text-red-600 text-sm">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring focus:ring-indigo-200 focus:ring-opacity-50 w-full">
-                        Create Account Detail
-                    </button>
-                </div>
-            </form>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="kc-label">Account Type <span class="text-red-500">*</span></label>
+          <select name="account_type" class="kc-select" required>
+            <option value="savings"      {{ old('account_type')==='savings'       ?'selected':'' }}>Savings</option>
+            <option value="cheque"       {{ old('account_type')==='cheque'        ?'selected':'' }}>Cheque / Current</option>
+            <option value="transmission" {{ old('account_type')==='transmission'  ?'selected':'' }}>Transmission</option>
+          </select>
         </div>
-    </div>
+        <div>
+          <label class="kc-label">Payment Method</label>
+          <select name="payment_method" class="kc-select">
+            <option value="debit_order">Debit Order (Nu-Pay)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-lg border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/60">
+        By adding this account you authorise Keystone Capital Partners to debit it for loan repayments per your agreed schedule.
+      </div>
+
+      <div class="flex gap-3">
+        <a href="{{ route('accountdetails.index') }}" class="kc-btn-ghost">Cancel</a>
+        <button type="submit" class="kc-btn-primary flex-1 justify-center">Save Bank Account</button>
+      </div>
+    </form>
+  </div>
 </x-app-layout>
