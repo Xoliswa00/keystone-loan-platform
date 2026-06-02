@@ -135,6 +135,27 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
     Route::post('admin/documents/{document}/verify',
         [CustomerProfileController::class, 'verifyDocument'])->name('admin.documents.verify');
 
+    // ── Funding Facilities ────────────────────────────────────────────────────
+    Route::prefix('admin/funding')->name('admin.funding.')->group(function () {
+        Route::get('/',                           [\App\Http\Controllers\FundingFacilityController::class, 'index'])->name('index');
+        Route::get('/create',                     [\App\Http\Controllers\FundingFacilityController::class, 'create'])->name('create');
+        Route::post('/',                          [\App\Http\Controllers\FundingFacilityController::class, 'store'])->name('store');
+        Route::get('/{fundingFacility}',          [\App\Http\Controllers\FundingFacilityController::class, 'show'])->name('show');
+        Route::get('/{fundingFacility}/edit',     [\App\Http\Controllers\FundingFacilityController::class, 'edit'])->name('edit');
+        Route::put('/{fundingFacility}',          [\App\Http\Controllers\FundingFacilityController::class, 'update'])->name('update');
+        Route::post('/{fundingFacility}/transaction', [\App\Http\Controllers\FundingFacilityController::class, 'recordTransaction'])->name('transaction');
+        Route::post('/accrue-all',                [\App\Http\Controllers\FundingFacilityController::class, 'accrueAll'])->name('accrue-all');
+        Route::post('/{fundingFacility}/upload-agreement', [\App\Http\Controllers\FundingFacilityController::class, 'uploadAgreement'])->name('upload-agreement');
+    });
+
+    // ── Business Bank Statement ───────────────────────────────────────────────
+    Route::prefix('admin/finance')->name('admin.finance.')->group(function () {
+        Route::get('/business-bank',              [\App\Http\Controllers\BusinessBankStatementController::class, 'showUpload'])->name('business-bank.upload');
+        Route::post('/business-bank',             [\App\Http\Controllers\BusinessBankStatementController::class, 'handleUpload'])->name('business-bank.store');
+        Route::get('/business-bank/{batch}',      [\App\Http\Controllers\BusinessBankStatementController::class, 'show'])->name('business-bank.show');
+        Route::post('/business-bank/{batch}/reconcile', [\App\Http\Controllers\BusinessBankStatementController::class, 'reconcile'])->name('business-bank.reconcile');
+    });
+
     // ── Nu-Pay imports ────────────────────────────────────────────────────────
     Route::get('/nupay/upload',  [NupayTransactionsStagingController::class, 'showUploadForm'])->name('nupay.upload.form');
     Route::post('/nupay/upload', [NupayTransactionsStagingController::class, 'handleUpload'])->name('nupay.upload');

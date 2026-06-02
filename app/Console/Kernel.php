@@ -34,6 +34,12 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/gl_recon.log'));
 
+        // ── Funding facility interest accrual ── last day of month (same time as provisioning)
+        $schedule->command('keystone:accrue-facility-interest')
+            ->monthlyOn(28, '22:30')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/facility_interest.log'));
+
         // ── Failed jobs cleanup ── weekly on Sunday
         $schedule->command('queue:retry all')
             ->weekly()
