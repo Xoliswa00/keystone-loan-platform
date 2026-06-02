@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -31,12 +30,10 @@ class AuthApiController extends Controller
             ]);
         }
 
-        // Block admin/staff from using the mobile API — they must use the web UI with 2FA
-        if ($user->rule_id === 2 || in_array($user->system_role ?? '', ['admin','finance','it_admin','loan_officer'])) {
-            return response()->json([
-                'message' => 'Staff accounts must sign in via the web portal.',
-            ], 403);
-        }
+        // Staff can use the API for the monitoring app — 2FA is enforced separately
+        // Client-only fields like 'monitoring' scope differentiate staff vs client tokens
+        $isStaff = $user->rule_id === 2
+            || in_array($user->system_role ?? '', ['admin','finance','it_admin','loan_officer']);
 
         // Block blacklisted users
         if ($user->blacklisted) {

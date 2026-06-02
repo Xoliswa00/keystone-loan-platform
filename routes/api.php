@@ -127,4 +127,25 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Agreement accepted.', 'accepted_at' => $agreement->fresh()->accepted_at]);
     });
 
+    // ── Admin / Staff monitoring endpoints ────────────────────────────────────
+    // Requires staff role token (obtained via same POST /api/auth/login but staff account)
+    Route::prefix('admin')->middleware(function ($request, $next) {
+        $user = $request->user();
+        $role = $user?->system_role ?? ($user?->rule_id === 2 ? 'admin' : 'client');
+        if (!in_array($role, ['admin', 'finance', 'it_admin', 'loan_officer'])) {
+            return response()->json(['message' => 'Staff access required.'], 403);
+        }
+        return $next($request);
+    })->group(function () {
+        Route::get('/dashboard',                           [AdminApiController::class, 'dashboard']);
+        Route::get('/disbursements',                       [AdminApiController::class, 'disbursements']);
+        Route::post('/disbursements/{id}/approve',         [AdminApiController::class, 'approveDisbursement']);
+        Route::post('/disbursements/{id}/reject',          [AdminApiController::class, 'rejectDisbursement']);
+        Route::get('/overdue',                             [AdminApiController::class, 'overdue']);
+        Route::get('/collections',                         [AdminApiController::class, 'collections']);
+        Route::get('/alerts',                              [AdminApiController::class, 'alerts']);
+        Route::get('/portfolio',                           [AdminApiController::class, 'portfolio']);
+    });
+});
+
 });
