@@ -4,35 +4,107 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RepaymentSchedule extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    protected $table = 'repayment_schedules'; 
+    protected $table = 'repayment_schedules';
 
-    
     protected $fillable = [
-        'loan_id',
+        'loan_id',           // references loan_applications.id
+        'user_id',
+        'installment_number',
         'emi_amount',
+        'principal_amount',
+        'interest_amount',
+        'fee_amount',
         'due_date',
         'status',
+        'gl_posted',
+        'paid_at',
     ];
 
-    public function loan()
+    protected $casts = [
+        'emi_amount'       => 'decimal:2',
+        'principal_amount' => 'decimal:2',
+        'interest_amount'  => 'decimal:2',
+        'fee_amount'       => 'decimal:2',
+        'due_date'         => 'date',
+        'gl_posted'        => 'boolean',
+        'paid_at'          => 'datetime',
+    ];
+
+    // ── Relationships ──
+
+    // loan_id points to loan_applications.id — keep method name accurate
+    public function loanApplication()
     {
-        return $this->belongsTo(LoanApplication::class);
+        return $this->belongsTo(LoanApplication::class, 'loan_id', 'id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function customer()
     {
         return $this->hasOneThrough(
             Customer::class,
             LoanApplication::class,
-            'id', // Foreign key on LoanApplication table...
-            'user_id', // Foreign key on Customer table...
-            'loan_id', // Local key on RepaymentSchedule table...
-            'user_id'  // Local key on LoanApplication table...
+            'id',      // FK on loan_applications
+            'user_id', // FK on customers
+            'loan_id', // local key on repayment_schedules
+            'user_id'  // local key on loan_applications
         );
     }
-    
+
+    // ── Scopes ──
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeOverdue($query)
+    {
+        return $query->where('status', 'pending')
+                     ->where('due_date', '<', now()->toDateString());
+    }
+
+    public function scopeDpd($query, int $from, int $to = null)
+    {
+        $q = $query->where('status', 'pending')
+                   ->whereRaw('DATEDIFF(CURDATE(), due_date) >= ?', [$from]);
+
+        if ($to !== null) {
+            $q->whereRaw('DATEDIFF(CURDATE(), due_date) <= ?', [$to]);
+        }
+
+        return $q;
+    }
+
+    // ── Helpers ──
+
+    public function daysOverdue(): int
+    {
+        if ($this->status !== 'pending') {
+            return 0;
+        }
+
+        return max(0, now()->diffInDays($this->due_date, false) * -1);
+    }
+
+    public function ifrs9Stage(): int
+    {
+        $dpd = $this->daysOverdue();
+
+        return match(true) {
+            $dpd >= 90 => 3,
+            $dpd >= 30 => 2,
+            default    => 1,
+        };
+    }
 }
