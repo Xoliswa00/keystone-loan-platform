@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Liger Management'),
+    'name' => env('APP_NAME', 'Keystone Capital Partners'),
 
     /*
     |--------------------------------------------------------------------------

@@ -11,22 +11,48 @@ export default {
 
     theme: {
         extend: {
-            fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+            colors: {
+                'kc-navy':        '#071B34',
+                'kc-navy-light':  '#0D2B4E',
+                'kc-navy-mid':    '#0A2240',
+                'kc-gold':        '#C89B3C',
+                'kc-gold-light':  '#D4AD56',
+                'kc-gold-muted':  '#A07D2E',
+                'kc-white':       '#F5F5F2',
+                'kc-charcoal':    '#1A1A1A',
+                'kc-silver':      '#B8BDC7',
+                'kc-silver-light':'#E8E9EC',
             },
-             animation: {
-        fadeIn: 'fadeIn 0.6s ease-out forwards',
-    },
-    keyframes: {
-        fadeIn: {
-            '0%': { opacity: 0 },
-            '100%': { opacity: 1 },
+            fontFamily: {
+                sans:    ['Inter', ...defaultTheme.fontFamily.sans],
+                display: ['Playfair Display', 'Georgia', 'serif'],
+            },
+            animation: {
+                fadeIn:    'fadeIn 0.5s ease-out forwards',
+                slideIn:   'slideIn 0.4s ease-out forwards',
+                shimmer:   'shimmer 2s infinite',
+            },
+            keyframes: {
+                fadeIn: {
+                    '0%':   { opacity: '0', transform: 'translateY(8px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+                slideIn: {
+                    '0%':   { opacity: '0', transform: 'translateX(-12px)' },
+                    '100%': { opacity: '1', transform: 'translateX(0)' },
+                },
+                shimmer: {
+                    '0%':   { backgroundPosition: '-200% 0' },
+                    '100%': { backgroundPosition: '200% 0' },
+                },
+            },
+            boxShadow: {
+                'kc-card':  '0 2px 12px rgba(7,27,52,0.08)',
+                'kc-gold':  '0 4px 16px rgba(200,155,60,0.25)',
+                'kc-navy':  '0 4px 24px rgba(7,27,52,0.30)',
+            },
         },
-    }
-
-        },
     },
-  
 
     plugins: [forms],
 };

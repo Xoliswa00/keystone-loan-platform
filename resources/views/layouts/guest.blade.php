@@ -5,140 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-    <title>@yield('title', config('app.name', 'Liger Holding'))</title>
-        <meta name="description" content="Liger Holding provides financial aid in times of need." />
-    <meta name="author" content="Liger Holding">
-    <!-- Open Graph for social sharing -->
-    <meta property="og:site_name" content="Liger Holding">
-    <meta property="og:title" content="Liger Holding – Financial Services">
-    <meta property="og:description" content="Liger Holding provides financial aid in times of need.">
+    <title>@yield('title', config('app.name', 'Keystone Capital Partners'))</title>
+    <meta name="description" content="Keystone Capital Partners — Capital. Partnership. Growth." />
+    <meta name="author" content="Keystone Capital Partners">
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Keystone Capital Partners">
+    <meta property="og:title" content="Keystone Capital Partners — Lending Platform">
+    <meta property="og:description" content="Capital. Partnership. Growth.">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="{{ asset('assets/img/android-chrome-192x192.png') }}" >
-
-    <!-- Structured Data (Schema.org) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Liger Holding",
-      "url": "{{ url('/') }}",
-      "logo": "{{ asset('assets/img/logo.png') }}",
-      "sameAs": [
-        "https://www.facebook.com/ligerholding",
-        "https://twitter.com/ligerholding",
-        "https://www.linkedin.com/company/ligerholding"
-      ]
-    }
-    </script>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net" />
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Favicon -->
     <link rel="icon" href="{{ asset('assets/img/favicon.ico') }}">
-    <link rel="icon" href="{{ asset('assets/img/favicon.png') }}">
-        <link rel="img" href="{{ asset('assets/img/favicon-16x16.png') }}">
-
     <link rel="apple-touch-icon" href="{{ asset('assets/img/apple-touch-icon.png') }}">
-    
-    <!-- Directly include the compiled CSS -->
-<link rel="stylesheet" href="/build/assets/app-DTUn7QGO.css">
-<link rel="stylesheet" href="/build/assets/app-DvB2Xm2x.css">
 
-<!-- Include the compiled JS -->
-<script type="module" src="/build/assets/app-CKwJ6yXA.js"></script>
-
-    <!-- Scripts -->
-   @if (app()->environment('production'))
-    <link rel="stylesheet" href="https://cdn.example.com/build/assets/app-DTUn7QGO.css">
-    <script type="module" src="https://cdn.example.com/build/assets/app-CKwJ6yXA.js"></script>
-@else
+    <!-- Vite assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-@endif
 
-
-
-
-
-
-
-    <!-- SEO Meta -->
-    <meta name="description" content="Liger Holding - a modern way to manage loans and clients efficiently." />
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="font-sans text-gray-900 antialiased bg-white dark:bg-gray-900 transition-all duration-300 flex flex-col min-h-screen">
+<body class="font-sans antialiased bg-kc-navy overflow-hidden">
 
-    <!-- Navigation Bar -->
-<nav class="bg-blue-400 dark:bg-blue-800 p-6 rounded-lg  text-white dark:text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <a href="{{ url('/') }}" class="text-xl font-bold text-blue-400 hover:text-white transition flex items-center">
-    <span class="ml-2 text-white text-lg sm:text-xl font-semibold">Liger Holding</span>
-</a>
+    {{-- Full-screen split layout --}}
+    <div class="min-h-screen flex">
 
+        {{-- ── LEFT PANEL — Brand / Hero ── --}}
+        <div class="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden">
 
-            <!-- Mobile Hamburger -->
-            <div class="sm:hidden">
-                <button id="mobile-menu-button" class="text-white focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
+            {{-- Background texture --}}
+            <div class="absolute inset-0 bg-kc-navy">
+                {{-- Subtle gold radial glow --}}
+                <div class="absolute top-0 right-0 w-96 h-96 bg-kc-gold opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-kc-gold opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                {{-- Geometric grid --}}
+                <svg class="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#C89B3C" stroke-width="0.5"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                </svg>
             </div>
 
-            <!-- Desktop Links -->
-            <div class="hidden sm:flex space-x-4 text-sm sm:text-base">
-                <a href="{{ route('login') }}" class="hover:text-blue-400">Login</a>
-                <a href="{{ route('register') }}" class="hover:text-blue-400">Register</a>
-                <a href="{{ route('about') }}" class="hover:text-blue-400">About</a>
-                <a href="{{ route('contact') }}" class="hover:text-blue-400">Contact</a>
+            {{-- Top — Logo --}}
+            <div class="relative z-10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-kc-gold/15 border border-kc-gold/30 flex items-center justify-center">
+                    <span class="font-display font-bold text-kc-gold text-base">KC</span>
+                </div>
+                <div>
+                    <p class="text-white font-display font-semibold text-base leading-tight">Keystone</p>
+                    <p class="text-kc-gold text-[10px] font-medium tracking-[0.2em] uppercase">Capital Partners</p>
+                </div>
+            </div>
+
+            {{-- Middle — Hero text --}}
+            <div class="relative z-10">
+                {{-- 3-segment keystone ornament --}}
+                <div class="flex gap-1.5 mb-8">
+                    <div class="h-0.5 w-8 bg-kc-gold rounded"></div>
+                    <div class="h-0.5 w-4 bg-kc-gold/50 rounded"></div>
+                    <div class="h-0.5 w-2 bg-kc-gold/25 rounded"></div>
+                </div>
+
+                <h1 class="font-display text-4xl xl:text-5xl font-semibold text-white leading-tight">
+                    Built on Strong<br>
+                    <span class="text-kc-gold">Foundations.</span>
+                </h1>
+                <p class="mt-5 text-white/50 text-sm leading-relaxed max-w-xs">
+                    A strategic capital and partnership firm structured for long-term growth and trusted relationships.
+                </p>
+
+                {{-- Three pillars --}}
+                <div class="mt-10 grid grid-cols-3 gap-4">
+                    @foreach(['Capital', 'Partnership', 'Growth'] as $i => $pillar)
+                    <div class="text-center">
+                        <div class="w-1 h-8 bg-kc-gold/{{ $i === 1 ? '100' : '40' }} rounded mx-auto mb-2"></div>
+                        <p class="text-[11px] font-semibold tracking-widest uppercase text-white/{{ $i === 1 ? '90' : '40' }}">{{ $pillar }}</p>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Bottom — Tagline --}}
+            <div class="relative z-10">
+                <p class="text-white/25 text-xs">
+                    NCR Registered Credit Provider &nbsp;·&nbsp; Keystone Lending (Pty) Ltd
+                </p>
             </div>
         </div>
 
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden sm:hidden px-4 pb-4 space-y-2">
-            <a href="{{ route('login') }}" class="block hover:text-blue-400">Login</a>
-            <a href="{{ route('register') }}" class="block hover:text-blue-400">Register</a>
-            <a href="{{ route('about') }}" class="block hover:text-blue-400">About</a>
-            <a href="{{ route('contact') }}" class="block hover:text-blue-400">Contact</a>
-        </div>
-    </nav>
+        {{-- ── RIGHT PANEL — Auth form ── --}}
+        <div class="w-full lg:w-1/2 flex flex-col bg-kc-white">
 
-    <!-- Main Content Area -->
-    <main class="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 bg-gradient-to-b from-gray-100 to-gray-300 dark:from-gray-900 dark:to-gray-800">
-        <div class="w-full max-w-6xl mx-auto">
-            {{ $slot }}
-        </div>
-    </main>
+            {{-- Mobile brand bar --}}
+            <div class="lg:hidden flex items-center gap-3 px-6 py-5 bg-kc-navy">
+                <div class="w-8 h-8 rounded bg-kc-gold/15 border border-kc-gold/30 flex items-center justify-center">
+                    <span class="font-display font-bold text-kc-gold text-sm">KC</span>
+                </div>
+                <div>
+                    <p class="text-white font-display font-semibold text-sm">Keystone Capital Partners</p>
+                    <p class="text-kc-gold text-[9px] tracking-widest uppercase">Capital. Partnership. Growth.</p>
+                </div>
+            </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-100 dark:bg-gray-800 text-center text-gray-600 dark:text-gray-400 text-sm py-6 px-4">
-        <div>
-            &copy; {{ now()->year }} Liger Holding. All rights reserved.
-        </div>
-        <div class="mt-2 space-x-3">
-            <a href="#" class="hover:underline">Privacy Policy</a>
-            <a href="#" class="hover:underline">Terms of Service</a>
-        </div>
-    </footer>
+            {{-- Form area --}}
+            <div class="flex-1 flex items-center justify-center p-8 sm:p-12">
+                <div class="w-full max-w-sm">
+                    {{ $slot }}
+                </div>
+            </div>
 
-    <!-- Floating WhatsApp Button -->
-    <a href="https://wa.me/27721853349" target="_blank"
-       class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg flex items-center space-x-2 z-50">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path
-                d="M20 4a16 16 0 0 0-16 16v1l2.29-2.3A14 14 0 0 1 20 4zm-5.5 9.5l-1.6-.8a1 1 0 0 0-1.1.2l-.5.5a8 8 0 0 1-3.8-3.8l.5-.5a1 1 0 0 0 .2-1.1l-.8-1.6a1 1 0 0 0-1.3-.4c-.9.4-2 1.2-1.9 2.6.3 3.9 3.3 6.9 7.2 7.2 1.4.1 2.2-1 2.6-1.9a1 1 0 0 0-.4-1.3z" />
-        </svg>
-        <span>Chat</span>
-    </a>
-
-    <script>
-        document.getElementById('mobile-menu-button').addEventListener('click', function () {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        });
-    </script>
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+            {{-- Footer --}}
+            <div class="px-8 pb-6 text-center">
+                <p class="text-xs text-kc-charcoal/30">
+                    &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

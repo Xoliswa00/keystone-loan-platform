@@ -1,3 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    html {
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, .font-display {
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+}
+
+@layer components {
+
+    /* ── Sidebar ── */
+    .kc-sidebar {
+        @apply fixed inset-y-0 left-0 z-40 flex flex-col bg-kc-navy w-64 transition-transform duration-300;
+    }
+    .kc-sidebar-logo {
+        @apply flex items-center gap-3 px-6 py-5 border-b border-white/10;
+    }
+    .kc-sidebar-nav {
+        @apply flex-1 overflow-y-auto px-3 py-6 space-y-1;
+    }
+    .kc-sidebar-footer {
+        @apply px-4 py-4 border-t border-white/10;
+    }
+
+    /* Nav items */
+    .kc-nav-item {
+        @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-white/70 transition-all duration-150 hover:text-white hover:bg-white/10 cursor-pointer;
+    }
+    .kc-nav-item.active {
+        @apply text-kc-gold bg-white/10 border-l-2 border-kc-gold;
+    }
+    .kc-nav-section {
+        @apply px-4 pt-5 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/35;
+    }
+
+    /* ── Top header ── */
+    .kc-topbar {
+        @apply flex items-center justify-between h-16 px-6 bg-white border-b border-kc-silver-light;
+    }
+
+    /* ── Cards ── */
+    .kc-card {
+        @apply bg-white rounded-xl shadow-kc-card border border-kc-silver-light p-6;
+    }
+    .kc-card-navy {
+        @apply bg-kc-navy rounded-xl shadow-kc-navy p-6 text-white;
+    }
+    .kc-stat-card {
+        @apply kc-card flex flex-col gap-1;
+    }
+
+    /* ── Buttons ── */
+    .kc-btn-primary {
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-gold text-kc-navy font-semibold text-sm shadow-kc-gold hover:bg-kc-gold-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-gold/50;
+    }
+    .kc-btn-secondary {
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-navy text-white font-semibold text-sm shadow-kc-navy hover:bg-kc-navy-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-navy/40;
+    }
+    .kc-btn-ghost {
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-transparent border border-kc-silver text-kc-charcoal font-medium text-sm hover:bg-kc-silver-light transition-all duration-150;
+    }
+    .kc-btn-danger {
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-600 text-white font-semibold text-sm hover:bg-red-700 transition-all duration-150;
+    }
+
+    /* ── Inputs ── */
+    .kc-input {
+        @apply w-full rounded-lg border border-kc-silver bg-white px-4 py-2.5 text-sm text-kc-charcoal placeholder-kc-silver transition focus:outline-none focus:ring-2 focus:ring-kc-gold/40 focus:border-kc-gold;
+    }
+    .kc-label {
+        @apply block text-xs font-semibold uppercase tracking-wide text-kc-charcoal/70 mb-1.5;
+    }
+    .kc-select {
+        @apply kc-input appearance-none pr-10 cursor-pointer;
+    }
+
+    /* ── Badges / Status ── */
+    .kc-badge {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    }
+    .kc-badge-gold    { @apply kc-badge bg-kc-gold/15 text-kc-gold-muted; }
+    .kc-badge-green   { @apply kc-badge bg-emerald-50 text-emerald-700; }
+    .kc-badge-red     { @apply kc-badge bg-red-50 text-red-700; }
+    .kc-badge-silver  { @apply kc-badge bg-kc-silver-light text-kc-charcoal/70; }
+    .kc-badge-navy    { @apply kc-badge bg-kc-navy text-white; }
+
+    /* ── Table ── */
+    .kc-table {
+        @apply w-full text-sm text-left;
+    }
+    .kc-table thead tr {
+        @apply border-b border-kc-silver-light;
+    }
+    .kc-table th {
+        @apply py-3 px-4 text-[11px] font-semibold uppercase tracking-wider text-kc-charcoal/50;
+    }
+    .kc-table tbody tr {
+        @apply border-b border-kc-silver-light/60 hover:bg-kc-white transition-colors;
+    }
+    .kc-table td {
+        @apply py-3.5 px-4 text-kc-charcoal;
+    }
+
+    /* ── Gold divider ── */
+    .kc-divider {
+        @apply flex items-center gap-3 my-4;
+    }
+    .kc-divider::before,
+    .kc-divider::after {
+        content: '';
+        @apply flex-1 h-px bg-kc-gold/30;
+    }
+
+    /* ── Page header ── */
+    .kc-page-title {
+        @apply font-display text-2xl font-semibold text-kc-navy;
+    }
+    .kc-page-subtitle {
+        @apply text-sm text-kc-charcoal/50 mt-0.5;
+    }
+
+    /* ── Alert boxes ── */
+    .kc-alert-error {
+        @apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
+    }
+    .kc-alert-success {
+        @apply rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700;
+    }
+    .kc-alert-warning {
+        @apply rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700;
+    }
+}
+
+/* ── Sidebar mobile overlay ── */
+.kc-overlay {
+    @apply fixed inset-0 bg-black/40 z-30 lg:hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #B8BDC7; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #C89B3C; }
+
+/* ── Gold shimmer on loading skeleton ── */
+.kc-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}

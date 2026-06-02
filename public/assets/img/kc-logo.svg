@@ -1,0 +1,20 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background mark -->
+  <rect width="52" height="52" rx="9" x="0" y="4" fill="#C89B3C" fill-opacity="0.12"/>
+  <rect width="52" height="52" rx="9" x="0" y="4" stroke="#C89B3C" stroke-opacity="0.35" stroke-width="1.2"/>
+
+  <!-- 3-segment keystone crown -->
+  <rect x="11" y="7" width="7" height="14" rx="2" fill="#C89B3C" opacity="0.5" transform="rotate(-10 14 14)"/>
+  <rect x="22" y="5" width="8" height="17" rx="2" fill="#C89B3C"/>
+  <rect x="33" y="7" width="7" height="14" rx="2" fill="#C89B3C" opacity="0.5" transform="rotate(10 37 14)"/>
+
+  <!-- KC Letters -->
+  <text x="8" y="46" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#C89B3C">KC</text>
+
+  <!-- Wordmark -->
+  <text x="62" y="26" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="600" fill="#071B34" letter-spacing="1">KEYSTONE</text>
+  <text x="62" y="42" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#C89B3C" letter-spacing="2.5">CAPITAL PARTNERS</text>
+
+  <!-- Gold rule under wordmark -->
+  <line x1="62" y1="47" x2="190" y2="47" stroke="#C89B3C" stroke-width="0.8" stroke-opacity="0.4"/>
+</svg>
