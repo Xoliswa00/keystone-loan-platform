@@ -79,8 +79,17 @@ class User extends Authenticatable
 
 
     public function customer()
-{
-    return $this->hasOne(Customer::class);
-}
+    {
+        return $this->hasOne(Customer::class);
+    }
 
+    public function customerProfile()
+    {
+        return $this->hasOne(CustomerProfile::class);
+    }
+
+    public function customerDocuments()
+    {
+        return $this->hasMany(CustomerDocument::class);
+    }
 }

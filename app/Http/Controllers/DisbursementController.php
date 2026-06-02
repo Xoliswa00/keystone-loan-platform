@@ -1,305 +1,192 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\LoanDisbursement;
-use App\Services\DisbursementService;
-use App\Models\LoanApplication;
-
 use App\Models\Loan;
+use App\Services\DisbursementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-    use App\Mail\LoanNotificationMail;
 use Illuminate\Support\Facades\Mail;
 
 class DisbursementController extends Controller
 {
-protected $disbursementService;
+    protected DisbursementService $disbursementService;
 
     public function __construct(DisbursementService $disbursementService)
     {
         $this->disbursementService = $disbursementService;
     }
 
-
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        // Fetch all disbursements
-        $disbursements = loanDisbursement::with('loan', 'approver')->get();
+        $disbursements = LoanDisbursement::with(['loan', 'loan.user', 'approver'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
         return view('disbursements.index', compact('disbursements'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Loan $loan)
+    // ──────────────────────────────────────────────────────────────────────────
+    // Approve — calls DisbursementService which posts GL, initialises balances
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function approve($id)
     {
-        // Only allow creation of disbursement if the loan is approved
-        if ($loan->status !== 'approved') {
-            return redirect()->route('loans.index')->with('error', 'Loan not approved for disbursement.');
+        try {
+            $disbursement = $this->disbursementService->approveAndPost($id, Auth::id());
+
+            $loanApplication = $disbursement->loan->loanApplication;
+
+            if ($loanApplication) {
+                $this->notify(
+                    $loanApplication,
+                    'Funds Disbursed',
+                    [
+                        'Your loan funds have been disbursed to your registered bank account.',
+                        'Amount: R' . number_format($disbursement->disbursed_amount, 2),
+                        'Please ensure sufficient funds are available on your repayment date.',
+                    ]
+                );
+            }
+
+            return redirect()->back()
+                ->with('success', 'Disbursement approved and posted to GL.');
+
+        } catch (\Exception $e) {
+            Log::error('Disbursement approve failed', ['id' => $id, 'error' => $e->getMessage()]);
+            return redirect()->back()
+                ->with('error', 'Failed to approve disbursement: ' . $e->getMessage());
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Reject
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function reject(Request $request, $id)
+    {
+        $disbursement = LoanDisbursement::findOrFail($id);
+
+        if ($disbursement->status !== 'waiting_for_approval') {
+            return back()->with('error', 'This disbursement cannot be rejected in its current state.');
         }
 
-        return view('disbursements.create', compact('loan'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        // Validate the disbursement request
-        $validatedData = $request->validate([
-            'loan_id' => ['required', 'exists:loans,id'],
-            'disbursed_amount' => ['required', 'numeric', 'min:0.01'],
-            'disbursement_method' => ['required', 'in:bank_transfer,cash,check,other'],
-            'disbursement_date' => ['required', 'date'],
-            'payment_reference' => ['nullable', 'string'],
-            'proof_of_payment' => ['nullable', 'file', 'mimes:jpg,png,pdf'],
-        ]);
-    
-        // Capture the approver's ID (logged-in user)
-        $validatedData['approver_id'] = auth()->id();
-    
-        // Handle file upload for proof of payment
-        if ($request->hasFile('proof_of_payment')) {
-            // Store the uploaded file and get its path
-            $proofOfPaymentPath = $request->file('proof_of_payment')->store('proofs', 'public');
-            // Add the file path to the validated data
-            $validatedData['proof_of_payment'] = $proofOfPaymentPath;
-        }
-    
-        // Create a new loan disbursement
-        $disbursement = LoanDisbursement::create($validatedData);
-    
-        // Update the loan status to 'disbursed' after disbursement
-        $loan = Loan::findOrFail($validatedData['loan_id']);
-        $loan->status = 'disbursed';
-        $loan->disbursed_at = $validatedData['disbursement_date'];  // Optional: Set disbursement date
-        $loan->save();
-    
-        // Redirect to loan listings with success message
-        return redirect()->route('loans.index')->with('success', 'Loan disbursed successfully.');
-    }
-    
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(loanDisbursement $disbursement)
-    {
-        // Show detailed disbursement information
-        return view('disbursements.show', compact('disbursement'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(loanDisbursement $disbursement)
-    {
-        // Only allow editing if the disbursement is not processed
-        if ($disbursement->status === 'processed') {
-            return redirect()->route('disbursements.index')->with('error', 'Processed disbursements cannot be edited.');
-        }
-
-        return view('disbursements.edit', compact('disbursement'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, loanDisbursement $disbursement)
-    {
-        // Validate the update request
-        $validatedData = $request->validate([
-            'disbursed_amount' => ['required', 'numeric', 'min:0.01'],
-            'disbursement_method' => ['required', 'in:bank_transfer,cash,check,other'],
-            'disbursement_date' => ['required', 'date'],
-        ]);
-
-        // Update disbursement details
-        $disbursement->update($validatedData);
-
-        return redirect()->route('disbursements.index')->with('success', 'Disbursement updated successfully.');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(loanDisbursement $disbursement)
-    {
-        // Only allow deletion if the disbursement is not processed
-        if ($disbursement->status === 'processed') {
-            return redirect()->route('disbursements.index')->with('error', 'Processed disbursements cannot be deleted.');
-        }
-
-        // Delete disbursement
-        $disbursement->delete();
-
-        return redirect()->route('disbursements.index')->with('success', 'Disbursement deleted successfully.');
-    }
-
-
-public function approve($id)
-{
-    $user = auth()->user();
-
-    try {
-        $disbursement = $this->disbursementService->approveAndPost($id, $user->id);
-
-        $application = $disbursement->loan->loanApplication;
-
-        if ($application) {
-            $this->sendLoanNotification(
-                $application,
-                'Loan Application Paid',
-                [
-                    'Your loan amount has been successfully paid into your account.',
-                    'You can now view your repayment schedule in your dashboard.'
-                ],
-                $application->status
-            );
-        }
-
-        return redirect()->back()
-            ->with('success', 'Disbursement approved, GL posted, and notification sent.');
-
-    } catch (\Exception $e) {
-
-        Log::error('Disbursement approve error', [
-            'id' => $id,
-            'error' => $e->getMessage(),
-        ]);
-
-        return redirect()->back()
-            ->with('error', 'Failed to approve disbursement: ' . $e->getMessage());
-    }
-}
-
-public function reject(Request $request, $id)
-{
-    $disbursement = LoanDisbursement::findOrFail($id);
-
-
-    if ($disbursement->status !== 'waiting_for_approval') {
-        return back()->with('error', 'This disbursement cannot be rejected.');
-    }
-
-    $disbursement->update([
-        'status' => 'rejected',
-        'rejected_by' => Auth::id(),
-        'rejected_at' => now(),
-        'rejection_reason' => $request->input('rejection_reason', 'No reason provided'),
-    ]);
-
-    if ($disbursement->loanApplication && $disbursement->loanApplication->user) {
-        $this->sendLoanNotification(
-            $disbursement->loanApplication,
-            'Loan Disbursement Rejected',
-            [
-                "Your loan disbursement (#{$disbursement->id}) has been rejected.",
-                "Rejected by: " . Auth::user()->name . " (User ID: " . Auth::id() . ")",
-                "Reason: " . $disbursement->rejection_reason,
-            ],
-            'rejected'
-        );
-    }
-
-    return back()->with('success', 'Disbursement rejected and notification sent.');
-}
-
-public function release($id)
-{
-    $disbursement = LoanDisbursement::findOrFail($id);
-
-
-    if ($disbursement->status !== 'approved') {
-        return back()->with('error', 'This disbursement cannot be released.');
-    }
-
-    $disbursement->update([
-        'status' => 'released',
-        'released_by' => Auth::id(),
-        'released_at' => now(),
-    ]);
-
-    if ($disbursement->loanApplication && $disbursement->loanApplication->user) {
-        $this->sendLoanNotification(
-            $disbursement->loanApplication,
-            'Loan Disbursement Released',
-            [
-                "Your loan disbursement (#{$disbursement->id}) has been released.",
-                "Released by: " . Auth::user()->name . " (User ID: " . Auth::id() . ")",
-                "Amount: R" . number_format($disbursement->amount, 2),
-            ],
-            'released'
-        );
-    }
-
-    return back()->with('success', 'Funds released and notification sent.');
-}
-
-public function approveAll()
-{
-    $pending = LoanDisbursement::where('status', 'waiting_for_approval')->get();
-
-
-    if ($pending->isEmpty()) {
-        return back()->with('error', 'No pending disbursements found.');
-    }
-
-    foreach ($pending as $disbursement) {
         $disbursement->update([
-            'status' => 'approved',
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
+            'status'           => 'rejected',
+            'rejected_by'      => Auth::id(),
+            'rejected_at'      => now(),
+            'rejection_reason' => $request->input('rejection_reason', 'No reason provided'),
         ]);
 
-        if ($disbursement->loanApplication && $disbursement->loanApplication->user) {
-            $this->sendLoanNotification(
-                $disbursement->loanApplication,
-                'Loan Disbursement Approved',
+        // Notify via loan → loanApplication chain
+        $loanApplication = $disbursement->loan?->loanApplication;
+
+        if ($loanApplication) {
+            $this->notify(
+                $loanApplication,
+                'Disbursement Rejected',
                 [
-                    "Your loan disbursement (#{$disbursement->id}) has been approved.",
-                    "Approved by: " . Auth::user()->name . " (User ID: " . Auth::id() . ")",
-                    "Amount: R" . number_format($disbursement->amount, 2),
-                ],
-                'approved'
+                    "Your disbursement request (#{$disbursement->id}) has been rejected.",
+                    'Reason: ' . $disbursement->rejection_reason,
+                    'Please contact support for assistance.',
+                ]
             );
         }
+
+        return back()->with('success', 'Disbursement rejected.');
     }
 
-    return back()->with('success', count($pending) . ' disbursement(s) approved and notifications sent.');
-}
+    // ──────────────────────────────────────────────────────────────────────────
+    // Release — only applicable if approve() was called separately from release
+    // In the standard flow, approveAndPost() sets status to 'released' directly.
+    // This action is for admin override of an edge case.
+    // ──────────────────────────────────────────────────────────────────────────
 
+    public function release($id)
+    {
+        $disbursement = LoanDisbursement::findOrFail($id);
 
-protected function sendLoanNotification($application, string $subject, array $bodyLines = [], ?string $status = null)
-{
-    if (!$application->user || !$application->user->email) {
-        Log::warning('Loan notification skipped: missing user or email', [
-            'application_id' => $application->id ?? null
+        if ($disbursement->status !== 'approved') {
+            return back()->with('error', 'Only approved disbursements can be released.');
+        }
+
+        $disbursement->update([
+            'status'      => 'released',
+            'released_by' => Auth::id(),
+            'released_at' => now(),
         ]);
-        return;
+
+        $loanApplication = $disbursement->loan?->loanApplication;
+
+        if ($loanApplication) {
+            $this->notify(
+                $loanApplication,
+                'Funds Released',
+                [
+                    "Your loan funds (#{$disbursement->id}) have been released.",
+                    'Amount: R' . number_format($disbursement->disbursed_amount, 2),
+                ]
+            );
+        }
+
+        return back()->with('success', 'Disbursement released.');
     }
 
-    if ($status) {
-        array_unshift($bodyLines, "Loan Status: " . ucfirst($status));
-        $subject .= " - " . ucfirst($status);
+    // ──────────────────────────────────────────────────────────────────────────
+    // Approve all — processes each through DisbursementService (GL posted)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function approveAll()
+    {
+        $pending = LoanDisbursement::where('status', 'waiting_for_approval')->get();
+
+        if ($pending->isEmpty()) {
+            return back()->with('error', 'No pending disbursements.');
+        }
+
+        $succeeded = 0;
+        $failed    = [];
+
+        foreach ($pending as $disbursement) {
+            try {
+                $this->disbursementService->approveAndPost($disbursement->id, Auth::id());
+                $succeeded++;
+
+                $loanApp = $disbursement->loan?->loanApplication;
+                if ($loanApp) {
+                    $this->notify($loanApp, 'Funds Disbursed', [
+                        'Your loan funds have been disbursed.',
+                        'Amount: R' . number_format($disbursement->disbursed_amount, 2),
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error("approveAll failed for disbursement #{$disbursement->id}", [
+                    'error' => $e->getMessage(),
+                ]);
+                $failed[] = "#{$disbursement->id}: " . $e->getMessage();
+            }
+        }
+
+        $msg = "{$succeeded} disbursement(s) approved and posted.";
+        if (!empty($failed)) {
+            $msg .= ' Failures: ' . implode('; ', $failed);
+        }
+
+        return back()->with($failed ? 'error' : 'success', $msg);
     }
 
-    Mail::to($application->user->email)
-        ->send(new LoanNotificationMail($subject, $bodyLines, $application));
+    // ──────────────────────────────────────────────────────────────────────────
 
-    Log::info('Loan notification email sent', [
-        'application_id' => $application->id,
-        'email' => $application->user->email
-    ]);
-}
-
-
-
+    protected function notify($application, string $subject, array $lines): void
+    {
+        try {
+            Mail::to($application->user->email)
+                ->queue(new \App\Mail\LoanNotificationMail($subject, $lines, $application));
+        } catch (\Exception $e) {
+            Log::warning('Disbursement notification failed: ' . $e->getMessage());
+        }
+    }
 }
