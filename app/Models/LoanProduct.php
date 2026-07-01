@@ -4,10 +4,52 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class LoanProduct extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saving(function (LoanProduct $product) {
+            $product->assertNcaCompliant();
+        });
+    }
+
+    /**
+     * Guard against configuring a product outside NCA-prescribed maximums
+     * (Regulation 42 fee caps, s.103(5) is enforced separately at the loan
+     * level). Runs on every save — tinker, seeder, or future admin UI alike.
+     */
+    public function assertNcaCompliant(): void
+    {
+        $errors = [];
+
+        $rateCap = (float) config('nca.interest_rate_cap_monthly');
+        if ((float) $this->monthly_interest_rate > $rateCap) {
+            $errors[] = "monthly_interest_rate ({$this->monthly_interest_rate}) exceeds the NCA short-term credit cap of {$rateCap} per month.";
+        }
+
+        $initiationAbsoluteCap = (float) config('nca.initiation_fee_absolute_cap');
+        if ((float) $this->initiation_fee_cap > $initiationAbsoluteCap) {
+            $errors[] = "initiation_fee_cap ({$this->initiation_fee_cap}) exceeds the NCA absolute initiation fee cap of R{$initiationAbsoluteCap} (excl. VAT).";
+        }
+
+        $initiationFlatCap = (float) config('nca.initiation_fee_flat_cap');
+        if ((float) $this->initiation_fee_flat > $initiationFlatCap) {
+            $errors[] = "initiation_fee_flat ({$this->initiation_fee_flat}) exceeds the NCA flat initiation fee cap of R{$initiationFlatCap} (excl. VAT).";
+        }
+
+        $serviceFeeCap = (float) config('nca.monthly_service_fee_cap');
+        if ((float) $this->monthly_service_fee > $serviceFeeCap) {
+            $errors[] = "monthly_service_fee ({$this->monthly_service_fee}) exceeds the NCA monthly service fee cap of R{$serviceFeeCap} (excl. VAT) without a documented repo-rate escalation.";
+        }
+
+        if ($errors) {
+            throw ValidationException::withMessages(['nca_compliance' => $errors]);
+        }
+    }
 
     protected $fillable = [
         'name', 'code',

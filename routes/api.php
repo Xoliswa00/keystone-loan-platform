@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\LoanApiController;
@@ -129,14 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Admin / Staff monitoring endpoints ────────────────────────────────────
     // Requires staff role token (obtained via same POST /api/auth/login but staff account)
-    Route::prefix('admin')->middleware(function ($request, $next) {
-        $user = $request->user();
-        $role = $user?->system_role ?? ($user?->rule_id === 2 ? 'admin' : 'client');
-        if (!in_array($role, ['admin', 'finance', 'it_admin', 'loan_officer'])) {
-            return response()->json(['message' => 'Staff access required.'], 403);
-        }
-        return $next($request);
-    })->group(function () {
+    Route::prefix('admin')->middleware('role:admin,finance,it_admin,loan_officer')->group(function () {
         Route::get('/dashboard',                           [AdminApiController::class, 'dashboard']);
         Route::get('/disbursements',                       [AdminApiController::class, 'disbursements']);
         Route::post('/disbursements/{id}/approve',         [AdminApiController::class, 'approveDisbursement']);
@@ -146,6 +140,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/alerts',                              [AdminApiController::class, 'alerts']);
         Route::get('/portfolio',                           [AdminApiController::class, 'portfolio']);
     });
-});
-
 });

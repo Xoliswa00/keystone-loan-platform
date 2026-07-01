@@ -131,4 +131,21 @@ class Loan extends Model
     {
         return $this->status === 'disbursed';
     }
+
+    /**
+     * NCA s.103(5) in duplum rule: interest, default charges, and fees that
+     * accrue while a consumer is in default may never exceed the unpaid
+     * principal balance as at the moment default occurred. There is no
+     * default/penalty-interest accrual path in this codebase yet — this is
+     * the guard any such feature (e.g. late fees, arrears interest) must
+     * call before posting a new charge against a defaulted loan.
+     */
+    public function exceedsInDuplumCap(float $additionalCharge = 0.0): bool
+    {
+        $capMultiple = (float) config('nca.in_duplum_multiple');
+        $principal   = (float) $this->principal_amount;
+        $chargedSoFar = (float) $this->total_interest + (float) $this->total_fees_excl_vat;
+
+        return ($chargedSoFar + $additionalCharge) > ($principal * $capMultiple);
+    }
 }
