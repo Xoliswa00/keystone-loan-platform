@@ -28,13 +28,13 @@ class Company extends Model
     /** Singleton accessor — cached for 10 minutes */
     public static function settings(): ?self
     {
-        return Cache::remember('company_settings', 600, fn() => static::first());
+        return Cache::remember('company_settings', 600, fn () => static::first());
     }
 
     /** Bust cache when settings are saved */
     protected static function booted(): void
     {
-        static::saved(fn() => Cache::forget('company_settings'));
+        static::saved(fn () => Cache::forget('company_settings'));
     }
 
     public function getNotificationCcArray(): array
@@ -56,8 +56,8 @@ class Company extends Model
 
     public function isComplete(): bool
     {
-        return !empty($this->ncr_number)
-            && !empty($this->registration_no)
-            && !empty($this->physical_address);
+        return ! empty($this->ncr_number)
+            && ! empty($this->registration_no)
+            && ! empty($this->physical_address);
     }
 }

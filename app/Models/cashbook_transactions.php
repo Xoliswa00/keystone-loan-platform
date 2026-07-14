@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class cashbook_transactions extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'transaction_number',
         'cashbook_account_id',
@@ -32,7 +33,7 @@ class cashbook_transactions extends Model
         'posted_at',
         'reversed_by',
         'reversed_at',
-        'reversal_reason'
+        'reversal_reason',
     ];
 
     public function account()
@@ -40,33 +41,33 @@ class cashbook_transactions extends Model
         return $this->belongsTo(cashbook_accounts::class, 'cashbook_account_id');
     }
 
-
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
-        public function batch()
+
+    public function batch()
     {
         return $this->belongsTo(cashbook_batches::class, 'batch_id');
     }
+
     public function glAccount()
     {
         return $this->belongsTo(gl_accounts::class, 'gl_account_id');
     }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id');
     }
+
     public function vendor()
     {
-        return $this->belongsTo(apvendors::class, 'vendor_id'); 
-    }   
+        return $this->belongsTo(apvendors::class, 'vendor_id');
+    }
+
     public function loan()
     {
         return $this->belongsTo(Loan::class, 'loan_id');
     }
-
-    
 }
-
-

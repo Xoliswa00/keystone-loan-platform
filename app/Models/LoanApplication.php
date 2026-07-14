@@ -35,13 +35,13 @@ class LoanApplication extends Model
     ];
 
     protected $casts = [
-        'terms_conditions'                 => 'boolean',
-        'affordability_checked'            => 'boolean',
-        'affordability_disposable_income'  => 'decimal:2',
-        'affordability_max_instalment'     => 'decimal:2',
-        'affordability_instalment_requested'=> 'decimal:2',
-        'loan_amount'                      => 'decimal:2',
-        'approval_date'                    => 'datetime',
+        'terms_conditions' => 'boolean',
+        'affordability_checked' => 'boolean',
+        'affordability_disposable_income' => 'decimal:2',
+        'affordability_max_instalment' => 'decimal:2',
+        'affordability_instalment_requested' => 'decimal:2',
+        'loan_amount' => 'decimal:2',
+        'approval_date' => 'datetime',
     ];
 
     // ── Relationships ──

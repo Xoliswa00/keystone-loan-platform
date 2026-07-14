@@ -24,31 +24,32 @@ class AdminTwoFactor
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
         // Only enforce for staff roles
         $role = $user->system_role ?? ($user->rule_id === 2 ? 'admin' : 'client');
 
-        if (!in_array($role, self::ADMIN_ROLES)) {
+        if (! in_array($role, self::ADMIN_ROLES)) {
             return $next($request); // clients skip 2FA
         }
 
         // Check if 2FA is enabled for this user
-        if (!$user->two_factor_enabled) {
+        if (! $user->two_factor_enabled) {
             return $next($request); // 2FA not enabled — still allow (but show warning)
         }
 
-        // Check if 2FA was completed in this session (last 8 hours)
-        $verifiedAt = session('2fa_verified_at');
+        // Check if 2FA was completed recently (last 8 hours). TwoFactorController
+        // stamps two_factor_verified_at on the user record, not a session key.
+        $verifiedAt = $user->two_factor_verified_at;
 
         if ($verifiedAt && now()->diffInHours($verifiedAt) < 8) {
             return $next($request); // still within the 8-hour window
         }
 
         // Need 2FA — store user ID, log out, redirect
-        if (!session('2fa_user_id')) {
+        if (! session('2fa_user_id')) {
             session(['2fa_user_id' => $user->id]);
             \Illuminate\Support\Facades\Auth::logout();
             $request->session()->save();

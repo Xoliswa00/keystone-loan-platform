@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\nupay_transactions_staging;
-use Illuminate\Auth\Access\Response;
+use App\Models\User;
 
 class NupayTransactionsStagingPolicy
 {

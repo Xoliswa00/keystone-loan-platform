@@ -13,24 +13,32 @@ use App\Http\Controllers\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register',  [RegisteredUserController::class, 'create'])->name('register');
+    Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('register', [RegisteredUserController::class, 'store']);
 
     // Login: throttle to 3 attempts per minute (rate limiter defined in AppServiceProvider)
-    Route::get('login',  [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:login');
 
-    Route::get('forgot-password',  [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('reset-password',        [NewPasswordController::class, 'store'])->name('password.store');
+    Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.store');
 
     // 2FA verification — accessible without full auth (user is in 2fa_user_id session)
-    Route::get('auth/two-factor',         [TwoFactorController::class, 'show'])->name('two-factor.show');
-    Route::post('auth/two-factor/verify', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
-    Route::post('auth/two-factor/send',   [TwoFactorController::class, 'send'])->name('two-factor.send');
+    Route::get('auth/two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
+    Route::post('auth/two-factor/verify', [TwoFactorController::class, 'verify'])
+        ->middleware('throttle:login')
+        ->name('two-factor.verify');
+    Route::post('auth/two-factor/send', [TwoFactorController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('two-factor.send');
 });
 
 Route::middleware('auth')->group(function () {
@@ -44,7 +52,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,1')
         ->name('verification.send');
 
-    Route::get('confirm-password',  [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
+    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');

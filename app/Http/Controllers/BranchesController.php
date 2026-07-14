@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\branches;
 use App\Http\Requests\StorebranchesRequest;
 use App\Http\Requests\UpdatebranchesRequest;
+use App\Models\branches;
 
 class BranchesController extends Controller
 {

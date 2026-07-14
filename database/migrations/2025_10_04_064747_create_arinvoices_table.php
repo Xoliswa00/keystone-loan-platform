@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('arinvoices', function (Blueprint $table) {
             $table->id();
-                 $table->string('invoice_number')->unique();
-                             $table->foreignId('customer_id')->constrained('customers');
+            $table->string('invoice_number')->unique();
+            $table->foreignId('customer_id')->constrained('customers');
 
             $table->date('invoice_date');
             $table->decimal('total_amount', 15, 2);

@@ -25,14 +25,14 @@ class ImportService
 
             // 2. Create batch
             $batch = ImportBatch::create([
-                'source'            => strtolower($source),
+                'source' => strtolower($source),
                 'original_filename' => $file->getClientOriginalName(),
-                'stored_path'       => $storedPath,
-                'checksum'          => hash_file(
+                'stored_path' => $storedPath,
+                'checksum' => hash_file(
                     'sha256',
                     $file->getRealPath()
                 ),
-                'status'            => 'UPLOADED',
+                'status' => 'UPLOADED',
             ]);
 
             // 3. Read rows
@@ -42,15 +42,15 @@ class ImportService
             foreach ($rows as $index => $row) {
                 ImportRow::create([
                     'import_batch_id' => $batch->id,
-                    'row_number'      => $index + 1,
-                    'payload'         => $row,
+                    'row_number' => $index + 1,
+                    'payload' => $row,
                 ]);
             }
 
             // 5. Finalize batch
             $batch->update([
                 'row_count' => count($rows),
-                'status'    => 'CAPTURED',
+                'status' => 'CAPTURED',
             ]);
 
             DB::commit();
@@ -77,7 +77,7 @@ class ImportService
     {
         return match ($source) {
             'nupay' => $this->readSpreadsheet($storedPath),
-            'bank'  => $this->readSpreadsheet($storedPath), // future rules
+            'bank' => $this->readSpreadsheet($storedPath), // future rules
             default => throw new \RuntimeException(
                 "Unsupported import source: {$source}"
             ),
@@ -110,6 +110,7 @@ class ImportService
             // First row = headers
             if ($rowIndex === 1) {
                 $headers = $cells;
+
                 continue;
             }
 

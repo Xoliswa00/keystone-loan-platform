@@ -16,4 +16,3 @@ class ARFlags extends Model
         return $this->morphTo();
     }
 }
-

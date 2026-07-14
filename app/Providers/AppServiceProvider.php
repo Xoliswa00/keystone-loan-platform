@@ -2,19 +2,21 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Validation\Rules\Password;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
 use App\Models\branches;
 use App\Models\chart_of_accounts;
 use App\Models\Loan;
 use App\Models\LoanApplication;
+use App\Models\User;
 use App\Observers\charts_of_accounts;
 use App\Observers\CreatedBranch;
-use App\Observers\LoanObserver;
 use App\Observers\LoanApplicationObserver;
+use App\Observers\LoanObserver;
+use App\Observers\UserObserver;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
 
         Loan::observe(LoanObserver::class);
         LoanApplication::observe(LoanApplicationObserver::class);
+        User::observe(UserObserver::class);
 
         // ── Password policy ────────────────────────────────────────────────────
         // Min 8 chars, at least 1 letter + 1 number. Applied everywhere Rules\Password::defaults() is used.

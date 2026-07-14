@@ -7,6 +7,7 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        './resources/js/**/*.js',
     ],
 
     theme: {
@@ -24,7 +25,7 @@ export default {
                 'kc-silver-light':'#E8E9EC',
             },
             fontFamily: {
-                sans:    ['Inter', ...defaultTheme.fontFamily.sans],
+                sans:    ['Source Sans 3', ...defaultTheme.fontFamily.sans],
                 display: ['Playfair Display', 'Georgia', 'serif'],
             },
             animation: {

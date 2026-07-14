@@ -76,7 +76,9 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        // Accounts are deactivated, not hard-deleted, so loan/audit history
+        // required under NCA/POPIA record-retention rules is preserved.
+        $this->assertSame('inactive', $user->fresh()->status);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Admin;
+use App\Models\CloDecision;
 use App\Models\Customer;
-use App\Models\RepaymentSchedule;
+use App\Models\Loan;
 use App\Models\LoanApplication;
 use App\Models\LoanDisbursement;
-use App\Models\Loan;
-use App\Http\Requests\StoreAdminRequest;
-use App\Http\Requests\UpdateAdminRequest;
+use App\Models\RepaymentSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,12 +25,12 @@ class AdminController extends Controller
             ->sum('emi_amount');
 
         return view('admin.dashboard', [
-            'pendingLoansCount'   => LoanApplication::where('status', 'pending')->count(),
-            'customerCount'       => Customer::count(),
-            'todaysRepayments'    => $todaysRepayments,
-            'overdueLoansCount'   => RepaymentSchedule::where('status', 'pending')
-                                        ->whereDate('due_date', '<', today())->count(),
-            'recentApplications'  => LoanApplication::with('user')->latest()->take(5)->get(),
+            'pendingLoansCount' => LoanApplication::where('status', 'pending')->count(),
+            'customerCount' => Customer::count(),
+            'todaysRepayments' => $todaysRepayments,
+            'overdueLoansCount' => RepaymentSchedule::where('status', 'pending')
+                ->whereDate('due_date', '<', today())->count(),
+            'recentApplications' => LoanApplication::with('user')->latest()->take(5)->get(),
             'totalLoansDisbursed' => LoanDisbursement::where('status', 'waiting_for_approval')->count(),
         ]);
     }
@@ -49,12 +47,13 @@ class AdminController extends Controller
 
     public function show($id)
     {
-        $application   = LoanApplication::with('user', 'user.customerProfile', 'loanfee', 'product', 'repaymentSchedules')
+        $application = LoanApplication::with('user', 'user.customerProfile', 'loanfee', 'product', 'repaymentSchedules')
             ->findOrFail($id);
         $previousLoans = LoanApplication::where('user_id', $application->user_id)
             ->where('id', '<>', $application->id)->get();
+        $cloDecision = CloDecision::latestFor($application->id)->first();
 
-        return view('admin.loan_applications.show', compact('application', 'previousLoans'));
+        return view('admin.loan_applications.show', compact('application', 'previousLoans', 'cloDecision'));
     }
 
     public function Disbursement()
@@ -62,6 +61,7 @@ class AdminController extends Controller
         $disbursements = LoanDisbursement::with('loan', 'loan.user')
             ->where('status', 'waiting_for_approval')
             ->get();
+
         return view('admin.loans.payments', compact('disbursements'));
     }
 
@@ -73,14 +73,14 @@ class AdminController extends Controller
     public function summary(Request $request)
     {
         $from = $request->from_date ?? now()->startOfMonth()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         // Correct join: glbatches → glentries → gl_accounts
         $accounts = DB::table('glbatches as gb')
             ->join('glentries as ge', 'gb.id', '=', 'ge.batch_id')
             ->join('gl_accounts as ga', 'ge.account_id', '=', 'ga.id')
-            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
-            ->whereBetween('gb.posted_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+            ->whereBetween('gb.posted_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->select([
                 'coa.account_code',
                 'coa.account_category',
@@ -93,9 +93,9 @@ class AdminController extends Controller
             ->orderBy('coa.account_code')
             ->get();
 
-        $totalDebits  = $accounts->sum('total_debit');
+        $totalDebits = $accounts->sum('total_debit');
         $totalCredits = $accounts->sum('total_credit');
-        $balanced     = round($totalDebits, 2) === round($totalCredits, 2);
+        $balanced = round($totalDebits, 2) === round($totalCredits, 2);
 
         return view('admin.reports.gl_summary', compact('accounts', 'from', 'to', 'totalDebits', 'totalCredits', 'balanced'));
     }
@@ -106,7 +106,7 @@ class AdminController extends Controller
 
     public function portfolio()
     {
-        $now           = now();
+        $now = now();
         $lastMonthDate = $now->copy()->subMonth();
 
         // All schedule joins use loan_application_id = rs.loan_id (consistent)
@@ -135,7 +135,7 @@ class AdminController extends Controller
         $totalProvision = DB::table('bad_debt_provisions')
             ->whereIn('loan_id', function ($q) {
                 $q->select('id')->from('loans')
-                  ->whereNotIn('status', ['settled', 'written_off']);
+                    ->whereNotIn('status', ['settled', 'written_off']);
             })
             ->select('loan_id', DB::raw('MAX(provision_amount) as latest_provision'))
             ->groupBy('loan_id')
@@ -254,7 +254,7 @@ class AdminController extends Controller
     public function profitability(Request $request)
     {
         $from = $request->from_date ?? now()->startOfYear()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         $totalPrincipalDisbursed = Loan::whereNotNull('disbursed_date')->sum('principal_amount');
 
@@ -281,27 +281,27 @@ class AdminController extends Controller
         // VAT on fees (15% of initiation + service fees)
         $vatOnFees = round(($initiationFeeIncome + $serviceFeeIncome) * 0.15, 2);
 
-        $totalFeeIncome   = $initiationFeeIncome + $serviceFeeIncome;
+        $totalFeeIncome = $initiationFeeIncome + $serviceFeeIncome;
         $totalGrossIncome = $interestIncome + $totalFeeIncome;
 
         // ── Collected vs expected ──────────────────────────────────────────────
         $collectedRevenue = DB::table('repayment_schedules as rs')
             ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
             ->where('rs.status', 'paid')
-            ->whereBetween('rs.paid_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween('rs.paid_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->sum('rs.interest_amount');  // only interest + fee portion, not principal
 
         $collectedFees = DB::table('repayment_schedules as rs')
             ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
             ->where('rs.status', 'paid')
-            ->whereBetween('rs.paid_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween('rs.paid_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->sum('rs.fee_amount');
 
         $totalCollected = $collectedRevenue + $collectedFees;
 
         // ── Deferred income remaining (multi-month loans) ─────────────────────
         $totalDeferredInterest = Loan::whereIn('status', ['disbursed'])->sum('deferred_interest');
-        $totalDeferredFees     = Loan::whereIn('status', ['disbursed'])->sum('deferred_fees');
+        $totalDeferredFees = Loan::whereIn('status', ['disbursed'])->sum('deferred_fees');
 
         // ── Credit loss expense (IFRS 9 provisions) ───────────────────────────
         $creditLossExpense = DB::table('bad_debt_provisions')
@@ -314,14 +314,14 @@ class AdminController extends Controller
 
         // ── Net revenue (correct definition) ──────────────────────────────────
         // Net revenue = collected income - credit loss expense - NuPay bank charges
-        $bankCharges   = DB::table('loan_repayments')
+        $bankCharges = DB::table('loan_repayments')
             ->whereBetween('payment_date', [$from, $to])
             ->sum('nupay_fee');
 
         $netRevenue = $totalCollected - $creditLossExpense - $bankCharges;
 
         // ── Outstanding exposure ───────────────────────────────────────────────
-        $totalOutstanding  = DB::table('repayment_schedules as rs')
+        $totalOutstanding = DB::table('repayment_schedules as rs')
             ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
             ->whereIn('rs.status', ['pending', 'payment_failed'])
             ->sum('rs.emi_amount');
@@ -412,9 +412,9 @@ class AdminController extends Controller
             ->orderByDesc('days_past_due')
             ->get();
 
-        $summary = $buckets->groupBy('dpd_bucket')->map(fn($g) => [
-            'count'   => $g->count(),
-            'total'   => $g->sum('arrears_amount'),
+        $summary = $buckets->groupBy('dpd_bucket')->map(fn ($g) => [
+            'count' => $g->count(),
+            'total' => $g->sum('arrears_amount'),
             'balance' => $g->sum('remaining_balance'),
         ]);
 
@@ -428,7 +428,7 @@ class AdminController extends Controller
     public function collections(Request $request)
     {
         $from = $request->from_date ?? now()->startOfMonth()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         $collections = DB::table('loan_repayments as lr')
             ->join('loans as l', 'l.id', '=', 'lr.loan_id')
@@ -469,7 +469,7 @@ class AdminController extends Controller
     public function disbursements(Request $request)
     {
         $from = $request->from_date ?? now()->startOfMonth()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         $disbursements = DB::table('loan_disbursements as ld')
             ->join('loans as l', 'l.id', '=', 'ld.loan_id')
@@ -501,32 +501,27 @@ class AdminController extends Controller
     // GL Reconciliation
     // ──────────────────────────────────────────────────────────────────────────
 
-    public function glReconciliation(Request $request)
+    public function glReconciliation(Request $request, \App\Services\GlReconciliationService $recon)
     {
         $from = $request->from_date ?? now()->startOfMonth()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
-        $batches = DB::table('glbatches as gb')
-            ->join('glentries as ge', 'gb.id', '=', 'ge.batch_id')
-            ->whereBetween('gb.posted_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->select(
-                'gb.id', 'gb.reference', 'gb.source_type', 'gb.posted_at',
-                DB::raw('SUM(ge.debit)  as total_debit'),
-                DB::raw('SUM(ge.credit) as total_credit'),
-                DB::raw('ABS(SUM(ge.debit) - SUM(ge.credit)) as variance')
-            )
-            ->groupBy('gb.id', 'gb.reference', 'gb.source_type', 'gb.posted_at')
-            ->having('variance', '>', 0.01)  // show unbalanced batches only (for reconciliation)
-            ->orderByDesc('gb.posted_at')
-            ->get();
+        // Same 3 checks keystone:reconcile-gl runs — previously this page
+        // only showed the batch-balance check and silently omitted the
+        // other two.
+        $batches = $recon->unbalancedBatches($from, $to);
+        $loanReceivable = $recon->loanReceivableCheck();
+        $deferredInterest = $recon->deferredInterestCheck();
 
         $summary = DB::table('glbatches as gb')
             ->join('glentries as ge', 'gb.id', '=', 'ge.batch_id')
-            ->whereBetween('gb.posted_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween('gb.posted_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->select(DB::raw('SUM(ge.debit) as total_debit, SUM(ge.credit) as total_credit'))
             ->first();
 
-        return view('admin.reports.gl_reconciliation', compact('batches', 'summary', 'from', 'to'));
+        return view('admin.reports.gl_reconciliation', compact(
+            'batches', 'summary', 'from', 'to', 'loanReceivable', 'deferredInterest'
+        ));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -536,7 +531,7 @@ class AdminController extends Controller
     public function reversalAudit(Request $request)
     {
         $from = $request->from_date ?? now()->startOfMonth()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         $reversals = DB::table('loan_repayments as lr')
             ->join('loans as l', 'l.id', '=', 'lr.loan_id')
@@ -578,8 +573,8 @@ class AdminController extends Controller
 
         $totals = [
             'total_outstanding' => $summary->sum('outstanding'),
-            'total_risky'       => $summary->sum('risky_exposure'),
-            'avg_default_rate'  => round($summary->avg('default_rate'), 2),
+            'total_risky' => $summary->sum('risky_exposure'),
+            'avg_default_rate' => round($summary->avg('default_rate'), 2),
         ];
 
         $orgTrend = DB::table('loan_applications as a')
@@ -655,7 +650,7 @@ class AdminController extends Controller
             ->select('l.id as loan_id', 'u.name as client', DB::raw('SUM(rs.emi_amount) as amount'), DB::raw('DATEDIFF(CURDATE(), MIN(rs.due_date)) as dpd'))
             ->groupBy('l.id', 'u.name')
             ->get()
-            ->map(fn($r) => (object)['type' => 'Stage 3 — 90+ DPD', 'severity' => 'critical', 'loan_id' => $r->loan_id, 'client' => $r->client, 'amount' => $r->amount, 'dpd' => $r->dpd, 'created_at' => now()]);
+            ->map(fn ($r) => (object) ['type' => 'Stage 3 — 90+ DPD', 'severity' => 'critical', 'loan_id' => $r->loan_id, 'client' => $r->client, 'amount' => $r->amount, 'dpd' => $r->dpd, 'created_at' => now()]);
 
         // Payments due tomorrow
         $dueTomorrow = DB::table('repayment_schedules as rs')
@@ -665,7 +660,7 @@ class AdminController extends Controller
             ->whereDate('rs.due_date', now()->addDay())
             ->select('l.id as loan_id', 'u.name as client', 'rs.emi_amount as amount', 'rs.due_date')
             ->get()
-            ->map(fn($r) => (object)['type' => 'Payment Due Tomorrow', 'severity' => 'warning', 'loan_id' => $r->loan_id, 'client' => $r->client, 'amount' => $r->amount, 'dpd' => 0, 'created_at' => now()]);
+            ->map(fn ($r) => (object) ['type' => 'Payment Due Tomorrow', 'severity' => 'warning', 'loan_id' => $r->loan_id, 'client' => $r->client, 'amount' => $r->amount, 'dpd' => 0, 'created_at' => now()]);
 
         $alerts = $stage3->merge($dueTomorrow)->sortByDesc('severity');
 
@@ -679,7 +674,7 @@ class AdminController extends Controller
     public function vat201(Request $request)
     {
         $from = $request->from_date ?? now()->startOfMonth()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         // Output VAT — on initiation fees + service fees (VAT-able supplies)
         $outputVatOnFees = DB::table('loan_fees as lf')
@@ -708,8 +703,8 @@ class AdminController extends Controller
             ->value('input_vat') ?? 0;
 
         $totalOutputVat = round(($outputVatOnFees->initiation_vat ?? 0) + ($outputVatOnFees->service_vat ?? 0), 2);
-        $totalInputVat  = $inputVatOnNupay;
-        $netVatPayable  = round($totalOutputVat - $totalInputVat, 2);
+        $totalInputVat = $inputVatOnNupay;
+        $netVatPayable = round($totalOutputVat - $totalInputVat, 2);
 
         return view('admin.reports.vat201', compact(
             'outputVatOnFees', 'interestIncome',
@@ -725,44 +720,44 @@ class AdminController extends Controller
     public function incomeStatement(Request $request)
     {
         $from = $request->from_date ?? now()->startOfYear()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         $data = [
             // Revenue
-            'interest_income'        => DB::table('repayment_schedules as rs')
+            'interest_income' => DB::table('repayment_schedules as rs')
                 ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
-                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from.' 00:00:00', $to.' 23:59:59'])
                 ->sum('rs.interest_amount'),
 
-            'fee_income_excl_vat'    => DB::table('repayment_schedules as rs')
+            'fee_income_excl_vat' => DB::table('repayment_schedules as rs')
                 ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
-                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from.' 00:00:00', $to.' 23:59:59'])
                 ->selectRaw('ROUND(SUM(rs.fee_amount) / 1.15, 2) as excl')->value('excl') ?? 0,
 
-            'penalty_income'         => DB::table('loan_repayments')
+            'penalty_income' => DB::table('loan_repayments')
                 ->where('transaction_type', 'manual')->whereBetween('payment_date', [$from, $to])
                 ->sum('fee_amount'),
 
             // Credit loss
-            'credit_loss_expense'    => DB::table('bad_debt_provisions')
+            'credit_loss_expense' => DB::table('bad_debt_provisions')
                 ->whereBetween('provision_date', [$from, $to])
                 ->sum('provision_movement'),
 
             // Operating expenses
-            'bank_charges'           => DB::table('loan_repayments')
+            'bank_charges' => DB::table('loan_repayments')
                 ->whereBetween('payment_date', [$from, $to])->sum('nupay_fee'),
 
             // Deferred income (not yet in P&L — balance sheet item)
-            'deferred_interest'      => Loan::where('status', 'disbursed')->sum('deferred_interest'),
-            'deferred_fees'          => Loan::where('status', 'disbursed')->sum('deferred_fees'),
+            'deferred_interest' => Loan::where('status', 'disbursed')->sum('deferred_interest'),
+            'deferred_fees' => Loan::where('status', 'disbursed')->sum('deferred_fees'),
 
             'from' => $from,
-            'to'   => $to,
+            'to' => $to,
         ];
 
-        $data['gross_income']     = $data['interest_income'] + $data['fee_income_excl_vat'] + $data['penalty_income'];
-        $data['total_expenses']   = $data['credit_loss_expense'] + $data['bank_charges'];
-        $data['net_profit']       = $data['gross_income'] - $data['total_expenses'];
+        $data['gross_income'] = $data['interest_income'] + $data['fee_income_excl_vat'] + $data['penalty_income'];
+        $data['total_expenses'] = $data['credit_loss_expense'] + $data['bank_charges'];
+        $data['net_profit'] = $data['gross_income'] - $data['total_expenses'];
 
         return view('admin.reports.income_statement', $data);
     }
@@ -780,19 +775,19 @@ class AdminController extends Controller
 
         $allowanceForCreditLoss = DB::table('bad_debt_provisions as p')
             ->join(DB::raw('(SELECT loan_id, MAX(provision_date) AS latest FROM bad_debt_provisions GROUP BY loan_id) latest'),
-                fn($j) => $j->on('p.loan_id', '=', 'latest.loan_id')->on('p.provision_date', '=', 'latest.latest'))
+                fn ($j) => $j->on('p.loan_id', '=', 'latest.loan_id')->on('p.provision_date', '=', 'latest.latest'))
             ->sum('p.provision_amount');
 
         $deferredInterest = Loan::where('status', 'disbursed')->sum('deferred_interest');
-        $deferredFees     = Loan::where('status', 'disbursed')->sum('deferred_fees');
+        $deferredFees = Loan::where('status', 'disbursed')->sum('deferred_fees');
 
         $cashAtBank = DB::table('gl_accounts as ga')
-            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
             ->where('coa.account_code', '1100')
             ->value('ga.current_balance') ?? 0;
 
         $vatOutput = DB::table('gl_accounts as ga')
-            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
             ->where('coa.account_code', '2200')
             ->value('ga.current_balance') ?? 0;
 
@@ -810,7 +805,7 @@ class AdminController extends Controller
     public function writeOffRegister(Request $request)
     {
         $from = $request->from_date ?? now()->startOfYear()->toDateString();
-        $to   = $request->to_date   ?? now()->toDateString();
+        $to = $request->to_date ?? now()->toDateString();
 
         $writeOffs = Loan::with(['user', 'user.customer'])
             ->where('status', 'written_off')
@@ -844,11 +839,11 @@ class AdminController extends Controller
                 GROUP BY loan_id
             ) rs'), 'rs.loan_id', '=', 'l.loan_application_id')
             ->leftJoin(DB::raw('(
-                SELECT loan_id, SUM(provision_amount) as latest_provision
+                SELECT p.loan_id, SUM(p.provision_amount) as latest_provision
                 FROM bad_debt_provisions p
                 INNER JOIN (SELECT loan_id, MAX(provision_date) as md FROM bad_debt_provisions GROUP BY loan_id) lp
                 ON p.loan_id = lp.loan_id AND p.provision_date = lp.md
-                GROUP BY loan_id
+                GROUP BY p.loan_id
             ) prov'), 'prov.loan_id', '=', 'l.id')
             ->whereNotNull('rs.dpd')
             ->where('rs.dpd', '>', 0)
@@ -873,10 +868,10 @@ class AdminController extends Controller
                 GROUP BY loan_id
             ) rs'), 'rs.loan_id', '=', 'l.loan_application_id')
             ->leftJoin(DB::raw('(
-                SELECT loan_id, SUM(provision_amount) as prov
+                SELECT p.loan_id, SUM(p.provision_amount) as prov
                 FROM bad_debt_provisions p
                 INNER JOIN (SELECT loan_id, MAX(provision_date) as md FROM bad_debt_provisions GROUP BY loan_id) lp
-                ON p.loan_id = lp.loan_id AND p.provision_date = lp.md GROUP BY loan_id
+                ON p.loan_id = lp.loan_id AND p.provision_date = lp.md GROUP BY p.loan_id
             ) prov'), 'prov.loan_id', '=', 'l.id')
             ->select(
                 DB::raw('CASE WHEN rs.dpd >= 90 THEN "Stage 3 (90+ DPD)" WHEN rs.dpd >= 30 THEN "Stage 2 (30-89 DPD)" ELSE "Stage 1 (1-29 DPD)" END as stage'),
@@ -902,7 +897,7 @@ class AdminController extends Controller
             ->latest('created_at');
 
         if ($request->filled('model')) {
-            $query->where('auditable_type', 'like', '%' . $request->model . '%');
+            $query->where('auditable_type', 'like', '%'.$request->model.'%');
         }
         if ($request->filled('event')) {
             $query->where('event', $request->event);
@@ -911,19 +906,10 @@ class AdminController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $logs  = $query->paginate(50);
+        $logs = $query->paginate(50);
         $users = \App\Models\User::orderBy('name')->get(['id', 'name']);
 
         return view('admin.reports.audit_log', compact('logs', 'users'));
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Resource stubs
-    // ──────────────────────────────────────────────────────────────────────────
-
-    public function create(): void {}
-    public function store(StoreAdminRequest $request): void {}
-    public function edit(Admin $admin): void {}
-    public function update(UpdateAdminRequest $request, Admin $admin): void {}
-    public function destroy(Admin $admin): void {}
 }

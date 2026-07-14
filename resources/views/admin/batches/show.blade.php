@@ -31,7 +31,6 @@
   <div class="flex justify-end mb-4">
     <form method="POST" action="{{ route('nu-pay.import.post', $batch->import_ref) }}">
       @csrf
-      <input type="hidden" name="user_id" value="{{ auth()->id() }}">
       <button type="submit" class="kc-btn-primary"
         onclick="return confirm('Post all staged transactions to GL?')">
         Post to GL ({{ $transactions->count() }} transactions)

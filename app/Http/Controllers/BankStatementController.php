@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\import_batch;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class BankStatementController extends Controller
 {
@@ -30,34 +29,37 @@ class BankStatementController extends Controller
     public function handleUpload(Request $request)
     {
         $request->validate([
-            'file'     => 'required|file|mimes:csv,txt|max:10240',
-            'bank_name'=> 'required|string|max:100',
-            'period'   => 'required|string|max:7', // YYYY-MM
+            // See BusinessBankStatementController::handleUpload() — `mimes`
+            // content-sniffs and rejects legitimate bank CSV exports (BOM,
+            // odd encodings); `extensions` trusts the file's extension.
+            'file' => 'required|file|extensions:csv,txt|max:10240',
+            'bank_name' => 'required|string|max:100',
+            'period' => 'required|string|max:7', // YYYY-MM
         ]);
 
-        $file    = $request->file('file');
+        $file = $request->file('file');
         $checksum = md5_file($file->getPathname());
 
         if (import_batch::where('checksum', $checksum)->exists()) {
             return back()->with('error', 'This bank statement file has already been imported.');
         }
 
-        $importRef  = 'BS-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(4));
-        $storedPath = "bank_statements/{$importRef}/" . $file->getClientOriginalName();
+        $importRef = 'BS-'.now()->format('Ymd-His').'-'.strtoupper(Str::random(4));
+        $storedPath = "bank_statements/{$importRef}/".basename($file->getClientOriginalName());
         Storage::disk('local')->put($storedPath, file_get_contents($file->getPathname()));
 
         $batch = import_batch::create([
-            'source'            => 'bank_statement',
+            'source' => 'bank_statement',
             'original_filename' => $file->getClientOriginalName(),
-            'stored_path'       => $storedPath,
-            'checksum'          => $checksum,
-            'status'            => 'UPLOADED',
-            'import_ref'        => $importRef,
-            'processed_by'      => Auth::id(),
-            'row_count'         => 0,
-            'meta'              => json_encode([
+            'stored_path' => $storedPath,
+            'checksum' => $checksum,
+            'status' => 'UPLOADED',
+            'import_ref' => $importRef,
+            'processed_by' => Auth::id(),
+            'row_count' => 0,
+            'meta' => json_encode([
                 'bank_name' => $request->bank_name,
-                'period'    => $request->period,
+                'period' => $request->period,
             ]),
         ]);
 
@@ -103,7 +105,7 @@ class BankStatementController extends Controller
             ->where('credit_amount', '>', 0)
             ->get();
 
-        $matched   = 0;
+        $matched = 0;
         $exception = 0;
 
         foreach ($lines as $line) {
@@ -121,9 +123,9 @@ class BankStatementController extends Controller
                 DB::table('bank_statement_lines')
                     ->where('id', $line->id)
                     ->update([
-                        'match_status'           => 'matched',
+                        'match_status' => 'matched',
                         'matched_nupay_staging_id' => $nupayMatch->id,
-                        'match_note'             => "Auto-matched: amount R{$line->credit_amount} on {$nupayMatch->action_date}",
+                        'match_note' => "Auto-matched: amount R{$line->credit_amount} on {$nupayMatch->action_date}",
                     ]);
                 $matched++;
             } else {
@@ -131,7 +133,7 @@ class BankStatementController extends Controller
                     ->where('id', $line->id)
                     ->update([
                         'match_status' => 'exception',
-                        'match_note'   => "No Nu-Pay match found for R{$line->credit_amount} on {$line->transaction_date}",
+                        'match_note' => "No Nu-Pay match found for R{$line->credit_amount} on {$line->transaction_date}",
                     ]);
                 $exception++;
             }
@@ -146,50 +148,55 @@ class BankStatementController extends Controller
 
     protected function parseBankCsv(string $filePath, int $batchId, string $importRef): int
     {
-        $handle  = fopen($filePath, 'r');
+        $handle = fopen($filePath, 'r');
         $headers = null;
-        $count   = 0;
-        $rows    = [];
+        $count = 0;
+        $rows = [];
 
         while (($line = fgetcsv($handle, 0, ',', '"')) !== false) {
-            if (empty(array_filter($line))) continue;
+            if (empty(array_filter($line))) {
+                continue;
+            }
 
             if ($headers === null) {
-                $headers = array_map(fn($h) => strtolower(trim($h)), $line);
+                $headers = array_map(fn ($h) => strtolower(trim($h)), $line);
+
                 continue;
             }
 
             $row = array_combine($headers, array_pad($line, count($headers), null));
 
             // Flexible column name matching for different SA bank formats
-            $date    = $this->findCol($row, ['date', 'transaction date', 'value date']);
-            $desc    = $this->findCol($row, ['description', 'narrative', 'details', 'reference']);
-            $ref     = $this->findCol($row, ['reference', 'ref', 'cheque no']);
-            $debit   = (float) preg_replace('/[^0-9.-]/', '', $this->findCol($row, ['debit', 'debit amount', 'payment']) ?? '0');
-            $credit  = (float) preg_replace('/[^0-9.-]/', '', $this->findCol($row, ['credit', 'credit amount', 'deposit', 'receipts']) ?? '0');
+            $date = $this->findCol($row, ['date', 'transaction date', 'value date']);
+            $desc = $this->findCol($row, ['description', 'narrative', 'details', 'reference']);
+            $ref = $this->findCol($row, ['reference', 'ref', 'cheque no']);
+            $debit = (float) preg_replace('/[^0-9.-]/', '', $this->findCol($row, ['debit', 'debit amount', 'payment']) ?? '0');
+            $credit = (float) preg_replace('/[^0-9.-]/', '', $this->findCol($row, ['credit', 'credit amount', 'deposit', 'receipts']) ?? '0');
             $balance = (float) preg_replace('/[^0-9.-]/', '', $this->findCol($row, ['balance', 'running balance', 'closing balance']) ?? '0');
 
-            if (!$date) continue;
+            if (! $date) {
+                continue;
+            }
 
             $rows[] = [
-                'import_batch_id'  => $batchId,
-                'import_ref'       => $importRef,
+                'import_batch_id' => $batchId,
+                'import_ref' => $importRef,
                 'transaction_date' => Carbon::parse($date)->toDateString(),
-                'description'      => substr($desc ?? '', 0, 500),
-                'reference'        => substr($ref ?? '', 0, 100),
-                'debit_amount'     => $debit,
-                'credit_amount'    => $credit,
-                'running_balance'  => $balance ?: null,
-                'match_status'     => 'unmatched',
-                'created_at'       => now(),
-                'updated_at'       => now(),
+                'description' => substr($desc ?? '', 0, 500),
+                'reference' => substr($ref ?? '', 0, 100),
+                'debit_amount' => $debit,
+                'credit_amount' => $credit,
+                'running_balance' => $balance ?: null,
+                'match_status' => 'unmatched',
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
             $count++;
         }
 
         fclose($handle);
 
-        if (!empty($rows)) {
+        if (! empty($rows)) {
             foreach (array_chunk($rows, 100) as $chunk) {
                 DB::table('bank_statement_lines')->insert($chunk);
             }
@@ -205,6 +212,7 @@ class BankStatementController extends Controller
                 return $row[$c];
             }
         }
+
         return null;
     }
 }

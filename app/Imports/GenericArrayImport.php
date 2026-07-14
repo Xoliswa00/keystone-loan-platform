@@ -5,16 +5,19 @@ namespace App\Imports;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 
 /**
  * Generic Excel/CSV importer that returns each row as an associative array
  * keyed by the heading row. Used by NupayImportService.
  *
  * WithHeadingRow: uses the first row as array keys (normalised to snake_case)
- * WithCalculatedFormulas: resolves any Excel formulas before reading
+ *
+ * Deliberately does NOT implement WithCalculatedFormulas — evaluating
+ * formulas from an untrusted uploaded file is a formula-injection risk
+ * (and a known source of PhpSpreadsheet CVEs). This importer reads raw
+ * cell values only; expected input is plain financial data, not formulas.
  */
-class GenericArrayImport implements ToCollection, WithHeadingRow, WithCalculatedFormulas
+class GenericArrayImport implements ToCollection, WithHeadingRow
 {
     public function collection(Collection $rows): Collection
     {

@@ -19,9 +19,9 @@ return new class extends Migration
             $table->string('password');
             $table->text('address');
             $table->text('phone');
-            $table->enum('role', ['admin', 'borrower','master'])->default('borrower');
+            $table->enum('role', ['admin', 'borrower', 'master'])->default('borrower');
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->text('ID_Number');//TODO:fix id unique feature
+            $table->text('ID_Number'); // TODO:fix id unique feature
             $table->enum('employment_status', ['Full-time', 'Part-time', 'Self-employed', 'Unemployed']);
             $table->enum('salary_frequency', ['Weekly', 'Bi-weekly', 'Monthly'])->nullable();
             $table->decimal('net_salary', 10, 2);
@@ -29,8 +29,6 @@ return new class extends Migration
             $table->integer('credit_score')->nullable();
             $table->text('ID_copy');
 
-            
-            
             $table->rememberToken();
             $table->timestamps();
         });

@@ -13,6 +13,61 @@
     @if($application->product)<span class="kc-badge kc-badge-navy">{{ $application->product->name }}</span>@endif
   </div>
 
+  <div class="flex justify-end mb-3">
+    <form method="POST" action="{{ route('admin.applications.reassess', $application) }}">
+      @csrf
+      <button type="submit" class="kc-btn-ghost text-xs">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Re-run CLO Assessment
+      </button>
+    </form>
+  </div>
+
+  @if($cloDecision)
+    @php
+      $cloBadgeMap = ['APPROVE'=>'kc-badge-green','REJECT'=>'kc-badge-red','ESCALATE'=>'kc-badge-red','REVIEW'=>'kc-badge-gold'];
+      $cloBadge = $cloBadgeMap[$cloDecision->decision] ?? 'kc-badge-silver';
+    @endphp
+    <div class="kc-card mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h5 class="font-semibold text-kc-navy">CLO Decision (advisory)</h5>
+        <span class="kc-badge {{ $cloBadge }}">{{ $cloDecision->decision }}</span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+        <div class="kc-stat-card text-center">
+          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Risk Score</p>
+          <p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $cloDecision->risk_score }}/100</p>
+        </div>
+        <div class="kc-stat-card text-center">
+          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Compliance</p>
+          <p class="font-display text-xl font-bold {{ $cloDecision->compliance_status === 'PASS' ? 'text-emerald-600' : 'text-red-600' }} mt-1">
+            {{ $cloDecision->compliance_status }}
+          </p>
+        </div>
+      </div>
+      <p class="text-sm text-kc-charcoal/70 mb-2">{{ $cloDecision->reason }}</p>
+      @if(!empty($cloDecision->fraud_flags))
+        <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider mb-1">Flags</p>
+        <div class="flex flex-wrap gap-1.5 mb-2">
+          @foreach($cloDecision->fraud_flags as $flag)
+            <span class="kc-badge kc-badge-silver text-xs">{{ $flag }}</span>
+          @endforeach
+        </div>
+      @endif
+      @if(!empty($cloDecision->required_actions))
+        <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider mb-1">Required Actions</p>
+        <ul class="text-sm list-disc list-inside text-kc-charcoal/70">
+          @foreach($cloDecision->required_actions as $action)
+            <li>{{ $action }}</li>
+          @endforeach
+        </ul>
+      @endif
+      <p class="text-xs text-kc-charcoal/40 mt-3">Evaluated {{ $cloDecision->evaluated_at->format('d M Y H:i') }} · advisory only, does not block manual approval/rejection</p>
+    </div>
+  @endif
+
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-5">
 
@@ -50,8 +105,8 @@
                 ['Customer',    $application->user?->customer?->customer_code ?? '—'],
                 ['Phone',       $application->user?->phone],
                 ['Email',       $application->user?->email],
-                ['Employment',  ucfirst($application->user?->employment_status ?? '—')],
-                ['Net Salary',  'R ' . number_format($application->user?->net_salary ?? 0, 2)],
+                ['Employment',  $application->user?->customerProfile?->employment_type ? ucfirst(str_replace('_', ' ', $application->user->customerProfile->employment_type)) : '—'],
+                ['Net Income',  'R ' . number_format($application->user?->customerProfile?->net_monthly_income ?? 0, 2)],
                 ['Payday',      $application->user?->salary_payment_day ? $application->user->salary_payment_day . 'th' : '—'],
               ] as [$k,$v])
               <tr class="border-b border-kc-silver-light/60">
@@ -179,7 +234,7 @@
         @php
           $notes = \Illuminate\Support\Facades\DB::table('admin_notes')
             ->where('loan_application_id', $application->id)
-            ->join('users','users.id','=','admin_notes.admin_id')
+            ->join('users','users.id','=','admin_notes.user_id')
             ->select('admin_notes.*','users.name as admin_name')
             ->orderByDesc('admin_notes.created_at')->get();
         @endphp
@@ -211,10 +266,16 @@
       <div class="kc-card">
         <h5 class="font-semibold text-kc-navy mb-3">Decision</h5>
 
-        <form method="POST" action="{{ route('admin.agreements.pre-agreement', $application) }}" class="mb-3">
-          @csrf
-          <button type="submit" class="kc-btn-ghost w-full justify-center text-xs">Pre-Agreement (NCA s.92)</button>
-        </form>
+        @if($application->nca_agreement_sent_at)
+          <a href="{{ route('agreements.index', $application) }}" class="kc-btn-ghost w-full justify-center text-xs mb-3">
+            View Pre-Agreement (sent {{ \Carbon\Carbon::parse($application->nca_agreement_sent_at)->format('d M Y') }})
+          </a>
+        @else
+          <form method="POST" action="{{ route('admin.agreements.pre-agreement', $application) }}" class="mb-3">
+            @csrf
+            <button type="submit" class="kc-btn-ghost w-full justify-center text-xs">Pre-Agreement (NCA s.92)</button>
+          </form>
+        @endif
 
         <form method="POST" action="{{ route('loans.approve', $application->id) }}" class="mb-3">
           @csrf
@@ -277,6 +338,13 @@
               <div class="w-3 h-3 rounded-full border border-kc-silver flex-shrink-0"></div>
             @endif
             <span class="text-xs text-kc-charcoal/70">{{ $kd->getTypeLabel() }}</span>
+            @if($kd->content_check_status === 'plausible')
+              <span title="{{ $kd->content_check_notes }}" class="kc-badge kc-badge-green text-[9px]">auto-check ✓</span>
+            @elseif($kd->content_check_status === 'inconclusive')
+              <span title="{{ $kd->content_check_notes }}" class="kc-badge kc-badge-gold text-[9px]">auto-check ⚠</span>
+            @elseif($kd->content_check_status === 'pending')
+              <span class="kc-badge kc-badge-silver text-[9px]">checking…</span>
+            @endif
           </div>
           <div class="flex items-center gap-1.5">
             <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($kd->file_path) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>

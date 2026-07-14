@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\gl_accounts;
-use Illuminate\Auth\Access\Response;
+use App\Models\User;
 
 class GlAccountsPolicy
 {

@@ -137,7 +137,7 @@
               <select name="gl_account_id" class="kc-select text-sm">
                 <optgroup label="Quick Pick">
                   @foreach($quickPicks as $qp)
-                    @php $glId = DB::table('gl_accounts as ga')->join('chart_of_accounts as coa','ga.chart_id','=','coa.id')->where('coa.account_code',$qp['code'])->value('ga.id'); @endphp
+                    @php $glId = DB::table('gl_accounts as ga')->join('chart_of_accounts as coa','ga.chart_of_account_id','=','coa.id')->where('coa.account_code',$qp['code'])->value('ga.id'); @endphp
                     @if($glId)
                     <option value="{{ $glId }}">{{ $qp['label'] }} ({{ $qp['code'] }})</option>
                     @endif
@@ -213,7 +213,7 @@
                       <select name="gl_account_id" class="kc-select text-xs">
                         <optgroup label="Quick">
                           @foreach($quickPicks as $qp)
-                            @php $glId = DB::table('gl_accounts as ga')->join('chart_of_accounts as coa','ga.chart_id','=','coa.id')->where('coa.account_code',$qp['code'])->value('ga.id'); @endphp
+                            @php $glId = DB::table('gl_accounts as ga')->join('chart_of_accounts as coa','ga.chart_of_account_id','=','coa.id')->where('coa.account_code',$qp['code'])->value('ga.id'); @endphp
                             @if($glId)<option value="{{ $glId }}">{{ $qp['label'] }}</option>@endif
                           @endforeach
                         </optgroup>
@@ -254,7 +254,7 @@
     <div class="kc-table-scroll">
       <table class="kc-table">
         <thead><tr>
-          <th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Category</th><th>GL Ref</th>
+          <th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Category</th><th>GL Ref</th><th>Action</th>
         </tr></thead>
         <tbody>
           @foreach($matched as $line)
@@ -273,6 +273,16 @@
             <td data-label="Credit" class="text-emerald-600">{{ $line->credit_amount > 0 ? 'R '.number_format($line->credit_amount,2) : '' }}</td>
             <td data-label="Category"><span class="kc-badge {{ $catClass }} text-[10px]">{{ ucfirst(str_replace('_',' ',$line->match_category ?? 'matched')) }}</span></td>
             <td data-label="GL Ref" class="font-mono text-[10px] text-kc-charcoal/40">{{ $line->allocation_gl_batch_ref ?? $line->match_note ? Str::limit($line->match_note,30) : '—' }}</td>
+            <td data-label="Action">
+              @if(!$status['all_lines_matched'] || $batch->status !== 'RECONCILED')
+              <form method="POST" action="{{ route('admin.finance.recon.unallocate', $batch->id) }}"
+                    onsubmit="return confirm('Undo this allocation? This will reverse any posted GL entry and return the line to unmatched.')">
+                @csrf
+                <input type="hidden" name="line_id" value="{{ $line->id }}">
+                <button type="submit" class="kc-btn-ghost text-[10px] py-1 px-2">Undo</button>
+              </form>
+              @endif
+            </td>
           </tr>
           @endforeach
         </tbody>

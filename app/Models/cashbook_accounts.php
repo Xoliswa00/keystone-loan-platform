@@ -4,12 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\GLAccount;
 
 class cashbook_accounts extends Model
 {
     use HasFactory;
-        protected $fillable = [
+
+    protected $fillable = [
         'account_code',
         'account_name',
         'bank_name',
@@ -17,7 +17,7 @@ class cashbook_accounts extends Model
         'branch_code',
         'currency',
         'gl_account_id',
-        'is_active'
+        'is_active',
     ];
 
     public function glAccount()
@@ -34,5 +34,4 @@ class cashbook_accounts extends Model
     {
         return $this->hasMany(cashbook_reconcilation::class);
     }
-
 }

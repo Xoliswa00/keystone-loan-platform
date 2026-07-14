@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Providers\RouteServiceProvider;
 use App\Models\User;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +30,7 @@ class AuthenticatedSessionController extends Controller
 
         // ── 2FA check for admin/staff roles ──────────────────────────────────
         $staffRoles = ['admin', 'finance', 'it_admin', 'loan_officer'];
-        $role       = $user->system_role ?? ($user->rule_id === 2 ? 'admin' : 'client');
+        $role = $user->system_role ?? ($user->rule_id === 2 ? 'admin' : 'client');
 
         if (in_array($role, $staffRoles) && $user->two_factor_enabled) {
             // Store user ID, log out, redirect to OTP page

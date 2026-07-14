@@ -1,6 +1,6 @@
 <nav class="kc-sidebar-nav">
     @auth
-        @php $isAdmin = Auth::user()->rule_id === 2; @endphp
+        @php $isAdmin = Auth::user()->hasRole('loan_officer', 'finance', 'it_admin', 'viewer'); @endphp
 
         @if($isAdmin)
             {{-- ── ADMIN NAVIGATION ── --}}
@@ -65,6 +65,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
                 </svg>
                 Funding Facilities
+            </a>
+
+            <a href="{{ route('loan-products.index') }}"
+                class="kc-nav-item {{ request()->routeIs('loan-products.*') ? 'active' : '' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4m16 0l-4-4m4 4l-4 4M4 12l4-4m-4 4l4 4"/>
+                </svg>
+                Loan Products
             </a>
 
             <a href="{{ route('admin.finance.business-bank.upload') }}"
@@ -149,13 +157,33 @@
             <p class="kc-nav-section">IT & System</p>
 
             <a href="{{ route('admin.settings.company') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                class="kc-nav-item {{ request()->routeIs('admin.settings.company*') ? 'active' : '' }}">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
                 Company Settings
             </a>
+
+            @if(Auth::user()->hasRole('admin', 'finance', 'it_admin'))
+            <a href="{{ route('admin.settings.lending') }}"
+                class="kc-nav-item {{ request()->routeIs('admin.settings.lending*') ? 'active' : '' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                Lending & Risk Settings
+            </a>
+            @endif
+
+            @if(Auth::user()->hasRole('it_admin'))
+            <a href="{{ route('admin.staff.index') }}"
+                class="kc-nav-item {{ request()->routeIs('admin.staff.*') ? 'active' : '' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-8a4 4 0 11-8 0 4 4 0 018 0zm6 3a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                Staff Management
+            </a>
+            @endif
 
             <a href="{{ route('admin.system.logs') }}"
                 class="kc-nav-item {{ request()->routeIs('admin.system.*') ? 'active' : '' }}">

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('apvendors', function (Blueprint $table) {
             $table->id();
-             $table->string('vendor_code')->unique();
+            $table->string('vendor_code')->unique();
             $table->string('vendor_name');
             $table->string('contact_person')->nullable();
             $table->string('email')->nullable();
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->decimal('outstanding_balance', 15, 2)->default(0.00);
             $table->string('status')->default('active');
-            
+
             $table->timestamps();
         });
     }

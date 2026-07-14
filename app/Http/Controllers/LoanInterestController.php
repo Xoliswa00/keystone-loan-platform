@@ -13,6 +13,7 @@ class LoanInterestController extends Controller
     public function index()
     {
         $loanInterests = LoanInterest::all();
+
         return view('loan_interests.index', compact('loanInterests'));
     }
 
@@ -83,6 +84,4 @@ class LoanInterestController extends Controller
 
         return redirect()->route('loan_interests.index')->with('success', 'Loan interest record deleted successfully.');
     }
- 
-
 }

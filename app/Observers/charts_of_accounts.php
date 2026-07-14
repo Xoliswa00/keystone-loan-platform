@@ -6,7 +6,6 @@ use App\Models\branches;
 use App\Models\chart_of_accounts;
 use App\Models\gl_accounts;
 
-
 class charts_of_accounts
 {
     /**
@@ -16,11 +15,11 @@ class charts_of_accounts
     {
         //
 
-  $branches = branches::all();
+        $branches = branches::all();
 
         foreach ($branches as $branch) {
             $glCode = sprintf(
-                "%03d-%s-%s",
+                '%03d-%s-%s',
                 $chart_of_accounts->account_code,
                 $branch->branch_code,
                 $branch->location ?? '000'
@@ -33,7 +32,7 @@ class charts_of_accounts
                 'location_code' => $branch->location ?? '000',
             ]);
         }
-    
+
     }
 
     /**

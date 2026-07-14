@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('admin_notes', function (Blueprint $table) {
             $table->id();
-                $table->foreignId('loan_application_id')->constrained()->onDelete('cascade');
-    $table->foreignId('user_id')->constrained()->onDelete('cascade'); // admin user who added the note
-    $table->text('note');
+            $table->foreignId('loan_application_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // admin user who added the note
+            $table->text('note');
             $table->timestamps();
         });
     }

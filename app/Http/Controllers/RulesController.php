@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Rules;
 use App\Http\Requests\StoreRulesRequest;
 use App\Http\Requests\UpdateRulesRequest;
+use App\Models\Rules;
 
 class RulesController extends Controller
 {

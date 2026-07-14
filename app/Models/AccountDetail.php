@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class AccountDetail extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'user_id',
         'account_holder_name',

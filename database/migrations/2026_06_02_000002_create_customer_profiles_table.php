@@ -27,7 +27,7 @@ return new class extends Migration
             // ── Monthly Expenses (5 slider categories) ──
             $table->decimal('expense_housing', 12, 2)->default(0.00);      // rent / bond
             $table->decimal('expense_transport', 12, 2)->default(0.00);    // car instalment / taxi / fuel
-            $table->decimal('expense_existing_debt', 12, 2)->default(0.00);// other active loan repayments
+            $table->decimal('expense_existing_debt', 12, 2)->default(0.00); // other active loan repayments
             $table->decimal('expense_insurance', 12, 2)->default(0.00);    // car / life / home / medical aid
             $table->decimal('expense_living', 12, 2)->default(0.00);       // food, utilities, phone
 

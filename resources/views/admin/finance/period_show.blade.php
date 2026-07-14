@@ -111,7 +111,13 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">Bank Reconciliation</p>
-                <p class="text-xs text-kc-charcoal/50">All bank lines matched and GL balance agrees with statement</p>
+                <p class="text-xs text-kc-charcoal/50">
+                  @if($period->bank_recon_no_activity)
+                    Confirmed no bank activity for this period
+                  @else
+                    All bank lines matched and GL balance agrees with statement
+                  @endif
+                </p>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -120,6 +126,11 @@
               <form method="POST" action="{{ route('admin.periods.bank-recon', $period) }}">
                 @csrf
                 <button type="submit" class="kc-btn-ghost text-xs py-1 px-3">Mark Done</button>
+              </form>
+              <form method="POST" action="{{ route('admin.periods.bank-recon-no-activity', $period) }}"
+                onsubmit="return confirm('Confirm there was genuinely no bank activity for {{ $period->displayLabel() }}? The system will check for repayments, disbursements, and uploaded bank statements before accepting this.')">
+                @csrf
+                <button type="submit" class="kc-btn-ghost text-xs py-1 px-3">No Activity</button>
               </form>
               @endif
             </div>

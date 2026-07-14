@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LoanFee;
 use App\Http\Requests\StoreLoanFeeRequest;
 use App\Http\Requests\UpdateLoanFeeRequest;
+use App\Models\LoanFee;
 
 class LoanFeeController extends Controller
 {

@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LoanDisbursement;
 use App\Models\Loan;
+use App\Models\LoanDisbursement;
 use App\Services\DisbursementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -46,7 +45,7 @@ class DisbursementController extends Controller
                     'Funds Disbursed',
                     [
                         'Your loan funds have been disbursed to your registered bank account.',
-                        'Amount: R' . number_format($disbursement->disbursed_amount, 2),
+                        'Amount: R'.number_format($disbursement->disbursed_amount, 2),
                         'Please ensure sufficient funds are available on your repayment date.',
                     ]
                 );
@@ -57,8 +56,9 @@ class DisbursementController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Disbursement approve failed', ['id' => $id, 'error' => $e->getMessage()]);
+
             return redirect()->back()
-                ->with('error', 'Failed to approve disbursement: ' . $e->getMessage());
+                ->with('error', 'Failed to approve disbursement: '.$e->getMessage());
         }
     }
 
@@ -75,9 +75,9 @@ class DisbursementController extends Controller
         }
 
         $disbursement->update([
-            'status'           => 'rejected',
-            'rejected_by'      => Auth::id(),
-            'rejected_at'      => now(),
+            'status' => 'rejected',
+            'rejected_by' => Auth::id(),
+            'rejected_at' => now(),
             'rejection_reason' => $request->input('rejection_reason', 'No reason provided'),
         ]);
 
@@ -90,7 +90,7 @@ class DisbursementController extends Controller
                 'Disbursement Rejected',
                 [
                     "Your disbursement request (#{$disbursement->id}) has been rejected.",
-                    'Reason: ' . $disbursement->rejection_reason,
+                    'Reason: '.$disbursement->rejection_reason,
                     'Please contact support for assistance.',
                 ]
             );
@@ -114,9 +114,10 @@ class DisbursementController extends Controller
         }
 
         $disbursement->update([
-            'status'      => 'released',
+            'status' => 'released',
             'released_by' => Auth::id(),
             'released_at' => now(),
+            'disbursement_method' => 'bank_transfer',
         ]);
 
         $loanApplication = $disbursement->loan?->loanApplication;
@@ -127,7 +128,7 @@ class DisbursementController extends Controller
                 'Funds Released',
                 [
                     "Your loan funds (#{$disbursement->id}) have been released.",
-                    'Amount: R' . number_format($disbursement->disbursed_amount, 2),
+                    'Amount: R'.number_format($disbursement->disbursed_amount, 2),
                 ]
             );
         }
@@ -148,7 +149,7 @@ class DisbursementController extends Controller
         }
 
         $succeeded = 0;
-        $failed    = [];
+        $failed = [];
 
         foreach ($pending as $disbursement) {
             try {
@@ -159,20 +160,20 @@ class DisbursementController extends Controller
                 if ($loanApp) {
                     $this->notify($loanApp, 'Funds Disbursed', [
                         'Your loan funds have been disbursed.',
-                        'Amount: R' . number_format($disbursement->disbursed_amount, 2),
+                        'Amount: R'.number_format($disbursement->disbursed_amount, 2),
                     ]);
                 }
             } catch (\Exception $e) {
                 Log::error("approveAll failed for disbursement #{$disbursement->id}", [
                     'error' => $e->getMessage(),
                 ]);
-                $failed[] = "#{$disbursement->id}: " . $e->getMessage();
+                $failed[] = "#{$disbursement->id}: ".$e->getMessage();
             }
         }
 
         $msg = "{$succeeded} disbursement(s) approved and posted.";
-        if (!empty($failed)) {
-            $msg .= ' Failures: ' . implode('; ', $failed);
+        if (! empty($failed)) {
+            $msg .= ' Failures: '.implode('; ', $failed);
         }
 
         return back()->with($failed ? 'error' : 'success', $msg);
@@ -186,7 +187,7 @@ class DisbursementController extends Controller
             Mail::to($application->user->email)
                 ->queue(new \App\Mail\LoanNotificationMail($subject, $lines, $application));
         } catch (\Exception $e) {
-            Log::warning('Disbursement notification failed: ' . $e->getMessage());
+            Log::warning('Disbursement notification failed: '.$e->getMessage());
         }
     }
 }

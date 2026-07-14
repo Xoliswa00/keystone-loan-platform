@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('glmappings', function (Blueprint $table) {
             $table->id();
-        $table->string('key')->unique(); // e.g. 'loan_disbursement', 'interest_income'
-        $table->string('account_code'); // links to gl_accounts.code
-        $table->string('entry_type'); // 'debit' or 'credit'
-        $table->string('is_active')->default('1'); // '1' for active, '0' for inactive
+            $table->string('key')->unique(); // e.g. 'loan_disbursement', 'interest_income'
+            $table->string('account_code'); // links to gl_accounts.code
+            $table->string('entry_type'); // 'debit' or 'credit'
+            $table->string('is_active')->default('1'); // '1' for active, '0' for inactive
 
-        $table->string('description')->nullable();
+            $table->string('description')->nullable();
             $table->timestamps();
         });
     }

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LoanRepayment;
 use App\Models\Loan;
+use App\Models\LoanRepayment;
 use App\Models\RepaymentSchedule;
 use App\Services\DisbursementService;
 use Illuminate\Http\Request;
@@ -31,7 +31,10 @@ class LoanRepaymentController extends Controller
             ->where('status', '!=', 'rejected')
             ->orderBy('due_date', 'asc');
 
-        if (Auth::user()->rule_id !== 2) {
+        $staffRoles = ['admin', 'finance', 'it_admin', 'loan_officer'];
+        $currentRole = Auth::user()->system_role ?? (Auth::user()->rule_id === 2 ? 'admin' : 'client');
+
+        if (! in_array($currentRole, $staffRoles)) {
             $query->where('user_id', Auth::id());
         }
 
@@ -49,11 +52,11 @@ class LoanRepaymentController extends Controller
     {
         $validated = $request->validate([
             'repayment_schedule_id' => ['required', 'exists:repayment_schedules,id'],
-            'payment_amount'        => ['required', 'numeric', 'min:0.01'],
-            'payment_date'          => ['required', 'date'],
-            'payment_method'        => ['required', 'in:bank_transfer,cash,card,mobile_payment'],
-            'payment_reference'     => ['nullable', 'string', 'max:100'],
-            'notes'                 => ['nullable', 'string', 'max:500'],
+            'payment_amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_date' => ['required', 'date'],
+            'payment_method' => ['required', 'in:bank_transfer,cash,card,mobile_payment'],
+            'payment_reference' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         DB::beginTransaction();
@@ -63,6 +66,7 @@ class LoanRepaymentController extends Controller
 
             if ($schedule->status === 'paid') {
                 DB::rollBack();
+
                 return back()->with('error', 'This instalment has already been paid.');
             }
 
@@ -70,40 +74,41 @@ class LoanRepaymentController extends Controller
             $loanApplication = $schedule->loanApplication;
             $loan = $loanApplication?->loan;
 
-            if (!$loan) {
+            if (! $loan) {
                 DB::rollBack();
+
                 return back()->with('error', 'Cannot find the associated loan record.');
             }
 
             $customer = $loan->user->customer;
 
             // For multi-month loans — recognise deferred income on this payment
-            if ($loan->loan_term_months > 1 && !$schedule->gl_posted) {
+            if ($loan->loan_term_months > 1 && ! $schedule->gl_posted) {
                 $this->disbursement->recogniseInstallmentIncome($schedule->id, Auth::id());
             }
 
-            $paymentAmount   = (float) $validated['payment_amount'];
+            $paymentAmount = (float) $validated['payment_amount'];
             $principalAmount = (float) $schedule->principal_amount;
-            $interestAmount  = (float) $schedule->interest_amount;
-            $feeAmount       = (float) $schedule->fee_amount;
+            $interestAmount = (float) $schedule->interest_amount;
+            $feeAmount = (float) $schedule->fee_amount;
 
             // ── Create LoanRepayment record ───────────────────────────────────
             $repayment = LoanRepayment::create([
-                'loan_id'               => $loan->id,
-                'user_id'               => $loan->user_id,
+                'loan_id' => $loan->id,
+                'user_id' => $loan->user_id,
                 'repayment_schedule_id' => $schedule->id,
-                'payment_amount'        => $paymentAmount,
-                'principal_amount'      => $principalAmount,
-                'interest_amount'       => $interestAmount,
-                'fee_amount'            => $feeAmount,
-                'payment_date'          => $validated['payment_date'],
-                'due_date'              => $schedule->due_date,
-                'status'                => 'paid',
-                'payment_method'        => $validated['payment_method'],
-                'payment_reference'     => $validated['payment_reference'],
-                'notes'                 => $validated['notes'],
-                'payment_received_by'   => Auth::id(),
-                'transaction_type'      => 'manual',
+                'payment_amount' => $paymentAmount,
+                'principal_amount' => $principalAmount,
+                'interest_amount' => $interestAmount,
+                'fee_amount' => $feeAmount,
+                'payment_date' => $validated['payment_date'],
+                'due_date' => $schedule->due_date,
+                'status' => 'paid',
+                'payment_method' => $validated['payment_method'],
+                'payment_reference' => $validated['payment_reference'],
+                'notes' => $validated['notes'],
+                'payment_received_by' => Auth::id(),
+                'transaction_type' => 'manual',
             ]);
 
             // ── Update loan balance ───────────────────────────────────────────
@@ -112,8 +117,8 @@ class LoanRepaymentController extends Controller
 
             // ── Mark schedule row paid ────────────────────────────────────────
             $schedule->update([
-                'status'    => 'paid',
-                'paid_at'   => now(),
+                'status' => 'paid',
+                'paid_at' => now(),
                 'gl_posted' => true,
             ]);
 
@@ -128,29 +133,49 @@ class LoanRepaymentController extends Controller
 
             DB::commit();
 
+            // Outside the transaction — a notification failure must never
+            // roll back a payment that already recorded successfully.
+            try {
+                $loan->user?->notify(new \App\Notifications\PaymentReceivedNotification($repayment));
+            } catch (\Exception $e) {
+                Log::warning('Payment notification failed: '.$e->getMessage());
+            }
+
             return redirect()->route('repaymentSchedules.index')
-                ->with('success', 'Payment recorded successfully. Reference: ' . ($validated['payment_reference'] ?? $repayment->id));
+                ->with('success', 'Payment recorded successfully. Reference: '.($validated['payment_reference'] ?? $repayment->id));
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Manual payment store failed', [
                 'user_id' => Auth::id(),
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return back()->withInput()
-                ->with('error', 'Payment failed to record: ' . $e->getMessage());
+                ->with('error', 'Payment failed to record: '.$e->getMessage());
         }
     }
 
     public function show(LoanRepayment $loanRepayment)
     {
+        $staffRoles = ['admin', 'finance', 'it_admin', 'loan_officer'];
+        $currentRole = Auth::user()->system_role ?? (Auth::user()->rule_id === 2 ? 'admin' : 'client');
+
+        abort_unless(
+            in_array($currentRole, $staffRoles) || $loanRepayment->user_id === Auth::id(),
+            403
+        );
+
         return view('loan_repayments.show', compact('loanRepayment'));
     }
 
+    /**
+     * Staff-only (see routes/web.php) — picks any customer's pending
+     * schedule to record a manual payment against.
+     */
     public function create()
     {
         $schedules = RepaymentSchedule::whereIn('status', ['pending', 'payment_failed'])
-            ->where('user_id', Auth::id())
             ->orderBy('due_date')
             ->get();
 
@@ -165,7 +190,7 @@ class LoanRepaymentController extends Controller
     public function update(Request $request, LoanRepayment $loanRepayment)
     {
         $request->validate([
-            'notes'             => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:500'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
         ]);
 

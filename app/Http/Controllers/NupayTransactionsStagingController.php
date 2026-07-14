@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\nupay_transactions_staging;
 use App\Models\import_batch;
 use App\Services\NupayImportService;
 use Illuminate\Http\Request;
@@ -36,10 +35,13 @@ class NupayTransactionsStagingController extends Controller
     public function handleUpload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:20480',
+            // See BusinessBankStatementController::handleUpload() — `mimes`
+            // content-sniffs and rejects legitimate CSV/Excel exports (BOM,
+            // odd encodings); `extensions` trusts the file's extension.
+            'file' => 'required|file|extensions:csv,txt,xlsx,xls|max:20480',
         ]);
 
-        $file         = $request->file('file');
+        $file = $request->file('file');
         $originalName = $file->getClientOriginalName();
 
         try {
@@ -50,15 +52,15 @@ class NupayTransactionsStagingController extends Controller
             );
 
             $warnings = $this->importService->warnings();
-            $errors   = $this->importService->errors();
+            $errors = $this->importService->errors();
 
             $msg = "Import successful. Batch: {$batch->import_ref} — {$batch->row_count} rows staged.";
 
-            if (!empty($warnings)) {
-                $msg .= ' ' . count($warnings) . ' row(s) skipped (already imported).';
+            if (! empty($warnings)) {
+                $msg .= ' '.count($warnings).' row(s) skipped (already imported).';
             }
-            if (!empty($errors)) {
-                $msg .= ' ' . count($errors) . ' row(s) had errors — check logs.';
+            if (! empty($errors)) {
+                $msg .= ' '.count($errors).' row(s) had errors — check logs.';
             }
 
             return redirect()
@@ -67,12 +69,12 @@ class NupayTransactionsStagingController extends Controller
 
         } catch (\Throwable $e) {
             Log::error('NuPay upload failed', [
-                'file'  => $originalName,
+                'file' => $originalName,
                 'error' => $e->getMessage(),
             ]);
 
             return redirect()->back()
-                ->with('error', 'Import failed: ' . $e->getMessage());
+                ->with('error', 'Import failed: '.$e->getMessage());
         }
     }
 }

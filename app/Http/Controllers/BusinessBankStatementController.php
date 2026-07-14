@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\import_batch;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 /**
  * Business Bank Statement Module
@@ -46,38 +45,43 @@ class BusinessBankStatementController extends Controller
     public function handleUpload(Request $request)
     {
         $request->validate([
-            'file'          => 'required|file|mimes:csv,txt|max:20480',
-            'bank_name'     => 'required|string|max:100',
-            'account_name'  => 'required|string|max:100',
-            'period'        => 'required|string|max:7',
-            'account_number'=> 'nullable|string|max:20',
+            // `mimes` sniffs the file's actual content via fileinfo, and bank
+            // CSV exports (esp. with a UTF-8 BOM) often get detected as
+            // application/octet-stream instead of text/csv — rejecting a
+            // genuine CSV. `extensions` checks the client-supplied extension
+            // instead, which is what banks and users actually mean by "CSV".
+            'file' => 'required|file|extensions:csv,txt|max:20480',
+            'bank_name' => 'required|string|max:100',
+            'account_name' => 'required|string|max:100',
+            'period' => 'required|string|max:7',
+            'account_number' => 'nullable|string|max:20',
         ]);
 
-        $file     = $request->file('file');
+        $file = $request->file('file');
         $checksum = md5_file($file->getPathname());
 
         if (import_batch::where('checksum', $checksum)->exists()) {
             return back()->with('error', 'This statement has already been imported.');
         }
 
-        $importRef  = 'BB-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(4));
-        $storedPath = "business_bank/{$importRef}/" . $file->getClientOriginalName();
+        $importRef = 'BB-'.now()->format('Ymd-His').'-'.strtoupper(Str::random(4));
+        $storedPath = "business_bank/{$importRef}/".basename($file->getClientOriginalName());
         Storage::disk('local')->put($storedPath, file_get_contents($file->getPathname()));
 
         $batch = import_batch::create([
-            'source'            => 'business_bank',
+            'source' => 'business_bank',
             'original_filename' => $file->getClientOriginalName(),
-            'stored_path'       => $storedPath,
-            'checksum'          => $checksum,
-            'status'            => 'UPLOADED',
-            'import_ref'        => $importRef,
-            'processed_by'      => Auth::id(),
-            'row_count'         => 0,
-            'meta'              => json_encode([
-                'bank_name'      => $request->bank_name,
-                'account_name'   => $request->account_name,
+            'stored_path' => $storedPath,
+            'checksum' => $checksum,
+            'status' => 'UPLOADED',
+            'import_ref' => $importRef,
+            'processed_by' => Auth::id(),
+            'row_count' => 0,
+            'meta' => json_encode([
+                'bank_name' => $request->bank_name,
+                'account_name' => $request->account_name,
                 'account_number' => $request->account_number,
-                'period'         => $request->period,
+                'period' => $request->period,
             ]),
         ]);
 
@@ -107,7 +111,7 @@ class BusinessBankStatementController extends Controller
             )
             ->first();
 
-        $meta   = json_decode($batch->meta ?? '{}', true);
+        $meta = json_decode($batch->meta ?? '{}', true);
         $period = $meta['period'] ?? now()->format('Y-m');
 
         // 3-way reconciliation summary
@@ -122,12 +126,12 @@ class BusinessBankStatementController extends Controller
      */
     public function reconcile(import_batch $batch)
     {
-        $lines    = DB::table('bank_statement_lines')
+        $lines = DB::table('bank_statement_lines')
             ->where('import_batch_id', $batch->id)
             ->where('match_status', 'unmatched')
             ->get();
 
-        $matched   = 0;
+        $matched = 0;
         $exception = 0;
 
         foreach ($lines as $line) {
@@ -147,9 +151,10 @@ class BusinessBankStatementController extends Controller
                 if ($nupayBatch) {
                     DB::table('bank_statement_lines')->where('id', $line->id)->update([
                         'match_status' => 'matched',
-                        'match_note'   => "Nu-Pay batch #{$nupayBatch->id} — total R{$nupayBatch->nupay_total} vs bank R{$line->credit_amount}",
+                        'match_note' => "Nu-Pay batch #{$nupayBatch->id} — total R{$nupayBatch->nupay_total} vs bank R{$line->credit_amount}",
                     ]);
                     $matched++;
+
                     continue;
                 }
 
@@ -166,9 +171,10 @@ class BusinessBankStatementController extends Controller
                 if ($facilityDraw) {
                     DB::table('bank_statement_lines')->where('id', $line->id)->update([
                         'match_status' => 'matched',
-                        'match_note'   => "Facility drawdown — R{$facilityDraw->amount} on {$facilityDraw->transaction_date}",
+                        'match_note' => "Facility drawdown — R{$facilityDraw->amount} on {$facilityDraw->transaction_date}",
                     ]);
                     $matched++;
+
                     continue;
                 }
             }
@@ -187,9 +193,10 @@ class BusinessBankStatementController extends Controller
                 if ($disbursement) {
                     DB::table('bank_statement_lines')->where('id', $line->id)->update([
                         'match_status' => 'matched',
-                        'match_note'   => "Loan disbursement #{$disbursement->id} — R{$disbursement->disbursed_amount}",
+                        'match_note' => "Loan disbursement #{$disbursement->id} — R{$disbursement->disbursed_amount}",
                     ]);
                     $matched++;
+
                     continue;
                 }
 
@@ -206,9 +213,10 @@ class BusinessBankStatementController extends Controller
                 if ($facilityRep) {
                     DB::table('bank_statement_lines')->where('id', $line->id)->update([
                         'match_status' => 'matched',
-                        'match_note'   => "Facility " . str_replace('_',' ',$facilityRep->transaction_type) . " — R{$facilityRep->amount}",
+                        'match_note' => 'Facility '.str_replace('_', ' ', $facilityRep->transaction_type)." — R{$facilityRep->amount}",
                     ]);
                     $matched++;
+
                     continue;
                 }
             }
@@ -216,7 +224,7 @@ class BusinessBankStatementController extends Controller
             // Mark as exception
             DB::table('bank_statement_lines')->where('id', $line->id)->update([
                 'match_status' => 'exception',
-                'match_note'   => "No match found for " . ($line->credit_amount > 0 ? "credit R{$line->credit_amount}" : "debit R{$line->debit_amount}"),
+                'match_note' => 'No match found for '.($line->credit_amount > 0 ? "credit R{$line->credit_amount}" : "debit R{$line->debit_amount}"),
             ]);
             $exception++;
         }
@@ -236,7 +244,7 @@ class BusinessBankStatementController extends Controller
             // Bank side
             $bankCredits = DB::table('bank_statement_lines')
                 ->where('import_batch_id', $batch->id)->sum('credit_amount');
-            $bankDebits  = DB::table('bank_statement_lines')
+            $bankDebits = DB::table('bank_statement_lines')
                 ->where('import_batch_id', $batch->id)->sum('debit_amount');
 
             // Nu-Pay side — total collected in this period
@@ -254,12 +262,12 @@ class BusinessBankStatementController extends Controller
                 ->sum('disbursed_amount');
 
             return [
-                'bank_credits'  => $bankCredits,
-                'bank_debits'   => $bankDebits,
-                'nupay_total'   => $nupayTotal,
-                'disb_total'    => $disbTotal,
+                'bank_credits' => $bankCredits,
+                'bank_debits' => $bankDebits,
+                'nupay_total' => $nupayTotal,
+                'disb_total' => $disbTotal,
                 'collections_variance' => $bankCredits - $nupayTotal,
-                'disbursement_variance'=> $bankDebits  - $disbTotal,
+                'disbursement_variance' => $bankDebits - $disbTotal,
             ];
         } catch (\Exception $e) {
             return [];
@@ -268,46 +276,53 @@ class BusinessBankStatementController extends Controller
 
     protected function parseBankCsv(string $filePath, int $batchId, string $importRef): int
     {
-        $handle  = fopen($filePath, 'r');
+        $handle = fopen($filePath, 'r');
         $headers = null;
-        $rows    = [];
-        $count   = 0;
+        $rows = [];
+        $count = 0;
 
         while (($line = fgetcsv($handle, 0, ',', '"')) !== false) {
-            if (empty(array_filter($line))) continue;
+            if (empty(array_filter($line))) {
+                continue;
+            }
 
             if ($headers === null) {
-                $headers = array_map(fn($h) => strtolower(trim($h)), $line);
+                $headers = array_map(fn ($h) => strtolower(trim($h)), $line);
+
                 continue;
             }
 
             $row = array_combine($headers, array_pad(array_slice($line, 0, count($headers)), count($headers), null));
 
-            $date    = $this->findVal($row, ['date','transaction date','value date']);
-            $desc    = $this->findVal($row, ['description','narrative','details']);
-            $ref     = $this->findVal($row, ['reference','ref','cheque no']);
-            $debit   = (float) preg_replace('/[^0-9.-]/', '', $this->findVal($row, ['debit','debit amount','payment']) ?? '0');
-            $credit  = (float) preg_replace('/[^0-9.-]/', '', $this->findVal($row, ['credit','credit amount','deposit','receipts']) ?? '0');
-            $balance = (float) preg_replace('/[^0-9.-]/', '', $this->findVal($row, ['balance','running balance']) ?? '0');
+            $date = $this->findVal($row, ['date', 'transaction date', 'value date']);
+            $desc = $this->findVal($row, ['description', 'narrative', 'details']);
+            $ref = $this->findVal($row, ['reference', 'ref', 'cheque no']);
+            $debit = (float) preg_replace('/[^0-9.-]/', '', $this->findVal($row, ['debit', 'debit amount', 'payment']) ?? '0');
+            $credit = (float) preg_replace('/[^0-9.-]/', '', $this->findVal($row, ['credit', 'credit amount', 'deposit', 'receipts']) ?? '0');
+            $balance = (float) preg_replace('/[^0-9.-]/', '', $this->findVal($row, ['balance', 'running balance']) ?? '0');
 
-            if (!$date || !$desc) continue;
+            if (! $date || ! $desc) {
+                continue;
+            }
 
             try {
                 $parsedDate = Carbon::parse($date)->toDateString();
-            } catch (\Exception $e) { continue; }
+            } catch (\Exception $e) {
+                continue;
+            }
 
             $rows[] = [
-                'import_batch_id'  => $batchId,
-                'import_ref'       => $importRef,
+                'import_batch_id' => $batchId,
+                'import_ref' => $importRef,
                 'transaction_date' => $parsedDate,
-                'description'      => substr($desc ?? '', 0, 500),
-                'reference'        => substr($ref ?? '', 0, 100),
-                'debit_amount'     => $debit,
-                'credit_amount'    => $credit,
-                'running_balance'  => $balance ?: null,
-                'match_status'     => 'unmatched',
-                'created_at'       => now(),
-                'updated_at'       => now(),
+                'description' => substr($desc ?? '', 0, 500),
+                'reference' => substr($ref ?? '', 0, 100),
+                'debit_amount' => $debit,
+                'credit_amount' => $credit,
+                'running_balance' => $balance ?: null,
+                'match_status' => 'unmatched',
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
             $count++;
         }
@@ -328,6 +343,7 @@ class BusinessBankStatementController extends Controller
                 return $row[$k];
             }
         }
+
         return null;
     }
 }

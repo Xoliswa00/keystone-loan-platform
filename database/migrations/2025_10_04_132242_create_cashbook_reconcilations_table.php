@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('cashbook_reconcilations', function (Blueprint $table) {
             $table->id();
-              $table->foreignId('cashbook_account_id')->constrained('cashbook_accounts');
+            $table->foreignId('cashbook_account_id')->constrained('cashbook_accounts');
             $table->foreignId('transaction_id')->constrained('cashbook_transactions');
             $table->date('statement_date');
             $table->string('bank_reference')->nullable();

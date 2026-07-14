@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\accounting_modules;
 use App\Http\Requests\Storeaccounting_modulesRequest;
 use App\Http\Requests\Updateaccounting_modulesRequest;
+use App\Models\accounting_modules;
 
 class AccountingModulesController extends Controller
 {

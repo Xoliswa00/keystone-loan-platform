@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('accounting_modules', function (Blueprint $table) {
             $table->id();
-              $table->string('module_code', 10)->unique(); // e.g. AR, AP, CB, GL
+            $table->string('module_code', 10)->unique(); // e.g. AR, AP, CB, GL
             $table->string('module_name'); // e.g. Accounts Receivable
             $table->string('description')->nullable();
             $table->boolean('is_active')->default(true);

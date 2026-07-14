@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('cashbook_accounts', function (Blueprint $table) {
             $table->id();
-                        $table->string('account_name');
+            $table->string('account_name');
             $table->string('bank_name')->nullable();
             $table->string('account_number')->nullable();
             $table->string('branch_code')->nullable();
@@ -23,7 +23,7 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->string('currency')->default('ZAR');
             $table->string('status')->default('active');
-            
+
             $table->timestamps();
         });
     }

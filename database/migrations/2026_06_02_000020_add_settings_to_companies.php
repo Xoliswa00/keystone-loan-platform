@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Extend the companies table with all fields needed for:
@@ -56,31 +55,8 @@ return new class extends Migration
                 ->comment('Comma-separated CC addresses for all loan notification emails');
         });
 
-        // Seed with placeholder if no company exists
-        if (DB::table('companies')->count() === 0) {
-            DB::table('companies')->insert([
-                'name'                  => 'Keystone Capital Partners',
-                'registration_no'       => '',
-                'ncr_number'            => '',
-                'vat_number'            => '',
-                'ncr_credit_category'   => 'unsecured',
-                'address'               => '',
-                'physical_address'      => '',
-                'phone'                 => '',
-                'whatsapp_number'       => '27721853349',
-                'email'                 => 'info@keystonecapitalpartners.co.za',
-                'support_email'         => 'support@keystonecapitalpartners.co.za',
-                'website'               => 'https://keystonecapitalpartners.co.za',
-                'tagline'               => 'Capital. Partnership. Growth.',
-                'authorised_signatory'  => '',
-                'signatory_title'       => 'Director',
-                'notification_from_email' => 'noreply@keystonecapitalpartners.co.za',
-                'notification_from_name'  => 'Keystone Capital Partners',
-                'notification_cc'         => '',
-                'created_at'            => now(),
-                'updated_at'            => now(),
-            ]);
-        }
+        // Seed data (the singleton company row) lives in
+        // database/seeders/CompaniesSeeder.php, not here.
     }
 
     public function down(): void

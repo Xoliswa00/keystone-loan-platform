@@ -19,10 +19,10 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('website')->nullable();
             $table->string('tax_id')->nullable();
-            
+
             $table->timestamps();
         });
-        
+
     }
 
     /**

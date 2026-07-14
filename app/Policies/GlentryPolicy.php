@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\glentry;
-use Illuminate\Auth\Access\Response;
+use App\Models\User;
 
 class GlentryPolicy
 {

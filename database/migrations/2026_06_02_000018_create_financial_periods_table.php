@@ -3,8 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 /**
  * Financial Periods — proper period management.
@@ -73,22 +71,8 @@ return new class extends Migration
             $table->index(['status', 'fiscal_year']);
         });
 
-        // Seed current and recent periods as 'open'
-        $now    = Carbon::now();
-        $start  = $now->copy()->subMonths(3); // go back 3 months
-
-        for ($i = 0; $i <= 4; $i++) {
-            $d = $start->copy()->addMonths($i);
-            DB::table('financial_periods')->insertOrIgnore([
-                'period'        => $d->format('Y-m'),
-                'fiscal_year'   => $d->year,
-                'fiscal_month'  => $d->month,
-                'is_year_end'   => $d->month === 12,
-                'status'        => $i < 3 ? 'open' : 'open', // all open initially
-                'created_at'    => now(),
-                'updated_at'    => now(),
-            ]);
-        }
+        // Seed data (the rolling open-period window) lives in
+        // database/seeders/FinancialPeriodsSeeder.php, not here.
     }
 
     public function down(): void

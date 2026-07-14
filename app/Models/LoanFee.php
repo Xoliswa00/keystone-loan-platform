@@ -8,24 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 class LoanFee extends Model
 {
     use HasFactory;
+
     protected $fillable = [
-    'loan_application_id' ,
+        'loan_application_id',
 
-        'interest_rate' ,
+        'interest_rate',
 
-        'interest_amount' ,
+        'interest_amount',
 
-        'initiation_fee' ,
+        'initiation_fee',
 
-        'service_fee' ,
+        'service_fee',
 
-        'total_due'
-];
+        'total_due',
+    ];
+
     public function loanApplication()
     {
         return $this->belongsTo(LoanApplication::class);
     }
-
-    
-
 }

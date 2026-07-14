@@ -4,6 +4,13 @@
     <p class="kc-page-subtitle">Application errors, warnings, and failed jobs — no SSH required</p>
   </x-slot>
 
+  @if(session('success'))
+    <div class="kc-alert-success mb-5 whitespace-pre-line">{{ session('success') }}</div>
+  @endif
+  @if(session('error'))
+    <div class="kc-alert-error mb-5 whitespace-pre-line">{{ session('error') }}</div>
+  @endif
+
   {{-- System health --}}
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
     @foreach([
@@ -34,6 +41,38 @@
     <div class="kc-stat-card text-center">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Info Today</p>
       <p class="font-display text-2xl font-bold text-kc-charcoal/40 mt-1">{{ $counts['info'] }}</p>
+    </div>
+  </div>
+
+  {{-- Scheduled Jobs — manual "run now" for jobs that otherwise only run
+       via cron and have no other admin trigger. --}}
+  <div class="kc-card mb-6">
+    <h4 class="font-display font-semibold text-kc-navy mb-3">Scheduled Jobs</h4>
+    <div class="space-y-2">
+      <div class="flex items-center justify-between p-3 rounded-lg border border-kc-silver-light">
+        <div>
+          <p class="text-sm font-semibold">Escalate Arrears</p>
+          <p class="text-xs text-kc-charcoal/50">Sends overdue-account escalation emails by DPD tier. Runs daily at 09:00 via cron.</p>
+        </div>
+        <form method="POST" action="{{ route('admin.system.jobs.run') }}"
+          onsubmit="return confirm('This sends real escalation emails to every overdue client right now. Continue?')">
+          @csrf
+          <input type="hidden" name="job" value="escalate-arrears">
+          <button type="submit" class="kc-btn-ghost text-xs py-1 px-3">Run Now</button>
+        </form>
+      </div>
+      <div class="flex items-center justify-between p-3 rounded-lg border border-kc-silver-light">
+        <div>
+          <p class="text-sm font-semibold">Send Payment Reminders</p>
+          <p class="text-xs text-kc-charcoal/50">Sends reminder emails for instalments due soon (per Lending Settings). Runs daily at 08:00 via cron.</p>
+        </div>
+        <form method="POST" action="{{ route('admin.system.jobs.run') }}"
+          onsubmit="return confirm('This sends real reminder emails to clients right now. Continue?')">
+          @csrf
+          <input type="hidden" name="job" value="send-payment-reminders">
+          <button type="submit" class="kc-btn-ghost text-xs py-1 px-3">Run Now</button>
+        </form>
+      </div>
     </div>
   </div>
 

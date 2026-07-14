@@ -3,76 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Models\RepaymentSchedule;
-use App\Models\Loan;
-use Illuminate\Http\Request;
-USE App\Models\LoanRepayment;
 
 class RepaymentScheduleController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * repayment_schedules.index duplicated loan_repayments.index (both list
+     * the same repayment schedule) but had rotted onto relations/columns
+     * (loan.customer, first_name, customer_code) that don't exist on this
+     * schema — LoanRepaymentController::index() is the maintained,
+     * ownership-scoped implementation, so route there instead of keeping a
+     * second broken query alive.
      */
-public function index(Request $request)
-{
-    $query = LoanRepayment::with(['loan.customer'])
-        ->orderBy('repayment_date', 'desc')->where('status','!=','rejected');
-
-    // If the user is not admin, only show their repayments
-    if (auth()->user()->role !== 'admin') {
-        $query->whereHas('loan.customer', function ($q) {
-            $q->where('user_id', auth()->id());
-        });
+    public function index()
+    {
+        return redirect()->route('loanrepayments.index');
     }
-
-    // 🔍 Handle search across customer name, reference, or loan code
-    if ($request->filled('search')) {
-        $search = trim($request->search);
-        $query->where(function ($q) use ($search) {
-            $q->where('reference', 'like', "%{$search}%")
-              ->orWhere('payment_method', 'like', "%{$search}%")
-              ->orWhereHas('loan.customer', function ($sub) use ($search) {
-                  $sub->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('customer_code', 'like', "%{$search}%");
-              });
-        });
-    }
-
-    $repayments = $query->paginate(50)->withQueryString();
-
-    return view('repayment_schedules.index', compact('repayments'));
-}
-
-
-
 
     /**
-     * Show the form for creating a new resource.
+     * Schedules are generated automatically on loan-application approval
+     * (see LoanApplicationController::approve()) — the view is a stub that
+     * says so. This action used to validate 'loan_id' against the `loans`
+     * table and hand it straight to RepaymentSchedule::create(), but
+     * repayment_schedules.loan_id is FK'd to loan_applications — every
+     * manual submission would violate the foreign key. Block it instead of
+     * patching a form nothing renders.
      */
     public function create()
     {
-        $loans = Loan::all();
-        return view('repayment_schedules.create', compact('loans'));
+        return view('repayment_schedules.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store()
     {
-        // Validate the incoming data with appropriate rules
-        $validatedData = $request->validate([
-            'loan_id' => ['required', 'exists:loans,id'],
-            'due_date' => ['required', 'date'],
-            'emi_amount' => ['required', 'numeric', 'min:0.01'], // Ensure consistency with migration field name
-            'status' => ['required', 'in:pending,paid,overdue'],
-        ]);
-
-        // Create a new repayment schedule
-        RepaymentSchedule::create($validatedData);
-
-        // Redirect to the index with a success message
-        return redirect()->route('repayment_schedules.index')->with('success', 'Repayment schedule created successfully.');
+        return redirect()->route('repaymentSchedules.index')
+            ->with('error', 'Repayment schedules are generated automatically and cannot be created manually.');
     }
 
     /**
@@ -80,8 +47,10 @@ public function index(Request $request)
      */
     public function show(RepaymentSchedule $repaymentSchedule)
     {
-        // Ensure the loan relationship is loaded
-        $repaymentSchedule->load('loan');
+        abort_unless($repaymentSchedule->user_id === auth()->id(), 403);
+
+        $repaymentSchedule->load('loanApplication');
+
         return view('repayment_schedules.show', compact('repaymentSchedule'));
     }
 
@@ -90,28 +59,16 @@ public function index(Request $request)
      */
     public function edit(RepaymentSchedule $repaymentSchedule)
     {
-        $loans = Loan::all();
-        return view('repayment_schedules.edit', compact('repaymentSchedule', 'loans'));
+        return view('repayment_schedules.edit', compact('repaymentSchedule'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, RepaymentSchedule $repaymentSchedule)
+    public function update(RepaymentSchedule $repaymentSchedule)
     {
-        // Validate the incoming data
-        $validatedData = $request->validate([
-            'loan_id' => ['required', 'exists:loans,id'],
-            'due_date' => ['required', 'date'],
-            'emi_amount' => ['required', 'numeric', 'min:0.01'], // Ensure consistency with migration field name
-            'status' => ['required', 'in:pending,paid,overdue'],
-        ]);
-
-        // Update the repayment schedule with validated data
-        $repaymentSchedule->update($validatedData);
-
-        // Redirect to the index with a success message
-        return redirect()->route('repayment_schedules.index')->with('success', 'Repayment schedule updated successfully.');
+        return redirect()->route('repaymentSchedules.index')
+            ->with('error', 'Repayment schedules are generated automatically and are read-only.');
     }
 
     /**
@@ -119,10 +76,7 @@ public function index(Request $request)
      */
     public function destroy(RepaymentSchedule $repaymentSchedule)
     {
-        // Delete the repayment schedule
-        $repaymentSchedule->delete();
-
-        // Redirect to the index with a success message
-        return redirect()->route('repayment_schedules.index')->with('success', 'Repayment schedule deleted successfully.');
+        return redirect()->route('repaymentSchedules.index')
+            ->with('error', 'Repayment schedules are generated automatically and cannot be deleted.');
     }
 }

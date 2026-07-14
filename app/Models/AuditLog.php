@@ -41,21 +41,21 @@ class AuditLog extends Model
 
     public static function record(
         string $event,
-        Model  $model,
-        array  $oldValues = [],
-        array  $newValues = [],
-        string $note = null
+        Model $model,
+        array $oldValues = [],
+        array $newValues = [],
+        ?string $note = null
     ): self {
         return static::create([
-            'event'          => $event,
+            'event' => $event,
             'auditable_type' => get_class($model),
-            'auditable_id'   => $model->getKey(),
-            'user_id'        => auth()->id(),
-            'ip_address'     => request()->ip(),
-            'user_agent'     => request()->userAgent(),
-            'old_values'     => $oldValues,
-            'new_values'     => $newValues,
-            'note'           => $note,
+            'auditable_id' => $model->getKey(),
+            'user_id' => auth()->id(),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+            'note' => $note,
         ]);
     }
 }

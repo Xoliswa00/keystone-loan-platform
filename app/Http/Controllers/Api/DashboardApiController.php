@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 class DashboardApiController extends Controller
 {
     public function __construct(
-        protected AffordabilityService      $affordability,
+        protected AffordabilityService $affordability,
         protected CustomerLimitationService $limitations
     ) {}
 
@@ -32,27 +32,27 @@ class DashboardApiController extends Controller
             : null;
 
         $affordability = $this->affordability->calculate($user);
-        $canApply      = $this->limitations->canApply($user);
+        $canApply = $this->limitations->canApply($user);
 
         return response()->json([
-            'outstanding_balance'   => (float) ($user->customer?->current_balance ?? 0),
-            'active_loan'           => $activeLoan ? [
-                'id'                => $activeLoan->id,
-                'loan_amount'       => (float) $activeLoan->loan_amount,
+            'outstanding_balance' => (float) ($user->customer?->current_balance ?? 0),
+            'active_loan' => $activeLoan ? [
+                'id' => $activeLoan->id,
+                'loan_amount' => (float) $activeLoan->loan_amount,
                 'remaining_balance' => (float) $activeLoan->remaining_balance,
-                'status'            => $activeLoan->status,
-                'loan_term_months'  => $activeLoan->loan_term_months,
+                'status' => $activeLoan->status,
+                'loan_term_months' => $activeLoan->loan_term_months,
             ] : null,
             'next_payment' => $nextPayment ? [
-                'due_date'    => $nextPayment->due_date,
-                'amount'      => (float) $nextPayment->emi_amount,
-                'is_overdue'  => now()->toDateString() > $nextPayment->due_date,
+                'due_date' => $nextPayment->due_date,
+                'amount' => (float) $nextPayment->emi_amount,
+                'is_overdue' => now()->toDateString() > $nextPayment->due_date,
             ] : null,
-            'can_apply'             => $canApply['allowed'],
-            'apply_block_reason'    => $canApply['reason'],
-            'apply_unblock_at'      => $canApply['unblock_at'],
-            'max_instalment'        => (float) ($affordability['max_instalment'] ?? 0),
-            'profile_complete_pct'  => $this->affordability->profileStatus($user)['percentage'],
+            'can_apply' => $canApply['allowed'],
+            'apply_block_reason' => $canApply['reason'],
+            'apply_unblock_at' => $canApply['unblock_at'],
+            'max_instalment' => (float) ($affordability['max_instalment'] ?? 0),
+            'profile_complete_pct' => $this->affordability->profileStatus($user)['percentage'],
         ]);
     }
 }

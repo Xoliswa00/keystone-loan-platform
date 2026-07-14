@@ -48,7 +48,7 @@ class NupayCleaner
         }
 
         return is_numeric($value)
-            ? round((float)$value, 2)
+            ? round((float) $value, 2)
             : null;
     }
 
@@ -61,7 +61,7 @@ class NupayCleaner
             return null;
         }
 
-        $value = trim((string)$value);
+        $value = trim((string) $value);
 
         return $value === '' ? null : $value;
     }

@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('cashbook_transactions', function (Blueprint $table) {
             $table->id();
-                  $table->foreignId('cashbook_account_id')->constrained('cashbook_accounts');
+            $table->foreignId('cashbook_account_id')->constrained('cashbook_accounts');
             $table->foreignId('batch_id')->nullable()->constrained('cashbook_batches');
-            
+
             $table->date('transaction_date');
             $table->string('reference')->nullable();
             $table->string('description')->nullable();
@@ -23,16 +23,16 @@ return new class extends Migration
             $table->enum('type', ['receipt', 'payment']);
             $table->enum('payment_method', ['cash', 'eft', 'debit_card', 'cheque'])->nullable();
             $table->string('status')->default('pending'); // pending, approved, posted
-            
+
             // 🔗 Integration with submodules
             $table->foreignId('customer_id')->nullable()->constrained('customers');
             $table->foreignId('vendor_id')->nullable()->constrained('apvendors');
             $table->foreignId('loan_id')->nullable()->constrained('loans');
-            
+
             // 🔗 Accounting linkage
             $table->foreignId('gl_account_id')->nullable()->constrained('gl_accounts');
             $table->foreignId('created_by')->nullable()->constrained('users');
-            
+
             $table->timestamps();
         });
     }

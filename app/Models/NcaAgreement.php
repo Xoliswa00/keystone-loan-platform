@@ -22,21 +22,21 @@ class NcaAgreement extends Model
 
     protected $casts = [
         'generated_at' => 'datetime', 'sent_at' => 'datetime', 'accepted_at' => 'datetime',
-        'first_payment_date'   => 'date',
-        'principal_amount'     => 'decimal:2',
-        'initiation_fee'       => 'decimal:2',
-        'initiation_fee_vat'   => 'decimal:2',
-        'monthly_service_fee'  => 'decimal:2',
+        'first_payment_date' => 'date',
+        'principal_amount' => 'decimal:2',
+        'initiation_fee' => 'decimal:2',
+        'initiation_fee_vat' => 'decimal:2',
+        'monthly_service_fee' => 'decimal:2',
         'monthly_service_fee_vat' => 'decimal:2',
-        'monthly_interest'     => 'decimal:2',
+        'monthly_interest' => 'decimal:2',
         'total_cost_of_credit' => 'decimal:2',
         'annual_percentage_rate' => 'decimal:4',
     ];
 
     const TYPES = [
         'pre_agreement_statement' => 'Pre-Agreement Statement (NCA s.92)',
-        'loan_agreement'          => 'Credit Agreement (NCA s.93)',
-        'settlement_quote'        => 'Settlement Quote (NCA s.125)',
+        'loan_agreement' => 'Credit Agreement (NCA s.93)',
+        'settlement_quote' => 'Settlement Quote (NCA s.125)',
     ];
 
     public function loanApplication()
@@ -61,6 +61,6 @@ class NcaAgreement extends Model
 
     public function isSigned(): bool
     {
-        return !is_null($this->accepted_at);
+        return ! is_null($this->accepted_at);
     }
 }

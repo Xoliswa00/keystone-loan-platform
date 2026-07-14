@@ -202,6 +202,35 @@
     {{-- RIGHT: Documents --}}
     <div class="space-y-4">
       <div class="kc-card">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="font-display font-semibold text-kc-navy">Bank Account</h4>
+          <a href="{{ route('accountdetails.create') }}" class="text-xs text-kc-gold hover:underline font-medium">
+            + Add account
+          </a>
+        </div>
+
+        @if($accountDetails->isEmpty())
+          <p class="text-[10px] text-kc-charcoal/30 uppercase">Missing</p>
+        @else
+          <div class="space-y-2">
+            @foreach($accountDetails as $account)
+              <div class="flex items-center justify-between py-2 border-b border-kc-silver-light/60 last:border-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  </div>
+                  <span class="text-xs font-medium text-kc-charcoal/70 truncate">
+                    {{ $account->bank_name }} — •••• {{ substr($account->account_number, -4) }}
+                  </span>
+                </div>
+                <a href="{{ route('accountdetails.edit', $account) }}" class="text-xs text-kc-gold hover:underline flex-shrink-0 ml-2">Edit</a>
+              </div>
+            @endforeach
+          </div>
+        @endif
+      </div>
+
+      <div class="kc-card">
         <h4 class="font-display font-semibold text-kc-navy mb-4">KYC Documents</h4>
         <form method="POST" action="{{ route('customer-profile.upload-document') }}" enctype="multipart/form-data" class="space-y-4">
           @csrf
@@ -226,26 +255,75 @@
 
         <div class="mt-5 space-y-2">
           @foreach(\App\Models\CustomerDocument::TYPES as $type => $label)
-          @php $doc = $documents[$type] ?? null; @endphp
-          <div class="flex items-center justify-between py-2 border-b border-kc-silver-light/60 last:border-0">
-            <div class="flex items-center gap-2">
-              @if($doc)
-                <div class="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                </div>
+          @php $docsOfType = $documents[$type] ?? collect(); @endphp
+
+          @if($type === 'bank_statement')
+            @php $hasVerified = $docsOfType->contains('verified', true); @endphp
+            <div class="py-2 border-b border-kc-silver-light/60 last:border-0">
+              <div class="flex items-center gap-2 mb-1.5">
+                @if($hasVerified)
+                  <div class="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  </div>
+                @elseif($docsOfType->isNotEmpty())
+                  <div class="w-5 h-5 rounded-full bg-kc-gold/15 flex items-center justify-center flex-shrink-0">
+                    <div class="w-1.5 h-1.5 rounded-full bg-kc-gold"></div>
+                  </div>
+                @else
+                  <div class="w-5 h-5 rounded-full bg-kc-silver-light flex items-center justify-center flex-shrink-0">
+                    <div class="w-1.5 h-1.5 rounded-full bg-kc-silver"></div>
+                  </div>
+                @endif
+                <span class="text-xs font-medium text-kc-charcoal/70">{{ $label }}</span>
+                <span class="text-[10px] text-kc-charcoal/30">— upload one per bank</span>
+              </div>
+              @if($docsOfType->isEmpty())
+                <p class="text-[10px] text-kc-charcoal/30 uppercase pl-7">Missing</p>
               @else
-                <div class="w-5 h-5 rounded-full bg-kc-silver-light flex items-center justify-center flex-shrink-0">
-                  <div class="w-1.5 h-1.5 rounded-full bg-kc-silver"></div>
+                <div class="pl-7 space-y-1">
+                  @foreach($docsOfType as $doc)
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] text-kc-charcoal/60 truncate">
+                        Uploaded {{ $doc->created_at->format('d M Y') }} — {{ $doc->original_name }}
+                        <span class="{{ $doc->verified ? 'text-emerald-600' : 'text-kc-gold-muted' }} font-medium">{{ $doc->verified ? '· Verified' : '· Pending review' }}</span>
+                      </span>
+                      <a href="{{ Storage::disk('public')->url($doc->file_path) }}" target="_blank" class="text-xs text-kc-gold hover:underline flex-shrink-0 ml-2">View</a>
+                    </div>
+                  @endforeach
                 </div>
               @endif
-              <span class="text-xs font-medium text-kc-charcoal/70">{{ $label }}</span>
             </div>
-            @if($doc)
-              <a href="{{ Storage::disk('public')->url($doc->file_path) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
-            @else
-              <span class="text-[10px] text-kc-charcoal/30 uppercase">Missing</span>
-            @endif
-          </div>
+          @else
+            @php $doc = $docsOfType->first(); @endphp
+            <div class="flex items-center justify-between py-2 border-b border-kc-silver-light/60 last:border-0">
+              <div class="flex items-center gap-2">
+                @if($doc?->verified)
+                  <div class="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  </div>
+                @elseif($doc)
+                  <div class="w-5 h-5 rounded-full bg-kc-gold/15 flex items-center justify-center flex-shrink-0">
+                    <div class="w-1.5 h-1.5 rounded-full bg-kc-gold"></div>
+                  </div>
+                @else
+                  <div class="w-5 h-5 rounded-full bg-kc-silver-light flex items-center justify-center flex-shrink-0">
+                    <div class="w-1.5 h-1.5 rounded-full bg-kc-silver"></div>
+                  </div>
+                @endif
+                <span class="text-xs font-medium text-kc-charcoal/70">{{ $label }}</span>
+              </div>
+              @if($doc)
+                <div class="flex items-center gap-2">
+                  @unless($doc->verified)
+                    <span class="text-[10px] text-kc-gold-muted uppercase">Pending review</span>
+                  @endunless
+                  <a href="{{ Storage::disk('public')->url($doc->file_path) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
+                </div>
+              @else
+                <span class="text-[10px] text-kc-charcoal/30 uppercase">Missing</span>
+              @endif
+            </div>
+          @endif
           @endforeach
         </div>
       </div>

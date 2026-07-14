@@ -30,9 +30,9 @@ class nupay_transactions_staging extends Model
 
     protected $casts = [
         'instalment_amount' => 'decimal:2',
-        'action_date'       => 'date',
-        'action_date_time'  => 'datetime',
-        'posted_at'         => 'datetime',
+        'action_date' => 'date',
+        'action_date_time' => 'datetime',
+        'posted_at' => 'datetime',
     ];
 
     // ── Relationships ──

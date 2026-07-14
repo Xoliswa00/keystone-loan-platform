@@ -19,6 +19,9 @@
     @if($recoveryCase)
       <span class="kc-badge kc-badge-red text-[10px]">Recovery Case Open</span>
     @endif
+    @if($user->extended_terms_eligible)
+      <span class="kc-badge kc-badge-navy text-[10px]">Extended Terms Eligible</span>
+    @endif
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -237,6 +240,18 @@
             <button type="submit" class="kc-btn-ghost w-full justify-center text-xs {{ $user->blacklisted?'text-emerald-600 border-emerald-200':'text-red-600 border-red-200' }}"
               onclick="return confirm('{{ $user->blacklisted ? 'Remove from blacklist?' : 'Blacklist this client?' }}')">
               {{ $user->blacklisted ? 'Remove Blacklist' : 'Add to Blacklist' }}
+            </button>
+          </form>
+
+          {{-- Extended-term override — lets this one client apply for
+               multi-month products even while they stay inactive for
+               everyone else. Independent of the global toggle on the Loan
+               Products admin page. --}}
+          <form method="POST" action="{{ route('customers.extended-terms', $customer) }}">
+            @csrf
+            <button type="submit" class="kc-btn-ghost w-full justify-center text-xs {{ $user->extended_terms_eligible ? 'text-emerald-600 border-emerald-200' : '' }}"
+              onclick="return confirm('{{ $user->extended_terms_eligible ? 'Revoke extended-term eligibility?' : 'Allow this client to apply for extended-term (multi-month) loans?' }}')">
+              {{ $user->extended_terms_eligible ? 'Revoke Extended Terms' : 'Grant Extended Terms' }}
             </button>
           </form>
 

@@ -41,9 +41,6 @@ return new class extends Migration
             $table->boolean('gl_posted')->default(false)->after('status');
             $table->timestamp('paid_at')->nullable()->after('gl_posted');
 
-            // Soft deletes so reversals are auditable
-            $table->softDeletes()->after('updated_at');
-
             $table->index(['loan_id', 'status']);
             $table->index(['due_date', 'status']);
         });
@@ -55,7 +52,7 @@ return new class extends Migration
             $table->dropColumn([
                 'user_id', 'installment_number',
                 'principal_amount', 'interest_amount', 'fee_amount',
-                'gl_posted', 'paid_at', 'deleted_at',
+                'gl_posted', 'paid_at',
             ]);
         });
     }

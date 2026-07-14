@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\chart_of_accounts;
 use App\Http\Requests\Storechart_of_accountsRequest;
 use App\Http\Requests\Updatechart_of_accountsRequest;
+use App\Models\chart_of_accounts;
 
 class ChartOfAccountsController extends Controller
 {

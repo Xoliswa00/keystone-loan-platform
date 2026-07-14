@@ -58,7 +58,7 @@
 
                     <!-- Footer -->
                     <footer class="mt-12 text-center text-xs text-gray-500 dark:text-gray-400">
-                        &copy; {{ date('Y') }} Liger Admin Panel. All rights reserved.
+                        &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
                     </footer>
                 </div>
             </div>

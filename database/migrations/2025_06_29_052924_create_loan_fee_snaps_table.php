@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('loan_fee_snaps', function (Blueprint $table) {
-             $table->id();
-    $table->foreignId('loan_id')->constrained('loans')->onDelete('cascade');
-    $table->date('due_date');
-    $table->decimal('amount_due', 10, 2);
-    $table->enum('status', ['pending', 'paid', 'late'])->default('pending');
-    $table->timestamps();
+            $table->id();
+            $table->foreignId('loan_id')->constrained('loans')->onDelete('cascade');
+            $table->date('due_date');
+            $table->decimal('amount_due', 10, 2);
+            $table->enum('status', ['pending', 'paid', 'late'])->default('pending');
+            $table->timestamps();
         });
     }
 

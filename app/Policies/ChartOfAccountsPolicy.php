@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\chart_of_accounts;
-use Illuminate\Auth\Access\Response;
+use App\Models\User;
 
 class ChartOfAccountsPolicy
 {

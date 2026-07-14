@@ -22,10 +22,10 @@
   @endif
 
   @if($batches->isEmpty())
-    <div class="kc-alert-success">All GL batches in this period are balanced.</div>
+    <div class="kc-alert-success mb-4">All GL batches in this period are balanced.</div>
   @else
     <div class="kc-alert-error mb-4">{{ $batches->count() }} unbalanced batch(es) found — review immediately.</div>
-    <div class="kc-card">
+    <div class="kc-card mb-6">
       <table class="kc-table">
         <thead><tr><th>Batch ID</th><th>Reference</th><th>Source</th><th>Posted</th><th>Total Debit</th><th>Total Credit</th><th>Variance</th></tr></thead>
         <tbody>
@@ -44,4 +44,28 @@
       </table>
     </div>
   @endif
+
+  {{-- Point-in-time snapshot checks — same as keystone:reconcile-gl checks 2 & 3 --}}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div>
+      @if($loanReceivable['variance'] > 1.00)
+        <div class="kc-alert-error">
+          <p class="font-semibold">Loan Receivable variance: R {{ number_format($loanReceivable['variance'], 2) }}</p>
+          <p class="text-xs mt-1">Loan ledger total: R {{ number_format($loanReceivable['ledger_total'], 2) }} · GL account 1200: R {{ number_format($loanReceivable['gl_total'], 2) }}</p>
+        </div>
+      @else
+        <div class="kc-alert-success">Loan ledger matches GL Loans Receivable (account 1200).</div>
+      @endif
+    </div>
+    <div>
+      @if($deferredInterest['variance'] > 1.00)
+        <div class="kc-alert-error">
+          <p class="font-semibold">Deferred Interest variance: R {{ number_format($deferredInterest['variance'], 2) }}</p>
+          <p class="text-xs mt-1">Ledger total: R {{ number_format($deferredInterest['ledger_total'], 2) }} · GL account 2100: R {{ number_format($deferredInterest['gl_total'], 2) }}</p>
+        </div>
+      @else
+        <div class="kc-alert-success">Deferred interest matches GL account 2100.</div>
+      @endif
+    </div>
+  </div>
 </x-app-layout>

@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class glpost extends Model
 {
     use HasFactory;
-     protected $fillable = [
+
+    protected $fillable = [
         'entry_id',
         'account_id',
         'debit',

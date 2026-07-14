@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('glentries', function (Blueprint $table) {
             $table->id();
-                     $table->foreignId('batch_id')->constrained('glbatches');
+            $table->foreignId('batch_id')->constrained('glbatches');
             $table->foreignId('account_id')->constrained('gl_accounts');
             $table->decimal('debit', 15, 2)->nullable();
             $table->decimal('credit', 15, 2)->nullable();
             $table->string('description')->nullable();
-       
+
             $table->string('reference')->nullable(); // invoice number, payment ref, etc.
             $table->timestamps();
         });

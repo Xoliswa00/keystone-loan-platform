@@ -2,76 +2,81 @@
 
 namespace App\Console\Commands;
 
+use App\Models\LendingSetting;
 use App\Models\RepaymentSchedule;
-use App\Models\Loan;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class EscalateArrears extends Command
 {
-    protected $signature   = 'keystone:escalate-arrears';
-    protected $description = 'Send escalation notices for overdue accounts by DPD bucket (30/60/90 days).';
+    protected $signature = 'keystone:escalate-arrears';
+
+    protected $description = 'Send escalation notices for overdue accounts by DPD tier (tunable via admin/settings/lending).';
 
     public function handle(): int
     {
         $today = now()->toDateString();
+        $settings = LendingSetting::current();
+        $stage2Dpd = $settings->ifrs9_stage2_dpd;
+        $secondNoticeDpd = $settings->arrears_second_notice_dpd;
+        $stage3Dpd = $settings->ifrs9_stage3_dpd;
 
-        // Group overdue schedules by DPD bucket
+        // Tiers (not the raw DPD boundaries) drive the message/subject match
+        // below, so a threshold change in admin/settings/lending can't
+        // silently fall through to the "default" (mildest) notice text.
+        $tierFor = fn (int $dpd): int => match (true) {
+            $dpd >= $stage3Dpd => 3,
+            $dpd >= $secondNoticeDpd => 2,
+            $dpd >= $stage2Dpd => 1,
+            default => 0,
+        };
+
         $overdue = RepaymentSchedule::with(['loanApplication.user', 'loanApplication.loan'])
             ->whereIn('status', ['pending', 'payment_failed'])
             ->whereDate('due_date', '<', $today)
             ->get()
-            ->groupBy(function ($s) {
-                $dpd = now()->diffInDays($s->due_date, false) * -1;
-                return match(true) {
-                    $dpd >= 90 => '90+',
-                    $dpd >= 60 => '60-89',
-                    $dpd >= 30 => '30-59',
-                    default    => '1-29',
-                };
-            });
+            ->groupBy(fn ($s) => $tierFor((int) max(0, now()->diffInDays($s->due_date, false) * -1)));
 
         $total = 0;
 
-        foreach ($overdue as $bucket => $schedules) {
+        foreach ($overdue as $tier => $schedules) {
             foreach ($schedules as $schedule) {
                 $application = $schedule->loanApplication;
-                $user        = $application?->user;
+                $user = $application?->user;
 
-                if (!$user || !$user->email) {
+                if (! $user || ! $user->email) {
                     continue;
                 }
 
-                $dpd = (int) (now()->diffInDays($schedule->due_date, false) * -1);
+                $dpd = (int) max(0, now()->diffInDays($schedule->due_date, false) * -1);
 
-                $subject = match($bucket) {
-                    '90+'   => 'URGENT: Account in Default — Keystone Capital Partners',
-                    '60-89' => 'Second Notice: Overdue Payment — Keystone Capital Partners',
-                    '30-59' => 'Payment Overdue Notice — Keystone Capital Partners',
+                $subject = match ($tier) {
+                    3 => 'URGENT: Account in Default — Keystone Capital Partners',
+                    2 => 'Second Notice: Overdue Payment — Keystone Capital Partners',
+                    1 => 'Payment Overdue Notice — Keystone Capital Partners',
                     default => 'Missed Payment Reminder — Keystone Capital Partners',
                 };
 
-                $lines = match($bucket) {
-                    '90+' => [
+                $lines = match ($tier) {
+                    3 => [
                         "Dear {$user->name},",
                         "Your account is now {$dpd} days overdue and has been classified as non-performing.",
-                        "Outstanding amount: R" . number_format($schedule->emi_amount, 2),
-                        "Failure to pay may result in legal action and adverse credit bureau listing.",
-                        "Contact us immediately to arrange payment: 27721853349",
+                        'Outstanding amount: R'.number_format($schedule->emi_amount, 2),
+                        'Failure to pay may result in legal action and adverse credit bureau listing.',
+                        'Contact us immediately to arrange payment: 27721853349',
                     ],
-                    '60-89' => [
+                    2 => [
                         "Dear {$user->name},",
                         "Your payment is {$dpd} days overdue. This is your second notice.",
-                        "Outstanding: R" . number_format($schedule->emi_amount, 2),
-                        "Please make payment immediately or contact us to discuss arrangements.",
+                        'Outstanding: R'.number_format($schedule->emi_amount, 2),
+                        'Please make payment immediately or contact us to discuss arrangements.',
                     ],
                     default => [
                         "Dear {$user->name},",
-                        "Your payment of R" . number_format($schedule->emi_amount, 2) . " is {$dpd} day(s) overdue.",
-                        "Please make payment as soon as possible to avoid additional charges.",
-                        "Contact us: 27721853349",
+                        'Your payment of R'.number_format($schedule->emi_amount, 2)." is {$dpd} day(s) overdue.",
+                        'Please make payment as soon as possible to avoid additional charges.',
+                        'Contact us: 27721853349',
                     ],
                 };
 
@@ -81,14 +86,21 @@ class EscalateArrears extends Command
                     );
                     $total++;
                 } catch (\Exception $e) {
-                    Log::warning("Escalation email failed for user #{$user->id}: " . $e->getMessage());
+                    Log::warning("Escalation email failed for user #{$user->id}: ".$e->getMessage());
                 }
             }
         }
 
         $this->info("Escalation notices sent: {$total}");
-        foreach ($overdue as $bucket => $items) {
-            $this->line("  [{$bucket} DPD]: {$items->count()} accounts");
+
+        $labels = [
+            0 => '1-'.($stage2Dpd - 1),
+            1 => "{$stage2Dpd}-".($secondNoticeDpd - 1),
+            2 => "{$secondNoticeDpd}-".($stage3Dpd - 1),
+            3 => "{$stage3Dpd}+",
+        ];
+        foreach ($overdue as $tier => $items) {
+            $this->line("  [{$labels[$tier]} DPD]: {$items->count()} accounts");
         }
 
         return self::SUCCESS;

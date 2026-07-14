@@ -20,14 +20,14 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-RewriteCond %{HTTP_REFERER} !^http://ligerholding.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^http://ligerholding.co.za$      [NC]
-RewriteCond %{HTTP_REFERER} !^http://www.ligerholding.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^http://www.ligerholding.co.za$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://ligerholding.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://ligerholding.co.za$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://www.ligerholding.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://www.ligerholding.co.za$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://keystonecapital.co.za/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://keystonecapital.co.za$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://www.keystonecapital.co.za/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://www.keystonecapital.co.za$      [NC]
+RewriteCond %{HTTP_REFERER} !^https://lkeystonecapital.co.za/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^https://keystonecapital.co.za$      [NC]
+RewriteCond %{HTTP_REFERER} !^https://www.keystonecapital.co.za/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^https://www.keystonecapital.co.za$      [NC]
 RewriteRule .*\.(jpg|jpeg|gif|png|bmp)$ - [F,NC]
 
 # php -- BEGIN cPanel-generated handler, do not edit

@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\{arbatch, glbatch, glentry, glpost, gl_accounts};
+use App\Models\arbatch;
+use App\Models\gl_accounts;
+use App\Models\glbatch;
+use App\Models\glentry;
+use App\Models\glpost;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class GLPostingService
 {
@@ -14,7 +18,8 @@ class GLPostingService
      * Assets and Expenses: debit increases, credit decreases.
      * Liabilities, Income, Equity: credit increases, debit decreases.
      */
-    const NORMAL_DEBIT_TYPES  = ['asset', 'expense'];
+    const NORMAL_DEBIT_TYPES = ['asset', 'expense'];
+
     const NORMAL_CREDIT_TYPES = ['liability', 'income', 'equity', 'deferred_income'];
 
     /**
@@ -33,17 +38,17 @@ class GLPostingService
             // Check the posting date against the financial period status.
             // Locked periods reject all postings (closed periods still accept adjustments).
             $postDate = $arBatch->approved_at ?? now();
-            $period   = \App\Models\FinancialPeriod::forDate($postDate->toDateString());
+            $period = \App\Models\FinancialPeriod::forDate($postDate->toDateString());
 
             if ($period && $period->isLocked()) {
                 throw new Exception(
-                    "Period {$period->displayLabel()} is locked — no GL postings allowed. " .
-                    "Contact your finance administrator."
+                    "Period {$period->displayLabel()} is locked — no GL postings allowed. ".
+                    'Contact your finance administrator.'
                 );
             }
 
             // Auto-create the period as open if it doesn't exist yet
-            if (!$period) {
+            if (! $period) {
                 \App\Models\FinancialPeriod::ensure($postDate->format('Y-m'));
             }
 
@@ -55,32 +60,32 @@ class GLPostingService
 
             // ── 1. GL Batch header ──────────────────────────────────────────────
             $glBatch = glbatch::create([
-                'reference'   => 'GLB-' . now()->format('YmdHis') . '-' . $arBatch->id,
+                'reference' => 'GLB-'.now()->format('YmdHis').'-'.$arBatch->id,
                 'source_type' => $arBatch->source_type,
-                'source_id'   => $arBatch->source_id,
-                'status'      => 'posted',
-                'created_by'  => $userId,
-                'posted_at'   => now(),
+                'source_id' => $arBatch->source_id,
+                'status' => 'posted',
+                'created_by' => $userId,
+                'posted_at' => now(),
             ]);
 
-            $totalDebit  = 0;
+            $totalDebit = 0;
             $totalCredit = 0;
 
             // ── 2. Process each entry ───────────────────────────────────────────
             foreach ($arBatch->entries as $arEntry) {
 
-                $debit  = $arEntry->entry_type === 'debit'  ? (float) $arEntry->amount : 0;
+                $debit = $arEntry->entry_type === 'debit' ? (float) $arEntry->amount : 0;
                 $credit = $arEntry->entry_type === 'credit' ? (float) $arEntry->amount : 0;
 
-                $totalDebit  += $debit;
+                $totalDebit += $debit;
                 $totalCredit += $credit;
 
                 // GL Entry (journal line)
                 $glEntry = glentry::create([
-                    'batch_id'    => $glBatch->id,
-                    'account_id'  => $arEntry->gl_account_id,
-                    'debit'       => $debit,
-                    'credit'      => $credit,
+                    'batch_id' => $glBatch->id,
+                    'account_id' => $arEntry->gl_account_id,
+                    'debit' => $debit,
+                    'credit' => $credit,
                     'description' => $arEntry->description,
                 ]);
 
@@ -89,13 +94,13 @@ class GLPostingService
 
                 // GL Post (the authoritative ledger line)
                 glpost::create([
-                    'entry_id'   => $glEntry->id,
+                    'entry_id' => $glEntry->id,
                     'account_id' => $account->id,
-                    'debit'      => $debit,
-                    'credit'     => $credit,
-                    'post_date'  => now()->toDateString(),
-                    'reference'  => $glBatch->reference,
-                    'module'     => $glBatch->source_type,
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'post_date' => now()->toDateString(),
+                    'reference' => $glBatch->reference,
+                    'module' => $glBatch->source_type,
                 ]);
 
                 // Account balance — direction depends on account type
@@ -118,16 +123,16 @@ class GLPostingService
 
             // ── 4. Stamp AR batch ───────────────────────────────────────────────
             $arBatch->update([
-                'status'       => 'posted',
+                'status' => 'posted',
                 'posted_to_gl' => true,
-                'posted_at'    => now(),
+                'posted_at' => now(),
             ]);
 
             Log::info('AR batch posted to GL', [
                 'ar_batch_id' => $arBatch->id,
                 'gl_batch_id' => $glBatch->id,
                 'total_debit' => $totalDebit,
-                'total_credit'=> $totalCredit,
+                'total_credit' => $totalCredit,
             ]);
 
             return $glBatch;

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('apbatch_entries', function (Blueprint $table) {
             $table->id();
-             $table->foreignId('batch_id')->constrained('apbatches');
+            $table->foreignId('batch_id')->constrained('apbatches');
             $table->foreignId('invoice_id')->nullable()->constrained('apinvoices');
             $table->foreignId('vendor_id')->nullable()->constrained('apvendors');
             $table->decimal('debit', 15, 2)->nullable();

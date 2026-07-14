@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ARFlags;
 use App\Http\Requests\StoreARFlagsRequest;
 use App\Http\Requests\UpdateARFlagsRequest;
+use App\Models\ARFlags;
 
 class ARFlagsController extends Controller
 {

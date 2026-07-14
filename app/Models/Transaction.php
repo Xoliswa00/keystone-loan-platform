@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Transaction extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
         'loan_id',
         'transaction_type',

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LoanApplication;
 use App\Models\Loan;
+use App\Models\LoanApplication;
 use App\Models\NcaAgreement;
 use App\Services\LoanAgreementService;
 use Illuminate\Http\Request;
@@ -46,7 +46,7 @@ class LoanAgreementController extends Controller
 
     public function generateLoanAgreement(LoanApplication $application)
     {
-        if (!$application->nca_agreement_sent_at) {
+        if (! $application->nca_agreement_sent_at) {
             return redirect()->back()
                 ->with('error', 'Pre-agreement statement must be sent to the client before generating the loan agreement.');
         }
@@ -76,7 +76,7 @@ class LoanAgreementController extends Controller
             abort(403);
         }
 
-        if (!Storage::disk('public')->exists($agreement->file_path)) {
+        if (! Storage::disk('public')->exists($agreement->file_path)) {
             // Regenerate on the fly if file missing
             $application = $agreement->loanApplication;
             if ($agreement->document_type === 'loan_agreement') {
@@ -87,7 +87,7 @@ class LoanAgreementController extends Controller
             $agreement->refresh();
         }
 
-        $filename = $agreement->reference . '.pdf';
+        $filename = $agreement->reference.'.pdf';
 
         return response()->file(
             Storage::disk('public')->path($agreement->file_path),
@@ -118,10 +118,10 @@ class LoanAgreementController extends Controller
     public function preview(LoanApplication $application, string $type = 'pre_agreement_statement')
     {
         $data = $this->agreements->buildAgreementData($application);
-        $view = match($type) {
-            'loan_agreement'   => 'agreements.loan_agreement',
+        $view = match ($type) {
+            'loan_agreement' => 'agreements.loan_agreement',
             'settlement_quote' => 'agreements.settlement_quote',
-            default            => 'agreements.pre_agreement',
+            default => 'agreements.pre_agreement',
         };
 
         return view($view, $data);

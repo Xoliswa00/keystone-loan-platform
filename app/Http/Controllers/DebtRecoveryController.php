@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\LoanNotificationMail;
 use App\Models\DebtRecovery;
 use App\Models\DebtRecoveryPayment;
 use App\Models\Loan;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class DebtRecoveryController extends Controller
 {
@@ -32,7 +34,7 @@ class DebtRecoveryController extends Controller
             $query->where('status', $request->status);
         }
 
-        $cases   = $query->paginate(30);
+        $cases = $query->paginate(30);
         $summary = DebtRecovery::select(
             DB::raw('SUM(original_write_off_amount) as total_written_off'),
             DB::raw('SUM(total_recovered) as total_recovered'),
@@ -64,9 +66,9 @@ class DebtRecoveryController extends Controller
     public function open(Request $request)
     {
         $request->validate([
-            'loan_id'    => 'required|exists:loans,id',
-            'notes'      => 'nullable|string|max:1000',
-            'assigned_to'=> 'nullable|exists:users,id',
+            'loan_id' => 'required|exists:loans,id',
+            'notes' => 'nullable|string|max:1000',
+            'assigned_to' => 'nullable|exists:users,id',
         ]);
 
         $loan = Loan::findOrFail($request->loan_id);
@@ -77,21 +79,30 @@ class DebtRecoveryController extends Controller
 
         $writeOffAmount = $loan->remaining_balance;
 
-        DebtRecovery::create([
-            'loan_id'                   => $loan->id,
-            'user_id'                   => $loan->user_id,
-            'status'                    => 'open',
+        $recovery = DebtRecovery::create([
+            'loan_id' => $loan->id,
+            'user_id' => $loan->user_id,
+            'status' => 'open',
             'original_write_off_amount' => $writeOffAmount,
-            'total_recovered'           => 0,
-            'outstanding_recovery'      => $writeOffAmount,
-            'assigned_to'               => $request->assigned_to,
-            'notes'                     => $request->notes,
-            'opened_at'                 => now()->toDateString(),
-            'next_action_date'          => now()->addDays(7)->toDateString(),
+            'total_recovered' => 0,
+            'outstanding_recovery' => $writeOffAmount,
+            'assigned_to' => $request->assigned_to,
+            'notes' => $request->notes,
+            'opened_at' => now()->toDateString(),
+            'next_action_date' => now()->addDays(7)->toDateString(),
         ]);
 
+        $this->sendRecoveryNotification(
+            $recovery,
+            'Your Account Has Been Moved to Recovery',
+            [
+                'Your loan account has an outstanding balance of R'.number_format($writeOffAmount, 2).' that requires immediate attention.',
+                'Please contact us as soon as possible to arrange payment or discuss a settlement plan.',
+            ]
+        );
+
         return redirect()->route('admin.recovery.index')
-            ->with('success', 'Recovery case opened for loan #' . $loan->id);
+            ->with('success', 'Recovery case opened for loan #'.$loan->id);
     }
 
     // ── Record a recovery payment ──────────────────────────────────────────
@@ -103,48 +114,48 @@ class DebtRecoveryController extends Controller
     public function recordPayment(Request $request, DebtRecovery $recovery)
     {
         $request->validate([
-            'amount'           => 'required|numeric|min:0.01|max:' . $recovery->outstanding_recovery,
-            'payment_date'     => 'required|date',
-            'payment_method'   => 'required|in:nupay,eft,cash,legal_settlement',
-            'payment_reference'=> 'nullable|string|max:100',
-            'notes'            => 'nullable|string|max:500',
+            'amount' => 'required|numeric|min:0.01|max:'.$recovery->outstanding_recovery,
+            'payment_date' => 'required|date',
+            'payment_method' => 'required|in:nupay,eft,cash,legal_settlement',
+            'payment_reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         DB::transaction(function () use ($request, $recovery) {
             $amount = (float) $request->amount;
 
             // ── GL Posting ─────────────────────────────────────────────────
-            $branchId     = $recovery->loan->branch_id    ?? 1;
+            $branchId = $recovery->loan->branch_id ?? 1;
             $locationCode = $recovery->loan->location_code ?? '000';
 
-            $bankGl     = DB::table('glmappings')->where('key', 'loan_repayment_dr')->value('account_code');
+            $bankGl = DB::table('glmappings')->where('key', 'loan_repayment_dr')->value('account_code');
             $recovIncGl = DB::table('glmappings')->where('key', 'recovery_income_cr')->value('account_code');
 
-            $ref = 'ARB-REC-' . now()->format('YmdHis') . '-' . $recovery->id;
+            $ref = 'ARB-REC-'.now()->format('YmdHis').'-'.$recovery->id;
 
             // Create AR batch and GL entries for recovery payment
-            $customer  = $recovery->loan->user->customer;
-            $arBatch   = \App\Models\arbatch::create([
-                'reference'    => $ref,
-                'customer_id'  => $customer->id,
-                'source_type'  => DebtRecovery::class,
-                'source_id'    => $recovery->id,
+            $customer = $recovery->loan->user->customer;
+            $arBatch = \App\Models\arbatch::create([
+                'reference' => $ref,
+                'customer_id' => $customer->id,
+                'source_type' => DebtRecovery::class,
+                'source_id' => $recovery->id,
                 'total_amount' => $amount,
-                'status'       => 'approved',
-                'created_by'   => Auth::id(),
-                'approved_by'  => Auth::id(),
-                'approved_at'  => now(),
+                'status' => 'approved',
+                'created_by' => Auth::id(),
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
             ]);
 
             if ($bankGl && $recovIncGl) {
                 $bankAccount = DB::table('gl_accounts as ga')
-                    ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+                    ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
                     ->where('coa.account_code', $bankGl)
                     ->where('ga.branch_id', $branchId)
                     ->value('ga.id');
 
                 $recovAccount = DB::table('gl_accounts as ga')
-                    ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+                    ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
                     ->where('coa.account_code', $recovIncGl)
                     ->value('ga.id');
 
@@ -161,26 +172,26 @@ class DebtRecoveryController extends Controller
 
             // ── Record payment ─────────────────────────────────────────────
             DebtRecoveryPayment::create([
-                'debt_recovery_id'  => $recovery->id,
-                'loan_id'           => $recovery->loan_id,
-                'user_id'           => $recovery->user_id,
-                'amount'            => $amount,
-                'payment_date'      => $request->payment_date,
-                'payment_method'    => $request->payment_method,
+                'debt_recovery_id' => $recovery->id,
+                'loan_id' => $recovery->loan_id,
+                'user_id' => $recovery->user_id,
+                'amount' => $amount,
+                'payment_date' => $request->payment_date,
+                'payment_method' => $request->payment_method,
                 'payment_reference' => $request->payment_reference,
-                'gl_batch_reference'=> $ref,
-                'received_by'       => Auth::id(),
-                'notes'             => $request->notes,
+                'gl_batch_reference' => $ref,
+                'received_by' => Auth::id(),
+                'notes' => $request->notes,
             ]);
 
             // ── Update recovery case ───────────────────────────────────────
-            $newRecovered    = $recovery->total_recovered + $amount;
-            $newOutstanding  = max(0, $recovery->original_write_off_amount - $newRecovered);
+            $newRecovered = $recovery->total_recovered + $amount;
+            $newOutstanding = max(0, $recovery->original_write_off_amount - $newRecovered);
 
             $recovery->update([
-                'total_recovered'      => $newRecovered,
+                'total_recovered' => $newRecovered,
                 'outstanding_recovery' => $newOutstanding,
-                'status'               => $newOutstanding <= 0 ? 'recovered' : 'partial',
+                'status' => $newOutstanding <= 0 ? 'recovered' : 'partial',
             ]);
 
             \App\Models\AuditLog::record('recovery_payment', $recovery, [], [
@@ -191,7 +202,7 @@ class DebtRecoveryController extends Controller
             Log::info("Recovery payment R{$amount} recorded on case #{$recovery->id}");
         });
 
-        return back()->with('success', 'Recovery payment of R' . number_format($request->amount, 2) . ' recorded.');
+        return back()->with('success', 'Recovery payment of R'.number_format($request->amount, 2).' recorded.');
     }
 
     // ── Update case status / assign ────────────────────────────────────────
@@ -199,13 +210,15 @@ class DebtRecoveryController extends Controller
     public function update(Request $request, DebtRecovery $recovery)
     {
         $request->validate([
-            'status'           => 'required|in:open,partial,recovered,closed,legal',
-            'assigned_to'      => 'nullable|exists:users,id',
-            'external_agency'  => 'nullable|string|max:200',
-            'legal_reference'  => 'nullable|string|max:200',
+            'status' => 'required|in:open,partial,recovered,closed,legal',
+            'assigned_to' => 'nullable|exists:users,id',
+            'external_agency' => 'nullable|string|max:200',
+            'legal_reference' => 'nullable|string|max:200',
             'next_action_date' => 'nullable|date',
-            'notes'            => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:1000',
         ]);
+
+        $previousStatus = $recovery->status;
 
         $recovery->update($request->only([
             'status', 'assigned_to', 'external_agency',
@@ -216,6 +229,40 @@ class DebtRecoveryController extends Controller
             $recovery->update(['closed_at' => now()->toDateString(), 'closed_by' => Auth::id()]);
         }
 
+        if ($previousStatus !== 'legal' && $request->status === 'legal') {
+            $this->sendRecoveryNotification(
+                $recovery,
+                'Important: Legal Action Notice',
+                [
+                    'This letter serves as notice that your outstanding balance of R'.number_format($recovery->outstanding_recovery, 2).' has been escalated for legal recovery.',
+                    'To avoid further action and additional costs, please contact us immediately to settle this account or arrange a payment plan.',
+                ]
+            );
+        }
+
+        if ($request->status === 'recovered') {
+            $this->sendRecoveryNotification(
+                $recovery,
+                'Account Settled — Thank You',
+                ['Your outstanding balance has been fully recovered. Thank you for resolving this account.']
+            );
+        }
+
         return back()->with('success', 'Recovery case updated.');
+    }
+
+    protected function sendRecoveryNotification(DebtRecovery $recovery, string $subject, array $bodyLines = []): void
+    {
+        try {
+            $recovery->loadMissing('user');
+            if (! $recovery->user?->email) {
+                return;
+            }
+
+            Mail::to($recovery->user->email)
+                ->queue(new LoanNotificationMail($subject, $bodyLines, $recovery->loan));
+        } catch (\Exception $e) {
+            Log::warning('Recovery notification failed: '.$e->getMessage());
+        }
     }
 }

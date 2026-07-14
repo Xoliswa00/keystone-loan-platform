@@ -2,11 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Loan_fee_rules;
-use app\Models\LoanFee;
-
+use Illuminate\Database\Seeder;
 
 class LoanFeeRulesSeeder extends Seeder
 {
@@ -17,7 +14,7 @@ class LoanFeeRulesSeeder extends Seeder
     {
         //
 
-     Loan_fee_rules::insert([
+        Loan_fee_rules::insert([
             [
                 'fee_type' => 'interest',
                 'applicability' => 'first_timer',
@@ -58,12 +55,7 @@ class LoanFeeRulesSeeder extends Seeder
                 'rate' => 0.05,
                 'flat_fee' => null,
                 'cap' => null,
-                   'months_valid' => null,
-
-
-
-
-
+                'months_valid' => null,
 
             ],
         ]);

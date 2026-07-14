@@ -109,7 +109,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'info@keystonecapitalpartners.co.za'),
-        'name'    => env('MAIL_FROM_NAME', 'Keystone Capital Partners'),
+        'name' => env('MAIL_FROM_NAME', 'Keystone Capital Partners'),
     ],
 
     // Loan notification CC — comma-separated, set in .env as LOAN_NOTIFICATION_CC

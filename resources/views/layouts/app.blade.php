@@ -81,7 +81,7 @@
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" title="Sign out"
+                    <button type="submit" title="Sign out" aria-label="Sign out"
                         class="text-white/40 hover:text-white/80 transition-colors p-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/>
@@ -99,6 +99,7 @@
         <header class="kc-topbar sticky top-0 z-20">
             {{-- Mobile sidebar toggle --}}
             <button @click="sidebarOpen = !sidebarOpen"
+                aria-label="Toggle navigation menu" :aria-expanded="sidebarOpen.toString()"
                 class="lg:hidden p-2 -ml-1 rounded-lg text-kc-charcoal/60 hover:bg-kc-silver-light transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -106,7 +107,7 @@
             </button>
 
             {{-- Page title slot --}}
-            <div class="flex-1 px-4 lg:px-0">
+            <div class="flex-1 min-w-0 px-4 lg:px-0">
                 @isset($header)
                     {{ $header }}
                 @endisset
@@ -124,6 +125,53 @@
                     </svg>
                     Support
                 </a>
+
+                {{-- Notifications --}}
+                @php
+                    $unreadNotifications = Auth::user()->unreadNotifications;
+                    $recentNotifications = Auth::user()->notifications()->latest()->take(10)->get();
+                @endphp
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" aria-label="Notifications"
+                        class="relative p-2 rounded-lg hover:bg-kc-silver-light transition text-kc-charcoal/60">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        @if($unreadNotifications->isNotEmpty())
+                            <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500"></span>
+                        @endif
+                    </button>
+
+                    <div x-show="open" @click.outside="open = false" x-cloak
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-kc-card border border-kc-silver-light overflow-hidden z-30">
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-kc-silver-light">
+                            <span class="text-sm font-semibold text-kc-navy">Notifications</span>
+                            @if($unreadNotifications->isNotEmpty())
+                                <form method="POST" action="{{ route('notifications.read-all') }}">
+                                    @csrf
+                                    <button type="submit" class="text-[11px] text-kc-gold hover:underline">Mark all read</button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="max-h-80 overflow-y-auto divide-y divide-kc-silver-light/60">
+                            @forelse($recentNotifications as $n)
+                                <form method="POST" action="{{ route('notifications.read', $n->id) }}"
+                                    class="block {{ $n->read_at ? '' : 'bg-kc-gold/5' }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-3 hover:bg-kc-silver-light/60 transition">
+                                        <p class="text-xs text-kc-charcoal/80">{{ $n->data['message'] ?? 'Notification' }}</p>
+                                        <p class="text-[10px] text-kc-charcoal/40 mt-0.5">{{ $n->created_at->diffForHumans() }}</p>
+                                    </button>
+                                </form>
+                            @empty
+                                <p class="px-4 py-6 text-center text-xs text-kc-charcoal/40">No notifications yet.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
 
                 {{-- User dropdown --}}
                 <div x-data="{ open: false }" class="relative">
@@ -192,6 +240,22 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 {{ session('error') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="mx-6 mt-4 kc-alert-error flex items-start gap-2 animate-fadeIn">
+                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <p class="font-medium">Please fix the following:</p>
+                    <ul class="list-disc list-inside mt-1">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         @endif
 

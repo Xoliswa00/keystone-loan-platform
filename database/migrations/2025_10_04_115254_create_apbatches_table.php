@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('apbatches', function (Blueprint $table) {
             $table->id();
-              $table->date('batch_date');
+            $table->date('batch_date');
             $table->string('status')->default('pending');
             $table->foreignId('created_by')->constrained('users');
             $table->timestamp('posted_at')->nullable();
             $table->string('module')->default('AP');
-           
+
             $table->timestamps();
         });
     }

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('bank_name');
             $table->string('account_number');
             $table->enum('account_type', ['savings', 'checking']);
-       
+
             $table->string('payment_method');
             $table->enum('status', ['active', 'inactive']);
             $table->timestamps();

@@ -2,27 +2,34 @@
 
 namespace App\Services;
 
-use App\Models\{
-    arbatch, arbatch_entries, Customer, Loan,
-    LoanRepayment, LoanFee, RepaymentSchedule,
-    nupay_transactions_staging, nupay_transaction,
-    gl_accounts, glmapping, User, import_batch
-};
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Models\arbatch;
+use App\Models\arbatch_entries;
+use App\Models\Customer;
+use App\Models\gl_accounts;
+use App\Models\glmapping;
+use App\Models\import_batch;
+use App\Models\Loan;
+use App\Models\LoanRepayment;
+use App\Models\nupay_transaction;
+use App\Models\nupay_transactions_staging;
+use App\Models\RepaymentSchedule;
+use App\Models\User;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class NuPayService
 {
-    protected GLPostingService    $glPosting;
+    protected GLPostingService $glPosting;
+
     protected DisbursementService $disbursement;
 
     protected float $nupayFeeRate = 0.02; // 2% NuPay collection fee
 
     public function __construct(GLPostingService $glPosting, DisbursementService $disbursement)
     {
-        $this->glPosting    = $glPosting;
+        $this->glPosting = $glPosting;
         $this->disbursement = $disbursement;
     }
 
@@ -34,7 +41,7 @@ class NuPayService
     {
         return DB::transaction(function () use ($stagingId, $userId) {
 
-            $txn  = nupay_transactions_staging::lockForUpdate()->findOrFail($stagingId);
+            $txn = nupay_transactions_staging::lockForUpdate()->findOrFail($stagingId);
             $type = strtolower(trim($txn->transaction_type ?? 'success'));
 
             if ($txn->posted_at !== null) {
@@ -43,35 +50,35 @@ class NuPayService
 
             // ── Resolve customer ──────────────────────────────────────────────
             $user = User::where('ID_Number', $txn->debtor_id)->first();
-            if (!$user) {
+            if (! $user) {
                 throw new Exception("No user found for debtor_id '{$txn->debtor_id}'.");
             }
 
             $customer = Customer::where('user_id', $user->id)->lockForUpdate()->first();
-            if (!$customer) {
+            if (! $customer) {
                 throw new Exception("No customer record for user #{$user->id}.");
             }
 
             // ── AR batch header ───────────────────────────────────────────────
-            $ref     = 'ARB-NUPAY-' . now()->format('YmdHis') . '-' . $txn->id;
+            $ref = 'ARB-NUPAY-'.now()->format('YmdHis').'-'.$txn->id;
             $arBatch = arbatch::create([
-                'reference'    => $ref,
-                'customer_id'  => $customer->id,
-                'source_type'  => nupay_transactions_staging::class,
-                'source_id'    => $txn->id,
+                'reference' => $ref,
+                'customer_id' => $customer->id,
+                'source_type' => nupay_transactions_staging::class,
+                'source_id' => $txn->id,
                 'total_amount' => $txn->instalment_amount,
-                'status'       => 'approved',
-                'created_by'   => $userId,
-                'approved_by'  => $userId,
-                'approved_at'  => now(),
+                'status' => 'approved',
+                'created_by' => $userId,
+                'approved_by' => $userId,
+                'approved_at' => now(),
             ]);
 
             // ── Dispatch by transaction type ──────────────────────────────────
-            $repayment = match($type) {
-                'success'           => $this->handleSuccess($txn, $arBatch, $user, $customer, $userId),
-                'failed', 'canceled'=> $this->handleFailed($txn, $arBatch, $customer),
-                'reversed'          => $this->handleReversed($txn, $arBatch, $customer),
-                default             => throw new Exception("Unsupported NuPay transaction type: {$type}"),
+            $repayment = match ($type) {
+                'success' => $this->handleSuccess($txn, $arBatch, $user, $customer, $userId),
+                'failed', 'canceled' => $this->handleFailed($txn, $arBatch, $customer),
+                'reversed' => $this->handleReversed($txn, $arBatch, $customer),
+                default => throw new Exception("Unsupported NuPay transaction type: {$type}"),
             };
 
             // ── Post to GL ────────────────────────────────────────────────────
@@ -98,13 +105,13 @@ class NuPayService
             nupay_transaction::updateOrCreate(
                 ['import_ref' => $txn->import_ref, 'mandate_id' => $txn->mandate_id],
                 [
-                    'debtor_id'         => $txn->debtor_id,
+                    'debtor_id' => $txn->debtor_id,
                     'loan_repayment_id' => $repayment?->id,
-                    'amount'            => round($txn->instalment_amount, 2),
-                    'fee'               => round($txn->instalment_amount * $this->nupayFeeRate, 2),
-                    'net_amount'        => round($txn->instalment_amount * (1 - $this->nupayFeeRate), 2),
-                    'transaction_type'  => $type,
-                    'posted_at'         => now(),
+                    'amount' => round($txn->instalment_amount, 2),
+                    'fee' => round($txn->instalment_amount * $this->nupayFeeRate, 2),
+                    'net_amount' => round($txn->instalment_amount * (1 - $this->nupayFeeRate), 2),
+                    'transaction_type' => $type,
+                    'posted_at' => now(),
                 ]
             );
 
@@ -118,35 +125,35 @@ class NuPayService
 
     protected function handleSuccess(
         nupay_transactions_staging $txn,
-        arbatch                    $arBatch,
-        User                       $user,
-        Customer                   $customer,
-        int                        $userId
+        arbatch $arBatch,
+        User $user,
+        Customer $customer,
+        int $userId
     ): LoanRepayment {
 
         $allocation = $this->allocate($customer, $txn);
-        $loan       = $allocation['loan'];
-        $schedule   = $allocation['schedule'];
+        $loan = $allocation['loan'];
+        $schedule = $allocation['schedule'];
 
-        $grossAmount     = round($txn->instalment_amount, 2);
+        $grossAmount = round($txn->instalment_amount, 2);
         $principalAmount = round($allocation['principal'], 2);
-        $interestAmount  = round($allocation['interest'], 2);
-        $feeAmount       = round($allocation['fee'], 2);
-        $nupayFee        = round($grossAmount * $this->nupayFeeRate, 2);
+        $interestAmount = round($allocation['interest'], 2);
+        $feeAmount = round($allocation['fee'], 2);
+        $nupayFee = round($grossAmount * $this->nupayFeeRate, 2);
 
-        $branchId     = $loan->branch_id    ?? 1;
+        $branchId = $loan->branch_id ?? 1;
         $locationCode = $loan->location_code ?? '000';
 
-        $bankGl        = $this->resolveGl('loan_repayment_dr',  $branchId, $locationCode);
-        $loanReceivGl  = $this->resolveGl('loan_disbursement_dr',$branchId, $locationCode);
-        $feeIncomeGl   = $this->resolveGl('fee_income_cr',       $branchId, $locationCode);
-        $intIncomeGl   = $this->resolveGl('interest_income_cr',  $branchId, $locationCode);
-        $deferredIntGl = $this->resolveGl('deferred_interest_cr',$branchId, $locationCode);
-        $deferredFeeGl = $this->resolveGl('deferred_fee_cr',     $branchId, $locationCode);
-        $bankChargesGl = $this->resolveGl('bank_charges',        $branchId, $locationCode);
+        $bankGl = $this->resolveGl('loan_repayment_dr', $branchId, $locationCode);
+        $loanReceivGl = $this->resolveGl('loan_disbursement_dr', $branchId, $locationCode);
+        $feeIncomeGl = $this->resolveGl('fee_income_cr', $branchId, $locationCode);
+        $intIncomeGl = $this->resolveGl('interest_income_cr', $branchId, $locationCode);
+        $deferredIntGl = $this->resolveGl('deferred_interest_cr', $branchId, $locationCode);
+        $deferredFeeGl = $this->resolveGl('deferred_fee_cr', $branchId, $locationCode);
+        $bankChargesGl = $this->resolveGl('bank_charges', $branchId, $locationCode);
 
-        if (!$bankGl || !$loanReceivGl) {
-            throw new Exception("Missing required GL accounts for payment posting.");
+        if (! $bankGl || ! $loanReceivGl) {
+            throw new Exception('Missing required GL accounts for payment posting.');
         }
 
         $isMulti = ($loan->loan_term_months ?? 1) > 1;
@@ -164,16 +171,16 @@ class NuPayService
         if ($isMulti) {
             // Release deferred interest this period
             if ($interestAmount > 0 && $deferredIntGl && $intIncomeGl) {
-                $entries[] = $this->entry($arBatch->id, $deferredIntGl->id, 'debit',  $interestAmount,
+                $entries[] = $this->entry($arBatch->id, $deferredIntGl->id, 'debit', $interestAmount,
                     "Deferred interest released — instalment #{$schedule->installment_number}");
-                $entries[] = $this->entry($arBatch->id, $intIncomeGl->id,   'credit', $interestAmount,
+                $entries[] = $this->entry($arBatch->id, $intIncomeGl->id, 'credit', $interestAmount,
                     "Interest income recognised — instalment #{$schedule->installment_number}");
             }
             // Release deferred fees this period
             if ($feeAmount > 0 && $deferredFeeGl && $feeIncomeGl) {
-                $entries[] = $this->entry($arBatch->id, $deferredFeeGl->id, 'debit',  $feeAmount,
+                $entries[] = $this->entry($arBatch->id, $deferredFeeGl->id, 'debit', $feeAmount,
                     "Deferred fee released — instalment #{$schedule->installment_number}");
-                $entries[] = $this->entry($arBatch->id, $feeIncomeGl->id,   'credit', $feeAmount,
+                $entries[] = $this->entry($arBatch->id, $feeIncomeGl->id, 'credit', $feeAmount,
                     "Fee income recognised — instalment #{$schedule->installment_number}");
             }
         } else {
@@ -191,9 +198,9 @@ class NuPayService
 
         // 4. NuPay collection fee (bank expense)
         if ($nupayFee > 0 && $bankChargesGl) {
-            $entries[] = $this->entry($arBatch->id, $bankChargesGl->id, 'debit',  $nupayFee,
+            $entries[] = $this->entry($arBatch->id, $bankChargesGl->id, 'debit', $nupayFee,
                 "NuPay collection fee — txn #{$txn->id}");
-            $entries[] = $this->entry($arBatch->id, $bankGl->id,        'credit', $nupayFee,
+            $entries[] = $this->entry($arBatch->id, $bankGl->id, 'credit', $nupayFee,
                 "NuPay fee deduction — txn #{$txn->id}");
         }
 
@@ -205,13 +212,13 @@ class NuPayService
 
         if ($isMulti) {
             $loan->decrement('deferred_interest', $interestAmount);
-            $loan->decrement('deferred_fees',     $feeAmount);
+            $loan->decrement('deferred_fees', $feeAmount);
         }
 
         // ── Mark schedule paid ──────────────────────────────────────────────────
         $schedule->update([
-            'status'    => 'paid',
-            'paid_at'   => now(),
+            'status' => 'paid',
+            'paid_at' => now(),
             'gl_posted' => true,
         ]);
 
@@ -225,24 +232,28 @@ class NuPayService
         ]);
 
         // ── LoanRepayment audit record ───────────────────────────────────────────
-        return LoanRepayment::create([
-            'loan_id'               => $loan->id,
-            'user_id'               => $user->id,
+        $repayment = LoanRepayment::create([
+            'loan_id' => $loan->id,
+            'user_id' => $user->id,
             'repayment_schedule_id' => $schedule->id,
-            'nupay_staging_id'      => $txn->id,
-            'payment_amount'        => $grossAmount,
-            'principal_amount'      => $principalAmount,
-            'interest_amount'       => $interestAmount,
-            'fee_amount'            => $feeAmount,
-            'nupay_fee'             => $nupayFee,
-            'payment_date'          => Carbon::parse($txn->action_date),
-            'due_date'              => $schedule->due_date,
-            'status'                => 'paid',
-            'payment_method'        => 'nupay',
-            'payment_reference'     => $txn->mandate_id,
-            'gl_batch_reference'    => $arBatch->reference,
-            'transaction_type'      => 'success',
+            'nupay_staging_id' => $txn->id,
+            'payment_amount' => $grossAmount,
+            'principal_amount' => $principalAmount,
+            'interest_amount' => $interestAmount,
+            'fee_amount' => $feeAmount,
+            'nupay_fee' => $nupayFee,
+            'payment_date' => Carbon::parse($txn->action_date),
+            'due_date' => $schedule->due_date,
+            'status' => 'paid',
+            'payment_method' => 'nupay',
+            'payment_reference' => $txn->mandate_id,
+            'gl_batch_reference' => $arBatch->reference,
+            'transaction_type' => 'success',
         ]);
+
+        $this->notify($user, new \App\Notifications\PaymentReceivedNotification($repayment));
+
+        return $repayment;
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -251,19 +262,19 @@ class NuPayService
 
     protected function handleFailed(
         nupay_transactions_staging $txn,
-        arbatch                    $arBatch,
-        Customer                   $customer
+        arbatch $arBatch,
+        Customer $customer
     ): ?LoanRepayment {
 
         $allocation = $this->allocate($customer, $txn);
-        $loan       = $allocation['loan'];
-        $schedule   = $allocation['schedule'];
+        $loan = $allocation['loan'];
+        $schedule = $allocation['schedule'];
 
-        $branchId     = $loan->branch_id    ?? 1;
+        $branchId = $loan->branch_id ?? 1;
         $locationCode = $loan->location_code ?? '000';
 
-        $penaltyIncGl  = $this->resolveGl('penalty_income',        $branchId, $locationCode);
-        $penaltyRecvGl = $this->resolveGl('penalty_receivable_dr',  $branchId, $locationCode);
+        $penaltyIncGl = $this->resolveGl('penalty_income', $branchId, $locationCode);
+        $penaltyRecvGl = $this->resolveGl('penalty_receivable_dr', $branchId, $locationCode);
 
         $entries = [];
 
@@ -271,13 +282,13 @@ class NuPayService
         $dishonourFee = 40.00; // Standard dishonour fee (configurable)
 
         if ($penaltyRecvGl && $penaltyIncGl) {
-            $entries[] = $this->entry($arBatch->id, $penaltyRecvGl->id, 'debit',  $dishonourFee,
+            $entries[] = $this->entry($arBatch->id, $penaltyRecvGl->id, 'debit', $dishonourFee,
                 "Dishonour fee — failed debit #{$txn->id}");
-            $entries[] = $this->entry($arBatch->id, $penaltyIncGl->id,  'credit', $dishonourFee,
+            $entries[] = $this->entry($arBatch->id, $penaltyIncGl->id, 'credit', $dishonourFee,
                 "Dishonour fee income — failed debit #{$txn->id}");
         }
 
-        if (!empty($entries)) {
+        if (! empty($entries)) {
             arbatch_entries::insert($entries);
         }
 
@@ -292,21 +303,25 @@ class NuPayService
 
         $loan->update(['status' => 'disbursed']); // stays active, not settled
 
-        return LoanRepayment::create([
-            'loan_id'               => $loan->id,
-            'user_id'               => $customer->user_id,
+        $repayment = LoanRepayment::create([
+            'loan_id' => $loan->id,
+            'user_id' => $customer->user_id,
             'repayment_schedule_id' => $schedule->id,
-            'nupay_staging_id'      => $txn->id,
-            'payment_amount'        => 0,
-            'payment_date'          => Carbon::parse($txn->action_date),
-            'due_date'              => $schedule->due_date,
-            'status'                => 'payment_failed',
-            'payment_method'        => 'nupay',
-            'payment_reference'     => $txn->mandate_id,
-            'gl_batch_reference'    => $arBatch->reference,
-            'transaction_type'      => strtolower($txn->transaction_type),
-            'notes'                 => 'Debit order failed — dishonour fee applied.',
+            'nupay_staging_id' => $txn->id,
+            'payment_amount' => 0,
+            'payment_date' => Carbon::parse($txn->action_date),
+            'due_date' => $schedule->due_date,
+            'status' => 'payment_failed',
+            'payment_method' => 'nupay',
+            'payment_reference' => $txn->mandate_id,
+            'gl_batch_reference' => $arBatch->reference,
+            'transaction_type' => strtolower($txn->transaction_type),
+            'notes' => 'Debit order failed — dishonour fee applied.',
         ]);
+
+        $this->notify($customer->user, new \App\Notifications\PaymentFailedNotification($repayment, $dishonourFee));
+
+        return $repayment;
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -315,53 +330,53 @@ class NuPayService
 
     protected function handleReversed(
         nupay_transactions_staging $txn,
-        arbatch                    $arBatch,
-        Customer                   $customer
+        arbatch $arBatch,
+        Customer $customer
     ): ?LoanRepayment {
 
         $allocation = $this->allocate($customer, $txn, allowPaid: true);
-        $loan       = $allocation['loan'];
-        $schedule   = $allocation['schedule'];
+        $loan = $allocation['loan'];
+        $schedule = $allocation['schedule'];
 
-        $grossAmount     = round($txn->instalment_amount, 2);
+        $grossAmount = round($txn->instalment_amount, 2);
         $principalAmount = round($allocation['principal'], 2);
-        $interestAmount  = round($allocation['interest'],  2);
-        $feeAmount       = round($allocation['fee'],       2);
+        $interestAmount = round($allocation['interest'], 2);
+        $feeAmount = round($allocation['fee'], 2);
 
-        $branchId     = $loan->branch_id    ?? 1;
+        $branchId = $loan->branch_id ?? 1;
         $locationCode = $loan->location_code ?? '000';
 
-        $bankGl       = $this->resolveGl('loan_repayment_dr',   $branchId, $locationCode);
+        $bankGl = $this->resolveGl('loan_repayment_dr', $branchId, $locationCode);
         $loanReceivGl = $this->resolveGl('loan_disbursement_dr', $branchId, $locationCode);
-        $intIncomeGl  = $this->resolveGl('interest_income_cr',   $branchId, $locationCode);
-        $feeIncomeGl  = $this->resolveGl('fee_income_cr',        $branchId, $locationCode);
-        $deferredIntGl= $this->resolveGl('deferred_interest_cr', $branchId, $locationCode);
-        $deferredFeeGl= $this->resolveGl('deferred_fee_cr',      $branchId, $locationCode);
+        $intIncomeGl = $this->resolveGl('interest_income_cr', $branchId, $locationCode);
+        $feeIncomeGl = $this->resolveGl('fee_income_cr', $branchId, $locationCode);
+        $deferredIntGl = $this->resolveGl('deferred_interest_cr', $branchId, $locationCode);
+        $deferredFeeGl = $this->resolveGl('deferred_fee_cr', $branchId, $locationCode);
 
         $isMulti = ($loan->loan_term_months ?? 1) > 1;
         $entries = [];
 
         // Reversal = swap Dr/Cr from the original success entries
-        $entries[] = $this->entry($arBatch->id, $bankGl->id,       'credit', $grossAmount,
+        $entries[] = $this->entry($arBatch->id, $bankGl->id, 'credit', $grossAmount,
             "Reversal — bank #{$txn->id}");
-        $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit',  $principalAmount,
+        $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $principalAmount,
             "Reversal — principal re-opened #{$txn->id}");
 
         if ($isMulti) {
             if ($interestAmount > 0 && $deferredIntGl && $intIncomeGl) {
-                $entries[] = $this->entry($arBatch->id, $intIncomeGl->id,   'debit',  $interestAmount, "Reversal — interest income reversed");
-                $entries[] = $this->entry($arBatch->id, $deferredIntGl->id, 'credit', $interestAmount, "Reversal — deferred interest restored");
+                $entries[] = $this->entry($arBatch->id, $intIncomeGl->id, 'debit', $interestAmount, 'Reversal — interest income reversed');
+                $entries[] = $this->entry($arBatch->id, $deferredIntGl->id, 'credit', $interestAmount, 'Reversal — deferred interest restored');
             }
             if ($feeAmount > 0 && $deferredFeeGl && $feeIncomeGl) {
-                $entries[] = $this->entry($arBatch->id, $feeIncomeGl->id,   'debit',  $feeAmount, "Reversal — fee income reversed");
-                $entries[] = $this->entry($arBatch->id, $deferredFeeGl->id, 'credit', $feeAmount, "Reversal — deferred fee restored");
+                $entries[] = $this->entry($arBatch->id, $feeIncomeGl->id, 'debit', $feeAmount, 'Reversal — fee income reversed');
+                $entries[] = $this->entry($arBatch->id, $deferredFeeGl->id, 'credit', $feeAmount, 'Reversal — deferred fee restored');
             }
         } else {
             if ($interestAmount > 0) {
-                $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $interestAmount, "Reversal — interest receivable restored");
+                $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $interestAmount, 'Reversal — interest receivable restored');
             }
             if ($feeAmount > 0) {
-                $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $feeAmount, "Reversal — fee receivable restored");
+                $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $feeAmount, 'Reversal — fee receivable restored');
             }
         }
 
@@ -373,36 +388,57 @@ class NuPayService
 
         if ($isMulti) {
             $loan->increment('deferred_interest', $interestAmount);
-            $loan->increment('deferred_fees',     $feeAmount);
+            $loan->increment('deferred_fees', $feeAmount);
         }
 
         // Re-open the schedule
         $schedule->update([
-            'status'    => 'pending',
-            'paid_at'   => null,
+            'status' => 'pending',
+            'paid_at' => null,
             'gl_posted' => false,
         ]);
 
         $loan->update(['status' => 'disbursed']);
 
-        return LoanRepayment::create([
-            'loan_id'               => $loan->id,
-            'user_id'               => $customer->user_id,
+        $repayment = LoanRepayment::create([
+            'loan_id' => $loan->id,
+            'user_id' => $customer->user_id,
             'repayment_schedule_id' => $schedule->id,
-            'nupay_staging_id'      => $txn->id,
-            'payment_amount'        => -$grossAmount,
-            'principal_amount'      => -$principalAmount,
-            'interest_amount'       => -$interestAmount,
-            'fee_amount'            => -$feeAmount,
-            'payment_date'          => Carbon::parse($txn->action_date),
-            'due_date'              => $schedule->due_date,
-            'status'                => 'reversed',
-            'payment_method'        => 'nupay',
-            'payment_reference'     => $txn->mandate_id,
-            'gl_batch_reference'    => $arBatch->reference,
-            'transaction_type'      => 'reversed',
-            'notes'                 => 'Payment reversed by NuPay.',
+            'nupay_staging_id' => $txn->id,
+            'payment_amount' => -$grossAmount,
+            'principal_amount' => -$principalAmount,
+            'interest_amount' => -$interestAmount,
+            'fee_amount' => -$feeAmount,
+            'payment_date' => Carbon::parse($txn->action_date),
+            'due_date' => $schedule->due_date,
+            'status' => 'reversed',
+            'payment_method' => 'nupay',
+            'payment_reference' => $txn->mandate_id,
+            'gl_batch_reference' => $arBatch->reference,
+            'transaction_type' => 'reversed',
+            'notes' => 'Payment reversed by NuPay.',
         ]);
+
+        $this->notify($customer->user, new \App\Notifications\PaymentReversedNotification($repayment));
+
+        return $repayment;
+    }
+
+    /**
+     * Notification failures (e.g. mail transport down) must never break the
+     * payment-recording transaction they're reporting on.
+     */
+    protected function notify(?User $user, $notification): void
+    {
+        if (! $user) {
+            return;
+        }
+
+        try {
+            $user->notify($notification);
+        } catch (Exception $e) {
+            Log::warning('Payment notification failed: '.$e->getMessage());
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -410,9 +446,9 @@ class NuPayService
     // ──────────────────────────────────────────────────────────────────────────
 
     protected function allocate(
-        Customer                   $customer,
+        Customer $customer,
         nupay_transactions_staging $txn,
-        bool                       $allowPaid = false
+        bool $allowPaid = false
     ): array {
 
         $loan = Loan::where('user_id', $customer->user_id)
@@ -420,7 +456,7 @@ class NuPayService
             ->lockForUpdate()
             ->first();
 
-        if (!$loan) {
+        if (! $loan) {
             throw new Exception("No active disbursed loan for customer #{$customer->id}.");
         }
 
@@ -431,13 +467,13 @@ class NuPayService
             ])
             ->lockForUpdate();
 
-        if (!$allowPaid) {
+        if (! $allowPaid) {
             $scheduleQuery->whereIn('status', ['pending', 'payment_failed']);
         }
 
         $schedule = $scheduleQuery->first();
 
-        if (!$schedule) {
+        if (! $schedule) {
             // Fallback: find the earliest unpaid schedule
             $schedule = RepaymentSchedule::where('loan_id', $loan->loan_application_id)
                 ->whereIn('status', ['pending', 'payment_failed'])
@@ -446,17 +482,17 @@ class NuPayService
                 ->first();
         }
 
-        if (!$schedule) {
+        if (! $schedule) {
             throw new Exception("No matching schedule row found for loan #{$loan->id} — {$txn->action_date}.");
         }
 
         // Use per-installment splits from the schedule row (set at application time)
         return [
-            'loan'      => $loan,
-            'schedule'  => $schedule,
+            'loan' => $loan,
+            'schedule' => $schedule,
             'principal' => (float) ($schedule->principal_amount ?? $loan->principal_amount),
-            'interest'  => (float) ($schedule->interest_amount ?? 0),
-            'fee'       => (float) ($schedule->fee_amount      ?? 0),
+            'interest' => (float) ($schedule->interest_amount ?? 0),
+            'fee' => (float) ($schedule->fee_amount ?? 0),
         ];
     }
 
@@ -467,29 +503,30 @@ class NuPayService
     protected function entry(int $batchId, int $accountId, string $type, float $amount, string $desc): array
     {
         return [
-            'arbatch_id'    => $batchId,
+            'arbatch_id' => $batchId,
             'gl_account_id' => $accountId,
-            'entry_type'    => $type,
-            'amount'        => round($amount, 2),
-            'description'   => $desc,
-            'created_at'    => now(),
-            'updated_at'    => now(),
+            'entry_type' => $type,
+            'amount' => round($amount, 2),
+            'description' => $desc,
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 
     protected function resolveGl(string $key, $branchId = 1, $locationCode = '000'): ?gl_accounts
     {
         $mapping = glmapping::where('key', $key)->where('is_active', 1)->first();
-        if (!$mapping) {
+        if (! $mapping) {
             Log::warning("GL mapping not found: {$key}");
+
             return null;
         }
 
         $code = $mapping->account_code;
 
-        return gl_accounts::whereHas('chartOfAccount', fn($q) => $q->where('account_code', $code))
+        return gl_accounts::whereHas('chartOfAccount', fn ($q) => $q->where('account_code', $code))
             ->where('branch_id', $branchId)->first()
-            ?? gl_accounts::whereHas('chartOfAccount', fn($q) => $q->where('account_code', $code))
+            ?? gl_accounts::whereHas('chartOfAccount', fn ($q) => $q->where('account_code', $code))
                 ->where('branch_id', 1)->first();
     }
 }

@@ -2,10 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\{arbatch, arbatch_entries, gl_accounts, glmapping};
+use App\Models\arbatch;
+use App\Models\arbatch_entries;
+use App\Models\gl_accounts;
+use App\Models\glmapping;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 /**
  * Bank Reconciliation Service
@@ -45,19 +48,18 @@ class BankReconciliationService
     // ──────────────────────────────────────────────────────────────────────────
 
     /**
-     * @param int    $lineId              bank_statement_lines.id
-     * @param string $category            match_category enum value
-     * @param int    $glAccountId         chart_of_accounts.id to debit (for expenses) or credit
-     * @param string $description         Human-readable description for the GL entry
-     * @param int    $userId
-     * @param float|null $overrideAmount  If null, uses the line's debit_amount or credit_amount
+     * @param  int  $lineId  bank_statement_lines.id
+     * @param  string  $category  match_category enum value
+     * @param  int  $glAccountId  chart_of_accounts.id to debit (for expenses) or credit
+     * @param  string  $description  Human-readable description for the GL entry
+     * @param  float|null  $overrideAmount  If null, uses the line's debit_amount or credit_amount
      */
     public function allocateLine(
-        int    $lineId,
+        int $lineId,
         string $category,
-        int    $glAccountId,
+        int $glAccountId,
         string $description,
-        int    $userId,
+        int $userId,
         ?float $overrideAmount = null
     ): void {
 
@@ -65,7 +67,7 @@ class BankReconciliationService
 
             $line = DB::table('bank_statement_lines')->lockForUpdate()->where('id', $lineId)->first();
 
-            if (!$line) {
+            if (! $line) {
                 throw new Exception("Bank statement line #{$lineId} not found.");
             }
 
@@ -76,7 +78,7 @@ class BankReconciliationService
             $amount = $overrideAmount ?? max($line->debit_amount, $line->credit_amount);
 
             if ($amount <= 0) {
-                throw new Exception("Line has zero amount — cannot allocate.");
+                throw new Exception('Line has zero amount — cannot allocate.');
             }
 
             $isDebit = $line->debit_amount > 0; // money OUT of bank
@@ -92,17 +94,101 @@ class BankReconciliationService
             }
 
             DB::table('bank_statement_lines')->where('id', $lineId)->update([
-                'match_status'             => 'matched',
-                'match_category'           => $category,
-                'allocated_gl_account_id'  => $glAccountId,
-                'allocation_description'   => $description,
-                'allocation_gl_batch_ref'  => $glBatchRef,
-                'allocation_posted'        => $glBatchRef !== null,
-                'allocated_by'             => $userId,
-                'allocated_at'             => now(),
-                'match_note'               => $description,
+                'match_status' => 'matched',
+                'match_category' => $category,
+                'allocated_gl_account_id' => $glAccountId,
+                'allocation_description' => $description,
+                'allocation_gl_batch_ref' => $glBatchRef,
+                'allocation_posted' => $glBatchRef !== null,
+                'allocated_by' => $userId,
+                'allocated_at' => now(),
+                'match_note' => $description,
             ]);
         });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Unallocate a previously matched line — the "undo" for a mistaken allocation.
+    // If a GL batch was posted (expense/inter_account/other), reverses it with an
+    // offsetting entry rather than deleting it, preserving the audit trail.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function unallocateLine(int $lineId, int $userId): void
+    {
+        DB::transaction(function () use ($lineId, $userId) {
+            $line = DB::table('bank_statement_lines')->lockForUpdate()->where('id', $lineId)->first();
+
+            if (! $line) {
+                throw new Exception("Bank statement line #{$lineId} not found.");
+            }
+
+            if ($line->match_status !== 'matched') {
+                throw new Exception("Line #{$lineId} is not currently matched.");
+            }
+
+            $batch = DB::table('import_batches')->find($line->import_batch_id);
+            if ($batch && $batch->status === 'RECONCILED') {
+                throw new Exception('Cannot unallocate — this batch is already reconciled and the period is locked.');
+            }
+
+            if ($line->allocation_posted && $line->allocation_gl_batch_ref) {
+                $this->reverseAllocationGl($line, $userId);
+            }
+
+            DB::table('bank_statement_lines')->where('id', $lineId)->update([
+                'match_status' => 'unmatched',
+                'match_category' => null,
+                'allocated_gl_account_id' => null,
+                'allocation_description' => null,
+                'allocation_gl_batch_ref' => null,
+                'allocation_posted' => false,
+                'allocated_by' => null,
+                'allocated_at' => null,
+                'match_note' => 'Unallocated by user #'.$userId.' on '.now()->toDateTimeString(),
+            ]);
+        });
+    }
+
+    protected function reverseAllocationGl($line, int $userId): void
+    {
+        $original = arbatch::where('reference', $line->allocation_gl_batch_ref)->first();
+        if (! $original) {
+            return;
+        }
+
+        $originalEntries = arbatch_entries::where('arbatch_id', $original->id)->get();
+        if ($originalEntries->isEmpty()) {
+            return;
+        }
+
+        $reversalRef = $line->allocation_gl_batch_ref.'-REV';
+
+        $reversalBatch = arbatch::create([
+            'reference' => $reversalRef,
+            'customer_id' => $original->customer_id,
+            'source_type' => 'BankStatementLine',
+            'source_id' => $line->id,
+            'total_amount' => $original->total_amount,
+            'status' => 'approved',
+            'created_by' => $userId,
+            'approved_by' => $userId,
+            'approved_at' => now(),
+        ]);
+
+        $reversedEntries = $originalEntries->map(fn ($e) => [
+            'arbatch_id' => $reversalBatch->id,
+            'gl_account_id' => $e->gl_account_id,
+            // Swap debit/credit to offset the original entry
+            'entry_type' => $e->entry_type === 'debit' ? 'credit' : 'debit',
+            'amount' => $e->amount,
+            'description' => 'Reversal: '.$e->description,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ])->toArray();
+
+        arbatch_entries::insert($reversedEntries);
+        $this->glPosting->postArBatch($reversalBatch, $userId);
+        $reversalBatch->update(['posted_to_gl' => true, 'status' => 'posted']);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -110,11 +196,11 @@ class BankReconciliationService
     // ──────────────────────────────────────────────────────────────────────────
 
     public function bulkAllocate(
-        array  $lineIds,
+        array $lineIds,
         string $category,
-        int    $glAccountId,
+        int $glAccountId,
         string $description,
-        int    $userId
+        int $userId
     ): array {
 
         $results = ['allocated' => 0, 'errors' => []];
@@ -124,8 +210,8 @@ class BankReconciliationService
                 $this->allocateLine((int) $lineId, $category, $glAccountId, $description, $userId);
                 $results['allocated']++;
             } catch (Exception $e) {
-                $results['errors'][] = "Line #{$lineId}: " . $e->getMessage();
-                Log::warning("Bulk allocation failed for line #{$lineId}: " . $e->getMessage());
+                $results['errors'][] = "Line #{$lineId}: ".$e->getMessage();
+                Log::warning("Bulk allocation failed for line #{$lineId}: ".$e->getMessage());
             }
         }
 
@@ -172,20 +258,20 @@ class BankReconciliationService
             : null;
 
         return [
-            'total_lines'         => $lines->total_lines,
-            'matched_lines'       => $lines->matched_lines,
-            'unmatched_lines'     => $lines->unmatched_lines,
-            'exception_lines'     => $lines->exception_lines,
-            'total_credits'       => $lines->total_credits,
-            'total_debits'        => $lines->total_debits,
-            'unmatched_amount'    => $lines->unmatched_amount,
-            'all_lines_matched'   => $allMatched,
-            'by_category'         => $byCategory,
-            'gl_bank_balance'     => $glBankBalance,
-            'statement_closing'   => $statementClosingBalance,
-            'balance_reconciled'  => $balanceReconciled,
-            'complete'            => $allMatched && ($balanceReconciled ?? true),
-            'completion_pct'      => $lines->total_lines > 0
+            'total_lines' => $lines->total_lines,
+            'matched_lines' => $lines->matched_lines,
+            'unmatched_lines' => $lines->unmatched_lines,
+            'exception_lines' => $lines->exception_lines,
+            'total_credits' => $lines->total_credits,
+            'total_debits' => $lines->total_debits,
+            'unmatched_amount' => $lines->unmatched_amount,
+            'all_lines_matched' => $allMatched,
+            'by_category' => $byCategory,
+            'gl_bank_balance' => $glBankBalance,
+            'statement_closing' => $statementClosingBalance,
+            'balance_reconciled' => $balanceReconciled,
+            'complete' => $allMatched && ($balanceReconciled ?? true),
+            'completion_pct' => $lines->total_lines > 0
                 ? round(($lines->matched_lines / $lines->total_lines) * 100, 1)
                 : 0,
         ];
@@ -199,7 +285,7 @@ class BankReconciliationService
     public function autoMatch(int $batchId, string $source = 'business_bank'): array
     {
         $matched = 0;
-        $lines   = DB::table('bank_statement_lines')
+        $lines = DB::table('bank_statement_lines')
             ->where('import_batch_id', $batchId)
             ->where('match_status', '!=', 'matched')
             ->get();
@@ -220,7 +306,7 @@ class BankReconciliationService
     {
         $date = $line->transaction_date;
         $dateFrom = \Carbon\Carbon::parse($date)->subDays(2)->toDateString();
-        $dateTo   = \Carbon\Carbon::parse($date)->addDays(2)->toDateString();
+        $dateTo = \Carbon\Carbon::parse($date)->addDays(2)->toDateString();
 
         // ── CREDITS (money in) ─────────────────────────────────────────────
         if ($line->credit_amount > 0) {
@@ -239,6 +325,7 @@ class BankReconciliationService
 
                 if ($nupay) {
                     $this->matchLine($line->id, 'nu_pay_collection', "Nu-Pay batch #{$nupay->id} — R{$nupay->total}");
+
                     return true;
                 }
             }
@@ -252,6 +339,7 @@ class BankReconciliationService
 
             if ($draw) {
                 $this->matchLine($line->id, 'facility_drawdown', "Facility drawdown — R{$draw->amount}");
+
                 return true;
             }
 
@@ -263,6 +351,7 @@ class BankReconciliationService
 
             if ($recovery) {
                 $this->matchLine($line->id, 'recovery_payment', "Debt recovery payment — R{$recovery->amount}");
+
                 return true;
             }
         }
@@ -280,6 +369,7 @@ class BankReconciliationService
 
             if ($disb) {
                 $this->matchLine($line->id, 'loan_disbursement', "Loan disbursement #{$disb->id} — R{$disb->disbursed_amount}");
+
                 return true;
             }
 
@@ -292,7 +382,8 @@ class BankReconciliationService
 
             if ($facilityTxn) {
                 $this->matchLine($line->id, 'facility_repayment',
-                    ucfirst(str_replace('_', ' ', $facilityTxn->transaction_type)) . " — R{$facilityTxn->amount}");
+                    ucfirst(str_replace('_', ' ', $facilityTxn->transaction_type))." — R{$facilityTxn->amount}");
+
                 return true;
             }
         }
@@ -305,51 +396,52 @@ class BankReconciliationService
     // ──────────────────────────────────────────────────────────────────────────
 
     protected function postAllocationGl(
-        int    $lineId,
-        int    $glAccountId,
-        float  $amount,
-        bool   $isDebit,     // true = money OUT (expense), false = money IN (income/credit note)
+        int $lineId,
+        int $glAccountId,
+        float $amount,
+        bool $isDebit,     // true = money OUT (expense), false = money IN (income/credit note)
         string $description,
-        int    $batchId,
-        int    $userId
+        int $batchId,
+        int $userId
     ): string {
 
         $bankGl = $this->resolveGl('loan_repayment_dr'); // account 1100 (business bank)
-        $expGl  = gl_accounts::find($glAccountId);
+        $expGl = gl_accounts::find($glAccountId);
 
-        if (!$bankGl || !$expGl) {
+        if (! $bankGl || ! $expGl) {
             Log::warning("GL accounts not found for bank recon allocation — line #{$lineId}");
+
             return '';
         }
 
         $batch = DB::table('import_batches')->find($batchId);
         $customer = \App\Models\Customer::first(); // system placeholder
 
-        $ref = 'ARB-BANKR-' . now()->format('YmdHis') . '-' . $lineId;
+        $ref = 'ARB-BANKR-'.now()->format('YmdHis').'-'.$lineId;
 
         $arBatch = arbatch::create([
-            'reference'    => $ref,
-            'customer_id'  => $customer?->id ?? 1,
-            'source_type'  => 'BankStatementLine',
-            'source_id'    => $lineId,
+            'reference' => $ref,
+            'customer_id' => $customer?->id ?? 1,
+            'source_type' => 'BankStatementLine',
+            'source_id' => $lineId,
             'total_amount' => $amount,
-            'status'       => 'approved',
-            'created_by'   => $userId,
-            'approved_by'  => $userId,
-            'approved_at'  => now(),
+            'status' => 'approved',
+            'created_by' => $userId,
+            'approved_by' => $userId,
+            'approved_at' => now(),
         ]);
 
         if ($isDebit) {
             // Money OUT: Dr Expense Account / Cr Bank
             $entries = [
-                ['arbatch_id'=>$arBatch->id,'gl_account_id'=>$expGl->id,  'entry_type'=>'debit', 'amount'=>$amount,'description'=>$description,'created_at'=>now(),'updated_at'=>now()],
-                ['arbatch_id'=>$arBatch->id,'gl_account_id'=>$bankGl->id, 'entry_type'=>'credit','amount'=>$amount,'description'=>$description,'created_at'=>now(),'updated_at'=>now()],
+                ['arbatch_id' => $arBatch->id, 'gl_account_id' => $expGl->id,  'entry_type' => 'debit', 'amount' => $amount, 'description' => $description, 'created_at' => now(), 'updated_at' => now()],
+                ['arbatch_id' => $arBatch->id, 'gl_account_id' => $bankGl->id, 'entry_type' => 'credit', 'amount' => $amount, 'description' => $description, 'created_at' => now(), 'updated_at' => now()],
             ];
         } else {
             // Money IN: Dr Bank / Cr GL Account (income/liability reduction)
             $entries = [
-                ['arbatch_id'=>$arBatch->id,'gl_account_id'=>$bankGl->id, 'entry_type'=>'debit', 'amount'=>$amount,'description'=>$description,'created_at'=>now(),'updated_at'=>now()],
-                ['arbatch_id'=>$arBatch->id,'gl_account_id'=>$expGl->id,  'entry_type'=>'credit','amount'=>$amount,'description'=>$description,'created_at'=>now(),'updated_at'=>now()],
+                ['arbatch_id' => $arBatch->id, 'gl_account_id' => $bankGl->id, 'entry_type' => 'debit', 'amount' => $amount, 'description' => $description, 'created_at' => now(), 'updated_at' => now()],
+                ['arbatch_id' => $arBatch->id, 'gl_account_id' => $expGl->id,  'entry_type' => 'credit', 'amount' => $amount, 'description' => $description, 'created_at' => now(), 'updated_at' => now()],
             ];
         }
 
@@ -363,25 +455,26 @@ class BankReconciliationService
     protected function matchLine(int $lineId, string $category, string $note): void
     {
         DB::table('bank_statement_lines')->where('id', $lineId)->update([
-            'match_status'   => 'matched',
+            'match_status' => 'matched',
             'match_category' => $category,
-            'match_note'     => $note,
+            'match_note' => $note,
         ]);
     }
 
     protected function getGlBankBalance(): float
     {
         $bankGl = $this->resolveGl('loan_repayment_dr');
+
         return $bankGl ? (float) $bankGl->current_balance : 0;
     }
 
     protected function resolveGl(string $key): ?gl_accounts
     {
         $mapping = glmapping::where('key', $key)->where('is_active', 1)->first();
-        if (!$mapping) {
+        if (! $mapping) {
             return null;
         }
 
-        return gl_accounts::whereHas('chartOfAccount', fn($q) => $q->where('account_code', $mapping->account_code))->first();
+        return gl_accounts::whereHas('chartOfAccount', fn ($q) => $q->where('account_code', $mapping->account_code))->first();
     }
 }

@@ -2,33 +2,23 @@
 
 namespace App\Console\Commands;
 
+use App\Services\GlReconciliationService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ReconcileGl extends Command
 {
-    protected $signature   = 'keystone:reconcile-gl {--fix : Log discrepancies only (default) or flag them}';
+    protected $signature = 'keystone:reconcile-gl';
+
     protected $description = 'Check that the loan ledger (remaining_balance totals) reconciles to the GL Loans Receivable account balance.';
 
-    public function handle(): int
+    public function handle(GlReconciliationService $recon): int
     {
         $this->info('Running GL reconciliation checks...');
         $issues = 0;
 
         // ── 1. Double-entry check — every GL batch must balance ───────────────
-        $unbalanced = DB::table('glbatches as gb')
-            ->join('glentries as ge', 'gb.id', '=', 'ge.batch_id')
-            ->select(
-                'gb.id',
-                'gb.reference',
-                DB::raw('ROUND(SUM(ge.debit),2)  as total_debit'),
-                DB::raw('ROUND(SUM(ge.credit),2) as total_credit'),
-                DB::raw('ROUND(ABS(SUM(ge.debit) - SUM(ge.credit)),2) as variance')
-            )
-            ->groupBy('gb.id', 'gb.reference')
-            ->having('variance', '>', 0.01)
-            ->get();
+        $unbalanced = $recon->unbalancedBatches();
 
         if ($unbalanced->isNotEmpty()) {
             $this->error("UNBALANCED GL BATCHES: {$unbalanced->count()}");
@@ -42,43 +32,24 @@ class ReconcileGl extends Command
         }
 
         // ── 2. Loan ledger vs GL Loans Receivable ─────────────────────────────
-        $loanLedgerTotal = DB::table('loans')
-            ->whereNotIn('status', ['settled', 'rejected', 'archived', 'written_off'])
-            ->sum('remaining_balance');
+        $lr = $recon->loanReceivableCheck();
 
-        // GL account 1200 = Loans Receivable
-        $glLoansReceivable = DB::table('gl_accounts as ga')
-            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
-            ->where('coa.account_code', '1200')
-            ->value('ga.current_balance') ?? 0;
-
-        $lrVariance = round(abs($loanLedgerTotal - $glLoansReceivable), 2);
-
-        if ($lrVariance > 1.00) {
-            $this->error("LOAN RECEIVABLE VARIANCE: R{$lrVariance}");
-            $this->warn("  Loan ledger total : R" . number_format($loanLedgerTotal, 2));
-            $this->warn("  GL account 1200   : R" . number_format($glLoansReceivable, 2));
-            Log::error("GL reconciliation: Loans Receivable variance R{$lrVariance}");
+        if ($lr['variance'] > 1.00) {
+            $this->error("LOAN RECEIVABLE VARIANCE: R{$lr['variance']}");
+            $this->warn('  Loan ledger total : R'.number_format($lr['ledger_total'], 2));
+            $this->warn('  GL account 1200   : R'.number_format($lr['gl_total'], 2));
+            Log::error("GL reconciliation: Loans Receivable variance R{$lr['variance']}");
             $issues++;
         } else {
             $this->info('  [OK] Loan ledger matches GL Loans Receivable.');
         }
 
         // ── 3. Deferred income check ───────────────────────────────────────────
-        $deferredInterestLedger = DB::table('loans')
-            ->where('status', 'disbursed')
-            ->sum('deferred_interest');
+        $di = $recon->deferredInterestCheck();
 
-        $deferredIntGl = DB::table('gl_accounts as ga')
-            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
-            ->where('coa.account_code', '2100')
-            ->value('ga.current_balance') ?? 0;
-
-        $diVariance = round(abs($deferredInterestLedger - $deferredIntGl), 2);
-
-        if ($diVariance > 1.00) {
-            $this->warn("DEFERRED INTEREST VARIANCE: R{$diVariance}");
-            Log::warning("GL reconciliation: Deferred interest variance R{$diVariance}");
+        if ($di['variance'] > 1.00) {
+            $this->warn("DEFERRED INTEREST VARIANCE: R{$di['variance']}");
+            Log::warning("GL reconciliation: Deferred interest variance R{$di['variance']}");
             $issues++;
         } else {
             $this->info('  [OK] Deferred interest matches GL account 2100.');

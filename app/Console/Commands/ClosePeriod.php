@@ -2,77 +2,72 @@
 
 namespace App\Console\Commands;
 
-use App\Services\BadDebtProvisionService;
+use App\Models\FinancialPeriod;
 use App\Models\User;
+use App\Services\FinancialPeriodService;
+use Exception;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class ClosePeriod extends Command
 {
-    protected $signature   = 'keystone:close-period {period : Period in YYYY-MM format, e.g. 2026-05} {--admin-id= : User ID}';
-    protected $description = 'Run month-end close: provision, GL balance check, lock period marker.';
+    protected $signature = 'keystone:close-period {period : Period in YYYY-MM format, e.g. 2026-05} {--admin-id= : User ID}';
 
-    public function handle(BadDebtProvisionService $provision): int
+    protected $description = 'Run month-end close via the same checklist/gate the admin UI enforces (provisioning, facility interest, bank recon, trial balance).';
+
+    public function handle(FinancialPeriodService $service): int
     {
-        $period  = $this->argument('period');
-        $adminId = (int) ($this->option('admin-id') ?? User::where('rule_id', 2)->value('id') ?? 1);
+        $period = $this->argument('period');
 
-        try {
-            $date = Carbon::createFromFormat('Y-m', $period);
-        } catch (\Exception $e) {
-            $this->error("Invalid period format. Use YYYY-MM.");
+        if (! preg_match('/^\d{4}-\d{2}$/', $period)) {
+            $this->error('Invalid period format. Use YYYY-MM.');
+
             return self::FAILURE;
         }
 
-        $this->info("Starting month-end close for {$period}...");
+        $adminId = (int) ($this->option('admin-id') ?? User::where('rule_id', 2)->value('id') ?? 1);
 
-        // ── 1. Run IFRS 9 provisioning ─────────────────────────────────────────
-        $this->info('Step 1: IFRS 9 provisioning...');
-        $results = $provision->runMonthlyProvisioning($adminId);
-        $this->info("  Provisioned: {$results['processed']} loans");
+        $fp = FinancialPeriod::ensure($period);
 
-        if (!empty($results['errors'])) {
-            $this->warn('  Provision errors: ' . implode(', ', $results['errors']));
+        try {
+            if ($fp->isOpen()) {
+                $this->info('Starting close...');
+                $service->startClose($fp->period, $adminId);
+                $fp->refresh();
+            }
+
+            if (! $fp->provisioning_complete) {
+                $this->info('Running IFRS 9 provisioning...');
+                $service->runProvisioning($fp, $adminId);
+                $fp->refresh();
+            }
+
+            if (! $fp->facility_interest_accrued) {
+                $this->info('Accruing facility interest...');
+                $service->runFacilityInterest($fp, $adminId);
+                $fp->refresh();
+            }
+
+            if (! $fp->bank_recon_complete) {
+                $this->error("Bank reconciliation not complete for {$period}. Reconcile via the admin UI, or if the period genuinely had no bank activity, use the 'No Activity' button on the period page — this command won't attempt that override automatically.");
+
+                return self::FAILURE;
+            }
+
+            if (! $fp->trial_balance_generated) {
+                $this->info('Generating trial balance...');
+                $service->generateTrialBalance($fp, $adminId);
+                $fp->refresh();
+            }
+
+            $service->closePeriod($fp, $adminId);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
         }
 
-        // ── 2. GL reconciliation ──────────────────────────────────────────────
-        $this->info('Step 2: GL reconciliation check...');
-        $this->call('keystone:reconcile-gl');
-
-        // ── 3. Mark period closed in a period_closes table (create if needed) ──
-        $this->info('Step 3: Recording period close...');
-
-        DB::table('period_closes')->insertOrIgnore([
-            'period'      => $period,
-            'closed_by'   => $adminId,
-            'closed_at'   => now(),
-            'notes'       => "Month-end close for {$period} completed via artisan command.",
-        ]);
-
-        // ── 4. Summary ────────────────────────────────────────────────────────
-        $totalIncome = DB::table('repayment_schedules as rs')
-            ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
-            ->where('rs.status', 'paid')
-            ->whereRaw("DATE_FORMAT(rs.paid_at, '%Y-%m') = ?", [$period])
-            ->sum(DB::raw('rs.interest_amount + rs.fee_amount'));
-
-        $totalCollected = DB::table('repayment_schedules as rs')
-            ->where('rs.status', 'paid')
-            ->whereRaw("DATE_FORMAT(rs.paid_at, '%Y-%m') = ?", [$period])
-            ->sum('rs.emi_amount');
-
-        $this->table(
-            ['Metric', 'Amount'],
-            [
-                ['Total Collected',   'R ' . number_format($totalCollected, 2)],
-                ['Income Recognised', 'R ' . number_format($totalIncome, 2)],
-                ['Provisions Run',    $results['processed']],
-            ]
-        );
-
         $this->info("Period {$period} closed successfully.");
+
         return self::SUCCESS;
     }
 }

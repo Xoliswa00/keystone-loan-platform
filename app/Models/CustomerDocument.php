@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
 
 class CustomerDocument extends Model
 {
@@ -15,6 +15,7 @@ class CustomerDocument extends Model
         'user_id',
         'document_type',
         'file_path',
+        'file_hash',
         'original_name',
         'mime_type',
         'file_size_bytes',
@@ -23,25 +24,27 @@ class CustomerDocument extends Model
         'verified_by',
         'verified_at',
         'rejection_reason',
+        'content_check_status',
+        'content_check_notes',
     ];
 
     protected $casts = [
-        'verified'    => 'boolean',
+        'verified' => 'boolean',
         'verified_at' => 'datetime',
         'document_date' => 'date',
     ];
 
     const TYPES = [
-        'id_document'      => 'SA ID Document',
-        'payslip'          => 'Latest Payslip',
-        'bank_statement'   => 'Bank Statement (3 months)',
+        'id_document' => 'SA ID Document',
+        'payslip' => 'Latest Payslip',
+        'bank_statement' => 'Bank Statement (3 months)',
         'proof_of_address' => 'Proof of Address',
-        'other'            => 'Other Document',
+        'other' => 'Other Document',
     ];
 
     // Documents must be within 3 months for payslips and bank statements
     const RECENCY_MONTHS = [
-        'payslip'        => 3,
+        'payslip' => 3,
         'bank_statement' => 3,
         'proof_of_address' => 3,
     ];
@@ -64,7 +67,7 @@ class CustomerDocument extends Model
     {
         $limit = self::RECENCY_MONTHS[$this->document_type] ?? null;
 
-        if (!$limit || !$this->document_date) {
+        if (! $limit || ! $this->document_date) {
             return true; // no recency rule for this type
         }
 

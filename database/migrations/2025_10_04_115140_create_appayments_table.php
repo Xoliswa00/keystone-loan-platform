@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('appayments', function (Blueprint $table) {
             $table->id();
-               $table->foreignId('invoice_id')->constrained('apinvoices');
+            $table->foreignId('invoice_id')->constrained('apinvoices');
             $table->foreignId('vendor_id')->constrained('apvendors');
             $table->decimal('amount_paid', 15, 2);
             $table->date('payment_date');
             $table->string('payment_method'); // EFT, cash, debit card, etc.
-            
+
             $table->timestamps();
         });
     }

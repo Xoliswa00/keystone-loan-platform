@@ -31,7 +31,7 @@ class BankAllocationController extends Controller
 
     public function workspace(import_batch $batch)
     {
-        $meta   = json_decode($batch->meta ?? '{}', true);
+        $meta = json_decode($batch->meta ?? '{}', true);
         $source = $batch->source;
 
         // All lines grouped by status
@@ -50,11 +50,11 @@ class BankAllocationController extends Controller
         // Recon status (pass statement closing balance if we have it)
         $closingBalance = $meta['closing_balance'] ?? null;
         $openingBalance = $meta['opening_balance'] ?? null;
-        $status = $this->recon->getReconciliationStatus($batch->id, $openingBalance ? (float)$openingBalance : null, $closingBalance ? (float)$closingBalance : null);
+        $status = $this->recon->getReconciliationStatus($batch->id, $openingBalance ? (float) $openingBalance : null, $closingBalance ? (float) $closingBalance : null);
 
         // GL expense accounts for the dropdown (5xxx + inter-company)
         $expenseAccounts = DB::table('gl_accounts as ga')
-            ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
             ->whereIn('coa.account_category', ['expense', 'liability', 'asset'])
             ->select('ga.id', 'coa.account_code', 'coa.account_category', 'coa.account_type')
             ->orderBy('coa.account_code')
@@ -89,10 +89,10 @@ class BankAllocationController extends Controller
     public function allocateLine(Request $request, import_batch $batch)
     {
         $request->validate([
-            'line_id'          => 'required|integer',
-            'match_category'   => 'required|in:nu_pay_collection,loan_disbursement,facility_drawdown,facility_repayment,expense,recovery_payment,inter_account,other',
-            'gl_account_id'    => 'required_if:match_category,expense,inter_account,other|nullable|integer',
-            'description'      => 'required|string|max:300',
+            'line_id' => 'required|integer',
+            'match_category' => 'required|in:nu_pay_collection,loan_disbursement,facility_drawdown,facility_repayment,expense,recovery_payment,inter_account,other',
+            'gl_account_id' => 'required_if:match_category,expense,inter_account,other|nullable|integer',
+            'description' => 'required|string|max:300',
         ]);
 
         try {
@@ -108,7 +108,7 @@ class BankAllocationController extends Controller
                 ->with('success', 'Line allocated and posted to GL.');
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Allocation failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Allocation failed: '.$e->getMessage());
         }
     }
 
@@ -119,11 +119,11 @@ class BankAllocationController extends Controller
     public function bulkAllocate(Request $request, import_batch $batch)
     {
         $request->validate([
-            'line_ids'       => 'required|array|min:1',
-            'line_ids.*'     => 'integer',
+            'line_ids' => 'required|array|min:1',
+            'line_ids.*' => 'integer',
             'match_category' => 'required|in:expense,inter_account,other,nu_pay_collection,loan_disbursement,facility_drawdown,facility_repayment',
-            'gl_account_id'  => 'nullable|integer',
-            'description'    => 'required|string|max:300',
+            'gl_account_id' => 'nullable|integer',
+            'description' => 'required|string|max:300',
         ]);
 
         $results = $this->recon->bulkAllocate(
@@ -135,12 +135,31 @@ class BankAllocationController extends Controller
         );
 
         $msg = "{$results['allocated']} line(s) allocated.";
-        if (!empty($results['errors'])) {
-            $msg .= ' Errors: ' . implode('; ', $results['errors']);
+        if (! empty($results['errors'])) {
+            $msg .= ' Errors: '.implode('; ', $results['errors']);
         }
 
         return redirect()->route('admin.finance.recon.workspace', $batch->id)
             ->with('success', $msg);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Undo a mistaken allocation — reverses any posted GL entry and returns
+    // the line to unmatched.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function unallocateLine(Request $request, import_batch $batch)
+    {
+        $request->validate(['line_id' => 'required|integer']);
+
+        try {
+            $this->recon->unallocateLine((int) $request->line_id, Auth::id());
+
+            return redirect()->route('admin.finance.recon.workspace', $batch->id)
+                ->with('success', 'Line unallocated. It is now unmatched again.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Unallocate failed: '.$e->getMessage());
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -170,21 +189,21 @@ class BankAllocationController extends Controller
 
     public function markComplete(import_batch $batch)
     {
-        $meta   = json_decode($batch->meta ?? '{}', true);
+        $meta = json_decode($batch->meta ?? '{}', true);
         $status = $this->recon->getReconciliationStatus(
             $batch->id,
             isset($meta['opening_balance']) ? (float) $meta['opening_balance'] : null,
             isset($meta['closing_balance']) ? (float) $meta['closing_balance'] : null
         );
 
-        if (!$status['all_lines_matched']) {
+        if (! $status['all_lines_matched']) {
             return redirect()->back()
                 ->with('error', "Cannot complete: {$status['unmatched_lines']} unmatched line(s) remain. Allocate all items first.");
         }
 
         if ($status['balance_reconciled'] === false) {
             return redirect()->back()
-                ->with('error', "Cannot complete: GL bank balance (R" . number_format($status['gl_bank_balance'],2) . ") does not match statement closing balance (R" . number_format($status['statement_closing'],2) . "). Investigate the variance.");
+                ->with('error', 'Cannot complete: GL bank balance (R'.number_format($status['gl_bank_balance'], 2).') does not match statement closing balance (R'.number_format($status['statement_closing'], 2).'). Investigate the variance.');
         }
 
         $batch->update(['status' => 'RECONCILED']);
@@ -204,16 +223,17 @@ class BankAllocationController extends Controller
             'nu_pay_collection' => 'loan_repayment_dr',   // bank account
             'loan_disbursement' => 'loan_repayment_dr',
             'facility_drawdown' => 'loan_repayment_dr',
-            'facility_repayment'=> 'loan_repayment_dr',
+            'facility_repayment' => 'loan_repayment_dr',
         ];
 
         if (isset($mapping[$category])) {
             $glMapping = DB::table('glmappings')->where('key', $mapping[$category])->first();
             if ($glMapping) {
                 $gl = DB::table('gl_accounts as ga')
-                    ->join('chart_of_accounts as coa', 'ga.chart_id', '=', 'coa.id')
+                    ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
                     ->where('coa.account_code', $glMapping->account_code)
                     ->value('ga.id');
+
                 return $gl ?? 1;
             }
         }
@@ -226,7 +246,7 @@ class BankAllocationController extends Controller
         // Common expense types for a lending business — map to COA codes
         return [
             ['label' => 'Bank Charges',        'code' => '5200', 'category' => 'expense'],
-            ['label' => 'Nu-Pay Collection Fee','code' => '5200', 'category' => 'expense'],
+            ['label' => 'Nu-Pay Collection Fee', 'code' => '5200', 'category' => 'expense'],
             ['label' => 'Staff Salaries',       'code' => '5300', 'category' => 'expense'],
             ['label' => 'NCR Levies',           'code' => '5400', 'category' => 'expense'],
             ['label' => 'Facility Interest',    'code' => '5600', 'category' => 'expense'],

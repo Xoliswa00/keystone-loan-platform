@@ -2,19 +2,18 @@
 
 namespace App\Mail;
 
+use App\Models\LoanApplication;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use App\Models\LoanApplication;
-
 
 class AdminLoanMismatchNotification extends Mailable
 {
     use Queueable, SerializesModels;
-        public LoanApplication $application;
+
+    public LoanApplication $application;
+
     public array $details;
 
     /**
@@ -29,11 +28,11 @@ class AdminLoanMismatchNotification extends Mailable
     public function build()
     {
         return $this->subject("⚠️ Loan Application Mismatch - Application #{$this->application->id}")
-                    ->view('emails.admin.loan_mismatch')
-                    ->with([
-                        'application' => $this->application,
-                        'details' => $this->details,
-                    ]);
+            ->view('emails.admin.loan_mismatch')
+            ->with([
+                'application' => $this->application,
+                'details' => $this->details,
+            ]);
     }
 
     /**

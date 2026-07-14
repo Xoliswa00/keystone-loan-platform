@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Funding Facilities — Keystone's own capital liabilities.
@@ -53,7 +52,7 @@ return new class extends Migration
             // Dates & terms
             $table->date('facility_start_date')->nullable();
             $table->date('maturity_date')->nullable();          // null = revolving / no fixed end
-            $table->enum('payment_frequency', ['monthly','quarterly','bi-annual','annual','on_demand'])
+            $table->enum('payment_frequency', ['monthly', 'quarterly', 'bi-annual', 'annual', 'on_demand'])
                 ->default('monthly');
             $table->integer('payment_day')->nullable();         // day of month interest is due
 
@@ -96,42 +95,11 @@ return new class extends Migration
             $table->index('transaction_type');
         });
 
-        // ── Add COA entries for funding liabilities and interest expense ───────
-        $now = now();
-
-        $extraCoa = [
-            // Liabilities
-            ['account_code'=>'2500','account_category'=>'liability','account_group'=>'Long-term Liability',     'account_type'=>'payable',     'statement_section'=>'Balance Sheet','note_reference'=>'Note 13'],
-            ['account_code'=>'2510','account_category'=>'liability','account_group'=>'Short-term Liability',    'account_type'=>'payable',     'statement_section'=>'Balance Sheet','note_reference'=>'Note 13'],
-            ['account_code'=>'2520','account_category'=>'liability','account_group'=>'Shareholder Loans',       'account_type'=>'payable',     'statement_section'=>'Balance Sheet','note_reference'=>'Note 14'],
-            ['account_code'=>'2530','account_category'=>'liability','account_group'=>'Current Liability',       'account_type'=>'payable',     'statement_section'=>'Balance Sheet','note_reference'=>'Note 15'],
-            // Expenses
-            ['account_code'=>'5600','account_category'=>'expense',  'account_group'=>'Finance Cost',            'account_type'=>'expense',     'statement_section'=>'Income Statement','note_reference'=>'Note 16'],
-            ['account_code'=>'5610','account_category'=>'expense',  'account_group'=>'Finance Cost',            'account_type'=>'expense',     'statement_section'=>'Income Statement','note_reference'=>'Note 16'],
-        ];
-
-        foreach ($extraCoa as $coa) {
-            DB::table('chart_of_accounts')->updateOrInsert(
-                ['account_code' => $coa['account_code']],
-                array_merge($coa, ['is_active'=>true,'custom_fields'=>null,'created_at'=>$now,'updated_at'=>$now])
-            );
-        }
-
-        // ── GL Mappings for facility transactions ──────────────────────────────
-        $mappings = [
-            ['key'=>'loans_payable_cr',        'account_code'=>'2500', 'description'=>'Loans Payable — external funders (drawdown credit)'],
-            ['key'=>'shareholder_loan_cr',     'account_code'=>'2520', 'description'=>'Shareholder Loans Payable'],
-            ['key'=>'accrued_interest_cr',     'account_code'=>'2530', 'description'=>'Accrued Interest Payable — funding facilities'],
-            ['key'=>'interest_expense_dr',     'account_code'=>'5600', 'description'=>'Interest Expense — cost of funding'],
-            ['key'=>'facility_fee_dr',         'account_code'=>'5610', 'description'=>'Facility Fee / Arrangement Fee Expense'],
-        ];
-
-        foreach ($mappings as $m) {
-            DB::table('glmappings')->updateOrInsert(
-                ['key' => $m['key']],
-                array_merge($m, ['is_active'=>true,'created_at'=>$now,'updated_at'=>$now])
-            );
-        }
+        // The extra COA entries (2500-2530, 5600-5610) and GL mappings for
+        // funding-facility transactions that used to be seeded here now live
+        // in database/seeders/ChartOfAccountsAndGlMappingsSeeder.php,
+        // alongside the rest of the chart of accounts, not split across
+        // migrations.
     }
 
     public function down(): void

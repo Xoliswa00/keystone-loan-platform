@@ -16,27 +16,27 @@ class FundingFacilityTransaction extends Model
     ];
 
     protected $casts = [
-        'amount'           => 'decimal:2',
+        'amount' => 'decimal:2',
         'transaction_date' => 'date',
-        'gl_posted'        => 'boolean',
+        'gl_posted' => 'boolean',
     ];
 
     const TYPE_LABELS = [
-        'drawdown'         => 'Drawdown',
-        'repayment'        => 'Repayment',
+        'drawdown' => 'Drawdown',
+        'repayment' => 'Repayment',
         'interest_payment' => 'Interest Payment',
         'interest_accrual' => 'Interest Accrual',
-        'fee'              => 'Facility Fee',
-        'reversal'         => 'Reversal',
+        'fee' => 'Facility Fee',
+        'reversal' => 'Reversal',
     ];
 
     const TYPE_CLASSES = [
-        'drawdown'         => 'kc-badge-navy',
-        'repayment'        => 'kc-badge-green',
+        'drawdown' => 'kc-badge-navy',
+        'repayment' => 'kc-badge-green',
         'interest_payment' => 'kc-badge-gold',
         'interest_accrual' => 'kc-badge-silver',
-        'fee'              => 'kc-badge-silver',
-        'reversal'         => 'kc-badge-red',
+        'fee' => 'kc-badge-silver',
+        'reversal' => 'kc-badge-red',
     ];
 
     public function facility()

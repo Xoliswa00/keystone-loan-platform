@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('nupay_transactions_stagings', function (Blueprint $table) {
             $table->id();
-                        // Core references
+            // Core references
             $table->unsignedBigInteger('import_id')->nullable();
             $table->string('transaction_type', 50);
             $table->string('approved')->nullable();
@@ -102,7 +102,6 @@ return new class extends Migration
             $table->index('action_date');
             $table->index(['contract_reference', 'action_date']);
             $table->index('status');
-   
 
         });
     }

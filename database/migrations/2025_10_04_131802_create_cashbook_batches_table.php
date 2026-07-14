@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('cashbook_batches', function (Blueprint $table) {
             $table->id();
-               $table->string('batch_number')->unique();
+            $table->string('batch_number')->unique();
             $table->string('description')->nullable();
             $table->enum('status', ['open', 'approved', 'posted'])->default('open');
             $table->foreignId('created_by')->nullable()->constrained('users');
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('posted_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('posted_at')->nullable();
-            
+
             $table->timestamps();
         });
     }

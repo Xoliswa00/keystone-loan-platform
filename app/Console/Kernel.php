@@ -9,13 +9,15 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule): void
     {
-        // ── Payment reminders ── 3 days before due date, every morning at 08:00
-        $schedule->command('keystone:send-payment-reminders --days=3')
+        // ── Payment reminders ── days-before-due-date is admin-configurable
+        // (admin/settings/lending); no --days flag here so the cron follows
+        // the setting instead of a fixed value baked into the schedule.
+        $schedule->command('keystone:send-payment-reminders')
             ->dailyAt('08:00')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/reminders.log'));
 
-        // ── Arrears escalation ── daily at 09:00 (emails for 30/60/90 DPD buckets)
+        // ── Arrears escalation ── daily at 09:00 (DPD tiers admin-configurable via admin/settings/lending)
         $schedule->command('keystone:escalate-arrears')
             ->dailyAt('09:00')
             ->withoutOverlapping()
@@ -49,7 +51,7 @@ class Kernel extends ConsoleKernel
 
     protected function commands(): void
     {
-        $this->load(__DIR__ . '/Commands');
+        $this->load(__DIR__.'/Commands');
         require base_path('routes/console.php');
     }
 }

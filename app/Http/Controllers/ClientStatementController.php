@@ -26,7 +26,7 @@ class ClientStatementController extends Controller
      */
     public function download(User $user)
     {
-        if (!Auth::user()->hasRole('admin', 'loan_officer', 'finance')) {
+        if (! Auth::user()->hasRole('admin', 'loan_officer', 'finance')) {
             abort(403);
         }
 
@@ -38,13 +38,13 @@ class ClientStatementController extends Controller
      */
     public function checkStatus()
     {
-        $user   = Auth::user();
+        $user = Auth::user();
         $period = now()->format('Y-m');
-        $path   = Cache::get("statement_{$user->id}_{$period}");
+        $path = Cache::get("statement_{$user->id}_{$period}");
 
         if ($path && Storage::disk('public')->exists($path)) {
             return response()->json([
-                'ready'    => true,
+                'ready' => true,
                 'download' => route('client.statement.file', ['user' => $user->id, 'period' => $period]),
             ]);
         }
@@ -52,7 +52,7 @@ class ClientStatementController extends Controller
         $generating = Cache::get("statement_generating_{$user->id}_{$period}");
 
         return response()->json([
-            'ready'      => false,
+            'ready' => false,
             'generating' => (bool) $generating,
         ]);
     }
@@ -63,23 +63,23 @@ class ClientStatementController extends Controller
     public function serveFile(User $user, string $period)
     {
         // Auth check
-        if (Auth::id() !== $user->id && !Auth::user()->hasRole('admin', 'finance')) {
+        if (Auth::id() !== $user->id && ! Auth::user()->hasRole('admin', 'finance')) {
             abort(403);
         }
 
         $path = Cache::get("statement_{$user->id}_{$period}");
 
-        if (!$path) {
+        if (! $path) {
             // Try the expected path directly
-            $filename = 'KCP-Statement-' . str_pad($user->id, 6, '0', STR_PAD_LEFT) . '-' . $period . '.pdf';
+            $filename = 'KCP-Statement-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.$period.'.pdf';
             $path = "statements/{$user->id}/{$filename}";
         }
 
-        if (!Storage::disk('public')->exists($path)) {
+        if (! Storage::disk('public')->exists($path)) {
             return back()->with('error', 'Statement not found. Please request a new one.');
         }
 
-        $filename = 'KCP-Statement-' . str_pad($user->id, 6, '0', STR_PAD_LEFT) . '-' . $period . '.pdf';
+        $filename = 'KCP-Statement-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.$period.'.pdf';
 
         return response()->download(
             Storage::disk('public')->path($path),
@@ -92,14 +92,15 @@ class ClientStatementController extends Controller
 
     protected function requestStatement(User $user, bool $emailUser = false)
     {
-        $period   = now()->format('Y-m');
+        $period = now()->format('Y-m');
         $cacheKey = "statement_{$user->id}_{$period}";
-        $genKey   = "statement_generating_{$user->id}_{$period}";
+        $genKey = "statement_generating_{$user->id}_{$period}";
 
         // 1. Check if already cached and ready
         $cachedPath = Cache::get($cacheKey);
         if ($cachedPath && Storage::disk('public')->exists($cachedPath)) {
             $filename = basename($cachedPath);
+
             return response()->download(
                 Storage::disk('public')->path($cachedPath),
                 $filename,
@@ -110,7 +111,7 @@ class ClientStatementController extends Controller
         // 2. Check if already generating
         if (Cache::get($genKey)) {
             return back()->with('info',
-                'Your statement is being generated. This usually takes under 30 seconds. ' .
+                'Your statement is being generated. This usually takes under 30 seconds. '.
                 'Refresh the page in a moment or you will receive an email when ready.'
             );
         }
@@ -122,16 +123,17 @@ class ClientStatementController extends Controller
             GenerateClientStatement::dispatch($user->id, $period, $emailUser);
         } catch (\Exception $e) {
             Cache::forget($genKey);
-            Log::error("Failed to queue statement generation: " . $e->getMessage());
+            Log::error('Failed to queue statement generation: '.$e->getMessage());
+
             return back()->with('error', 'Could not generate statement. Please try again.');
         }
 
         // Return a "generating" page that polls for completion
         return view('statements.generating', [
-            'user'       => $user,
-            'period'     => $period,
+            'user' => $user,
+            'period' => $period,
             'period_label' => now()->format('F Y'),
-            'poll_url'   => route('client.statement.status'),
+            'poll_url' => route('client.statement.status'),
             'download_url' => route('client.statement.file', ['user' => $user->id, 'period' => $period]),
         ]);
     }

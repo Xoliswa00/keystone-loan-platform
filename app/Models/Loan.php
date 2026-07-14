@@ -9,6 +9,16 @@ class Loan extends Model
 {
     use HasFactory;
 
+    /**
+     * Scratch space for LoanObserver to pass the from/to status between its
+     * updating() and updated() hooks. Must be a real declared property, not
+     * a dynamic $loan->whatever = ... assignment — Eloquent has no concept
+     * of a non-persisted attribute, so any dynamic property set on a Model
+     * goes through __set() and becomes dirty, ending up in the next UPDATE
+     * statement (that's the exact bug this replaces).
+     */
+    public ?array $statusChangeContext = null;
+
     protected $fillable = [
         'user_id',
         'loan_application_id',
@@ -39,21 +49,21 @@ class Loan extends Model
     ];
 
     protected $casts = [
-        'loan_amount'        => 'decimal:2',
-        'principal_amount'   => 'decimal:2',
-        'interest_rate'      => 'decimal:4',
-        'approved_amount'    => 'decimal:2',
-        'remaining_balance'  => 'decimal:2',
-        'total_interest'     => 'decimal:2',
-        'total_fees_excl_vat'=> 'decimal:2',
-        'total_vat'          => 'decimal:2',
-        'total_amount_due'   => 'decimal:2',
-        'deferred_interest'  => 'decimal:2',
-        'deferred_fees'      => 'decimal:2',
-        'disbursed_date'     => 'date',
-        'approved_at'        => 'datetime',
-        'processed_at'       => 'datetime',
-        'next_payment_date'  => 'date',
+        'loan_amount' => 'decimal:2',
+        'principal_amount' => 'decimal:2',
+        'interest_rate' => 'decimal:4',
+        'approved_amount' => 'decimal:2',
+        'remaining_balance' => 'decimal:2',
+        'total_interest' => 'decimal:2',
+        'total_fees_excl_vat' => 'decimal:2',
+        'total_vat' => 'decimal:2',
+        'total_amount_due' => 'decimal:2',
+        'deferred_interest' => 'decimal:2',
+        'deferred_fees' => 'decimal:2',
+        'disbursed_date' => 'date',
+        'approved_at' => 'datetime',
+        'processed_at' => 'datetime',
+        'next_payment_date' => 'date',
     ];
 
     // ── Relationships ──
@@ -143,7 +153,7 @@ class Loan extends Model
     public function exceedsInDuplumCap(float $additionalCharge = 0.0): bool
     {
         $capMultiple = (float) config('nca.in_duplum_multiple');
-        $principal   = (float) $this->principal_amount;
+        $principal = (float) $this->principal_amount;
         $chargedSoFar = (float) $this->total_interest + (float) $this->total_fees_excl_vat;
 
         return ($chargedSoFar + $additionalCharge) > ($principal * $capMultiple);

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('glamfs', function (Blueprint $table) {
             $table->id();
-             $table->string('account_code')->unique();
+            $table->string('account_code')->unique();
             $table->string('account_name');
             $table->string('account_type'); // Asset, Liability, Equity, Revenue, Expense
             $table->string('financial_statement'); // BS, P&L, Notes

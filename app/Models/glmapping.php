@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class glmapping extends Model
 {
     use HasFactory;
-       protected $fillable = ['key', 'account_code','entry_type', 'description'];
+
+    protected $fillable = ['key', 'account_code', 'entry_type', 'description'];
 
     public function account()
     {
         return $this->belongsTo(gl_accounts::class, 'account_code', 'full_account_no');
     }
-    
 }

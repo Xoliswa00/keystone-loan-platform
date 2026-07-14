@@ -34,19 +34,19 @@ class CustomerProfile extends Model
     ];
 
     protected $casts = [
-        'gross_monthly_income'    => 'decimal:2',
-        'net_monthly_income'      => 'decimal:2',
-        'other_income'            => 'decimal:2',
-        'expense_housing'         => 'decimal:2',
-        'expense_transport'       => 'decimal:2',
-        'expense_existing_debt'   => 'decimal:2',
-        'expense_insurance'       => 'decimal:2',
-        'expense_living'          => 'decimal:2',
-        'total_monthly_expenses'  => 'decimal:2',
-        'disposable_income'       => 'decimal:2',
-        'max_monthly_instalment'  => 'decimal:2',
-        'profile_complete'        => 'boolean',
-        'completed_at'            => 'datetime',
+        'gross_monthly_income' => 'decimal:2',
+        'net_monthly_income' => 'decimal:2',
+        'other_income' => 'decimal:2',
+        'expense_housing' => 'decimal:2',
+        'expense_transport' => 'decimal:2',
+        'expense_existing_debt' => 'decimal:2',
+        'expense_insurance' => 'decimal:2',
+        'expense_living' => 'decimal:2',
+        'total_monthly_expenses' => 'decimal:2',
+        'disposable_income' => 'decimal:2',
+        'max_monthly_instalment' => 'decimal:2',
+        'profile_complete' => 'boolean',
+        'completed_at' => 'datetime',
     ];
 
     // ── Relationships ──
@@ -87,14 +87,14 @@ class CustomerProfile extends Model
 
     public function recalculate(): void
     {
-        $this->total_monthly_expenses  = $this->total_expenses;
-        $this->disposable_income       = $this->calculated_disposable;
-        $this->max_monthly_instalment  = $this->calculated_max_instalment;
+        $this->total_monthly_expenses = $this->total_expenses;
+        $this->disposable_income = $this->calculated_disposable;
+        $this->max_monthly_instalment = $this->calculated_max_instalment;
 
         $this->profile_complete = $this->net_monthly_income > 0
             && ($this->expense_housing > 0 || $this->expense_living > 0);
 
-        if ($this->profile_complete && !$this->completed_at) {
+        if ($this->profile_complete && ! $this->completed_at) {
             $this->completed_at = now();
         }
 

@@ -5,7 +5,7 @@
     {{-- Heading --}}
     <div class="mb-8">
         <h2 class="font-display text-2xl font-semibold text-kc-navy">Welcome back</h2>
-        <p class="mt-1 text-sm text-kc-charcoal/50">Sign in to access your lending dashboard</p>
+        <p class="mt-1 text-sm text-kc-navy/80">Sign in to access your lending dashboard</p>
     </div>
 
     {{-- Gold divider --}}
@@ -90,7 +90,7 @@
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="remember" id="remember_me"
                     class="w-3.5 h-3.5 rounded border-kc-silver text-kc-gold focus:ring-kc-gold/30 cursor-pointer">
-                <span class="text-xs text-kc-charcoal/60">Remember me</span>
+                <span class="text-xs text-kc-navy/80">Remember me</span>
             </label>
 
             @if (Route::has('password.request'))
@@ -111,7 +111,7 @@
 
         {{-- Register link --}}
         @if (Route::has('register'))
-            <p class="text-center text-xs text-kc-charcoal/50 pt-2">
+            <p class="text-center text-xs text-kc-navy/80 pt-2">
                 Don't have an account?
                 <a href="{{ route('register') }}" class="text-kc-gold hover:text-kc-gold-muted transition font-medium">
                     Apply now

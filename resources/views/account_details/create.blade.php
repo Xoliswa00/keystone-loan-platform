@@ -5,8 +5,25 @@
   </x-slot>
 
   <div class="kc-card max-w-lg">
-    <form action="{{ route('accountdetails.store') }}" method="POST" class="space-y-4">
+    <form action="{{ route('accountdetails.store') }}" method="POST" class="space-y-4"
+      x-data="{
+        branchCodes: {
+          'ABSA': '632005',
+          'African Bank': '430000',
+          'Capitec Bank': '470010',
+          'Discovery Bank': '679000',
+          'FNB (First National Bank)': '250655',
+          'Nedbank': '198765',
+          'Standard Bank': '051001',
+          'TymeBank': '678910',
+          'Old Mutual': '462005',
+          'Investec': '580105',
+          'Bidvest Bank': '462005',
+        },
+        branchCode: '{{ old('branch_code') }}',
+      }">
       @csrf
+      <input type="hidden" name="status" value="active">
       <div>
         <label class="kc-label">Account Holder Name <span class="text-red-500">*</span></label>
         <input type="text" name="account_holder_name" value="{{ old('account_holder_name', Auth::user()->name) }}"
@@ -16,7 +33,8 @@
 
       <div>
         <label class="kc-label">Bank <span class="text-red-500">*</span></label>
-        <select name="bank_name" class="kc-select" required>
+        <select name="bank_name" class="kc-select" required
+          @change="branchCode = branchCodes[$event.target.value] || ''">
           <option value="">Select your bank...</option>
           @foreach(['ABSA','African Bank','Capitec Bank','Discovery Bank','FNB (First National Bank)','Nedbank','Standard Bank','TymeBank','Old Mutual','Investec','Bidvest Bank'] as $bank)
             <option value="{{ $bank }}" {{ old('bank_name') === $bank ? 'selected' : '' }}>{{ $bank }}</option>
@@ -34,16 +52,16 @@
 
       <div>
         <label class="kc-label">Branch Code</label>
-        <input type="text" name="branch_code" value="{{ old('branch_code') }}" class="kc-input font-mono" placeholder="e.g. 632005">
+        <input type="text" name="branch_code" x-model="branchCode" class="kc-input font-mono" placeholder="Filled in automatically once you pick a bank">
+        <p class="mt-1 text-[11px] text-kc-charcoal/40">Every branch of a bank shares one universal code — filled in for you, but you can edit it if yours differs.</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="kc-label">Account Type <span class="text-red-500">*</span></label>
           <select name="account_type" class="kc-select" required>
-            <option value="savings"      {{ old('account_type')==='savings'       ?'selected':'' }}>Savings</option>
-            <option value="cheque"       {{ old('account_type')==='cheque'        ?'selected':'' }}>Cheque / Current</option>
-            <option value="transmission" {{ old('account_type')==='transmission'  ?'selected':'' }}>Transmission</option>
+            <option value="savings"  {{ old('account_type')==='savings'  ?'selected':'' }}>Savings</option>
+            <option value="checking" {{ old('account_type')==='checking' ?'selected':'' }}>Cheque / Current</option>
           </select>
         </div>
         <div>

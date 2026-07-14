@@ -39,14 +39,18 @@
                 {{-- Subtle gold radial glow --}}
                 <div class="absolute top-0 right-0 w-96 h-96 bg-kc-gold opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                 <div class="absolute bottom-0 left-0 w-64 h-64 bg-kc-gold opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-                {{-- Geometric grid --}}
-                <svg class="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#C89B3C" stroke-width="0.5"/>
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grid)" />
+
+                {{-- Sunburst fan — the same brand symbol used on Welcome/About/Contact
+                     (abstracted from the mark's gold fan ornament), scaled up as a large
+                     watermark so this panel actually tells the brand's story instead of
+                     just being a color field. --}}
+                <svg class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[140%] max-w-[640px] opacity-[0.10]"
+                     viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMax meet">
+                    <path d="M132,150 L148,150 L153,75 L127,75 Z" fill="#FFFFFF" fill-opacity="0.5" transform="rotate(-36 140 150)"/>
+                    <path d="M134,150 L146,150 L150,58 L130,58 Z" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(-18 140 150)"/>
+                    <path d="M133,150 L147,150 L151,45 L129,45 Z" fill="#C89B3C"/>
+                    <path d="M134,150 L146,150 L150,58 L130,58 Z" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(18 140 150)"/>
+                    <path d="M132,150 L148,150 L153,75 L127,75 Z" fill="#FFFFFF" fill-opacity="0.5" transform="rotate(36 140 150)"/>
                 </svg>
             </div>
 
@@ -74,8 +78,10 @@
                     Built on Strong<br>
                     <span class="text-kc-gold">Foundations.</span>
                 </h1>
-                <p class="mt-5 text-white/50 text-sm leading-relaxed max-w-xs">
-                    A strategic capital and partnership firm structured for long-term growth and trusted relationships.
+                <p class="mt-5 text-white/60 text-sm leading-relaxed max-w-xs">
+                    A keystone holds an arch together — the one piece every other
+                    piece depends on. That's how we structure every agreement:
+                    individually accountable, built to hold.
                 </p>
 
                 {{-- Three pillars --}}

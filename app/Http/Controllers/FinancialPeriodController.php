@@ -6,7 +6,6 @@ use App\Models\FinancialPeriod;
 use App\Services\FinancialPeriodService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class FinancialPeriodController extends Controller
 {
@@ -28,10 +27,10 @@ class FinancialPeriodController extends Controller
         $periods = FinancialPeriod::orderBy('period', 'desc')->paginate(24);
 
         $summary = [
-            'open'    => FinancialPeriod::where('status', 'open')->count(),
+            'open' => FinancialPeriod::where('status', 'open')->count(),
             'closing' => FinancialPeriod::where('status', 'closing')->count(),
-            'closed'  => FinancialPeriod::where('status', 'closed')->count(),
-            'locked'  => FinancialPeriod::where('status', 'locked')->count(),
+            'closed' => FinancialPeriod::where('status', 'closed')->count(),
+            'locked' => FinancialPeriod::where('status', 'locked')->count(),
         ];
 
         return view('admin.finance.periods', compact('periods', 'summary'));
@@ -50,6 +49,7 @@ class FinancialPeriodController extends Controller
     {
         try {
             $this->service->startClose($period->period, Auth::id());
+
             return redirect()->route('admin.periods.show', $period)
                 ->with('success', "Period {$period->displayLabel()} moved to 'Closing'. Complete the pre-close checklist.");
         } catch (\Exception $e) {
@@ -63,6 +63,7 @@ class FinancialPeriodController extends Controller
     {
         try {
             $this->service->runProvisioning($period, Auth::id());
+
             return back()->with('success', 'IFRS 9 provisioning complete.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -73,6 +74,7 @@ class FinancialPeriodController extends Controller
     {
         try {
             $this->service->runFacilityInterest($period, Auth::id());
+
             return back()->with('success', 'Facility interest accrual complete.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -83,7 +85,19 @@ class FinancialPeriodController extends Controller
     {
         try {
             $this->service->markBankReconComplete($period);
+
             return back()->with('success', 'Bank reconciliation marked complete.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function markBankReconNoActivity(FinancialPeriod $period)
+    {
+        try {
+            $this->service->markBankReconNoActivity($period, Auth::id());
+
+            return back()->with('success', 'Bank reconciliation marked complete — no activity confirmed for this period.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -93,10 +107,11 @@ class FinancialPeriodController extends Controller
     {
         try {
             $data = $this->service->generateTrialBalance($period, Auth::id());
+
             return back()->with('success',
-                "Trial balance generated. Income: R" . number_format($data['income'], 2) .
-                " | Expenses: R" . number_format($data['expenses'], 2) .
-                " | Net: R" . number_format($data['net_profit'], 2));
+                'Trial balance generated. Income: R'.number_format($data['income'], 2).
+                ' | Expenses: R'.number_format($data['expenses'], 2).
+                ' | Net: R'.number_format($data['net_profit'], 2));
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -108,8 +123,9 @@ class FinancialPeriodController extends Controller
     {
         try {
             $this->service->closePeriod($period, Auth::id());
+
             return redirect()->route('admin.periods.show', $period)
-                ->with('success', "Period {$period->displayLabel()} closed. " .
+                ->with('success', "Period {$period->displayLabel()} closed. ".
                     ($period->is_year_end ? 'Year-end journals posted.' : ''));
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -122,6 +138,7 @@ class FinancialPeriodController extends Controller
     {
         try {
             $this->service->lockPeriod($period, Auth::id());
+
             return redirect()->route('admin.periods.show', $period)
                 ->with('success', "Period {$period->displayLabel()} locked. No further changes allowed.");
         } catch (\Exception $e) {

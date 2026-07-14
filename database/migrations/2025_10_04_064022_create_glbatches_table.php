@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('reference')->unique();
             $table->string('source_type')->nullable();
             $table->unsignedBigInteger('source_id')->nullable();
-            $table->enum('status', ['pending','posted','reversed','deleted'])->default('pending');
+            $table->enum('status', ['pending', 'posted', 'reversed', 'deleted'])->default('pending');
             $table->foreignId('created_by')->constrained('users');
             $table->timestamp('posted_at')->nullable();
             $table->timestamps();

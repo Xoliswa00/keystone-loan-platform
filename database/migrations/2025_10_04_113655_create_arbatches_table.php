@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('arbatches', function (Blueprint $table) {
             $table->id();
-               $table->string('reference')->unique();
+            $table->string('reference')->unique();
             $table->foreignId('customer_id')->constrained('customers');
             $table->morphs('source'); // source_type, source_id (e.g. LoanDisbursement)
             $table->decimal('total_amount', 15, 2)->default(0);
-            $table->enum('status', ['pending','approved','posted','reversed'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'posted', 'reversed'])->default('pending');
             $table->boolean('posted_to_gl')->default(false);
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('approved_by')->nullable()->constrained('users');

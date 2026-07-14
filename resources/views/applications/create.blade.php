@@ -72,8 +72,8 @@
           <h4 class="font-display font-semibold text-kc-navy mb-4">Loan Amount & Term</h4>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="kc-label">Loan Type</label>
-              <select name="loan_type" class="kc-select" required>
+              <label class="kc-label" for="loan_type">Loan Type</label>
+              <select id="loan_type" name="loan_type" class="kc-select" required>
                 <option value="personal" {{ old('loan_type') === 'personal' ? 'selected' : '' }}>Personal</option>
                 <option value="business" {{ old('loan_type') === 'business' ? 'selected' : '' }}>Business</option>
               </select>
@@ -84,7 +84,7 @@
                 <span class="text-sm font-bold text-kc-navy">R <span x-text="amount.toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2})"></span></span>
               </div>
               <input type="range" name="loan_amount" :min="minAmount" :max="maxAmount" step="50"
-                x-model="amount" @input="recalculate()"
+                x-model.number="amount" @input="recalculate()"
                 class="w-full h-1.5 appearance-none bg-kc-silver-light rounded-full accent-kc-gold cursor-pointer">
               <div class="flex justify-between text-[10px] text-kc-charcoal/40 mt-0.5">
                 <span>R <span x-text="minAmount.toLocaleString()"></span></span>
@@ -94,8 +94,8 @@
               @error('loan_amount')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
             <div x-show="maxMonths > 1">
-              <label class="kc-label">Repayment Term</label>
-              <select name="loan_term_months" x-model="months" @change="recalculate()" class="kc-select">
+              <label class="kc-label" for="loan_term_months">Repayment Term</label>
+              <select id="loan_term_months" name="loan_term_months" x-model.number="months" @change="recalculate()" class="kc-select">
                 <template x-for="m in Array.from({length:maxMonths-minMonths+1},(_,i)=>i+minMonths)" :key="m">
                   <option :value="m" x-text="m + ' month' + (m>1?'s':'')"></option>
                 </template>
@@ -103,8 +103,8 @@
             </div>
             <input x-show="maxMonths === 1" type="hidden" name="loan_term_months" value="1">
             <div>
-              <label class="kc-label">Purpose</label>
-              <select name="purpose" class="kc-select" required>
+              <label class="kc-label" for="purpose">Purpose</label>
+              <select id="purpose" name="purpose" class="kc-select" required>
                 <option value="">Select...</option>
                 @foreach(\App\Models\NcrPurposeCode::where('active',true)->get() as $pc)
                   <option value="{{ $pc->code }}">{{ $pc->description }}</option>
@@ -122,14 +122,37 @@
           <p class="text-xs text-kc-charcoal/50 mb-4">Required under NCA s.81 for affordability assessment. PDF, JPG, PNG — max 5MB each.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="kc-label">Latest Payslip <span class="text-red-500">*</span></label>
-              <input type="file" name="payslips" accept=".pdf,.jpg,.jpeg,.png" required class="kc-input py-2 cursor-pointer @error('payslips') border-red-400 @enderror">
+              <label class="kc-label" for="payslips">
+                Latest Payslip
+                @if(!$existingPayslip)<span class="text-red-500">*</span>@endif
+              </label>
+              @if($existingPayslip)
+                <p class="text-[11px] text-emerald-600 font-medium mb-1">
+                  ✓ On file from your profile (uploaded {{ $existingPayslip->created_at->format('d M Y') }})
+                </p>
+              @endif
+              <input id="payslips" type="file" name="payslips" accept=".pdf,.jpg,.jpeg,.png"
+                {{ $existingPayslip ? '' : 'required' }} class="kc-input py-2 cursor-pointer @error('payslips') border-red-400 @enderror">
+              <p class="text-[10px] text-kc-charcoal/40 mt-0.5">
+                {{ $existingPayslip ? 'Only attach a new one if yours is outdated.' : '' }}
+              </p>
               @error('payslips')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
             <div>
-              <label class="kc-label">Bank Statement (3 months) <span class="text-red-500">*</span></label>
-              <input type="file" name="bank_statement" accept=".pdf,.jpg,.jpeg,.png,.csv" required class="kc-input py-2 cursor-pointer @error('bank_statement') border-red-400 @enderror">
-              <p class="text-[10px] text-kc-charcoal/40 mt-0.5">CSV format enables automatic affordability analysis</p>
+              <label class="kc-label" for="bank_statement">
+                Bank Statement (3 months)
+                @if(!$existingBankStatement)<span class="text-red-500">*</span>@endif
+              </label>
+              @if($existingBankStatement)
+                <p class="text-[11px] text-emerald-600 font-medium mb-1">
+                  ✓ On file from your profile (uploaded {{ $existingBankStatement->created_at->format('d M Y') }})
+                </p>
+              @endif
+              <input id="bank_statement" type="file" name="bank_statement" accept=".pdf,.jpg,.jpeg,.png,.csv"
+                {{ $existingBankStatement ? '' : 'required' }} class="kc-input py-2 cursor-pointer @error('bank_statement') border-red-400 @enderror">
+              <p class="text-[10px] text-kc-charcoal/40 mt-0.5">
+                {{ $existingBankStatement ? 'Only attach a new one if yours is outdated. CSV re-enables automatic affordability analysis.' : 'CSV format enables automatic affordability analysis' }}
+              </p>
               @error('bank_statement')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
           </div>

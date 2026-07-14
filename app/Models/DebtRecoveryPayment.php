@@ -17,11 +17,22 @@ class DebtRecoveryPayment extends Model
     ];
 
     protected $casts = [
-        'amount'       => 'decimal:2',
+        'amount' => 'decimal:2',
         'payment_date' => 'date',
     ];
 
-    public function recovery()    { return $this->belongsTo(DebtRecovery::class, 'debt_recovery_id'); }
-    public function loan()        { return $this->belongsTo(Loan::class); }
-    public function receivedBy()  { return $this->belongsTo(User::class, 'received_by'); }
+    public function recovery()
+    {
+        return $this->belongsTo(DebtRecovery::class, 'debt_recovery_id');
+    }
+
+    public function loan()
+    {
+        return $this->belongsTo(Loan::class);
+    }
+
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
 }

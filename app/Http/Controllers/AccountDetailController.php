@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AccountDetailController extends Controller
 {
@@ -12,7 +13,8 @@ class AccountDetailController extends Controller
      */
     public function index()
     {
-        $accountDetails = $user->accountDetails ?? collect();
+        $accountDetails = Auth::user()->accountDetails ?? collect();
+
         return view('account_details.index', compact('accountDetails'));
     }
 
@@ -30,16 +32,16 @@ class AccountDetailController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            
+
             'account_holder_name' => ['required', 'string', 'max:255'],
             'bank_name' => ['required', 'string', 'max:255'],
             'account_number' => ['required', 'numeric', 'unique:account_details,account_number'],
-            'account_type' => ['required', 'in:savings,current'],
-           
+            'account_type' => ['required', 'in:savings,checking'],
+
             'payment_method' => ['required', 'in:debit_order,manual'],
             'status' => ['required', 'in:active,inactive'],
         ]);
-        $validatedData['user_id']=Auth()->user()->id;
+        $validatedData['user_id'] = Auth()->user()->id;
 
         AccountDetail::create($validatedData);
 
@@ -51,6 +53,8 @@ class AccountDetailController extends Controller
      */
     public function show(AccountDetail $accountDetail)
     {
+        abort_unless($accountDetail->user_id === Auth::id(), 403);
+
         return view('account_details.show', compact('accountDetail'));
     }
 
@@ -59,6 +63,8 @@ class AccountDetailController extends Controller
      */
     public function edit(AccountDetail $accountDetail)
     {
+        abort_unless($accountDetail->user_id === Auth::id(), 403);
+
         return view('account_details.edit', compact('accountDetail'));
     }
 
@@ -67,11 +73,13 @@ class AccountDetailController extends Controller
      */
     public function update(Request $request, AccountDetail $accountDetail)
     {
+        abort_unless($accountDetail->user_id === Auth::id(), 403);
+
         $validatedData = $request->validate([
             'account_holder_name' => ['required', 'string', 'max:255'],
             'bank_name' => ['required', 'string', 'max:255'],
-            'account_number' => ['required', 'numeric', 'unique:account_details,account_number,' . $accountDetail->id],
-            'account_type' => ['required', 'in:savings,current'],
+            'account_number' => ['required', 'numeric', 'unique:account_details,account_number,'.$accountDetail->id],
+            'account_type' => ['required', 'in:savings,checking'],
             'branch_code' => ['nullable', 'string', 'max:10'],
             'iban' => ['nullable', 'string', 'max:34'],
             'payment_method' => ['required', 'in:debit_order,manual'],
@@ -88,8 +96,10 @@ class AccountDetailController extends Controller
      */
     public function destroy(AccountDetail $accountDetail)
     {
+        abort_unless($accountDetail->user_id === Auth::id(), 403);
+
         $accountDetail->delete();
 
-        return redirect()->route('account_details.index')->with('success', 'Account details deleted successfully.');
+        return redirect()->route('accountdetails.index')->with('success', 'Account details deleted successfully.');
     }
 }

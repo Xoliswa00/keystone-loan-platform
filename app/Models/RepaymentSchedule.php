@@ -27,13 +27,13 @@ class RepaymentSchedule extends Model
     ];
 
     protected $casts = [
-        'emi_amount'       => 'decimal:2',
+        'emi_amount' => 'decimal:2',
         'principal_amount' => 'decimal:2',
-        'interest_amount'  => 'decimal:2',
-        'fee_amount'       => 'decimal:2',
-        'due_date'         => 'date',
-        'gl_posted'        => 'boolean',
-        'paid_at'          => 'datetime',
+        'interest_amount' => 'decimal:2',
+        'fee_amount' => 'decimal:2',
+        'due_date' => 'date',
+        'gl_posted' => 'boolean',
+        'paid_at' => 'datetime',
     ];
 
     // ── Relationships ──
@@ -71,13 +71,13 @@ class RepaymentSchedule extends Model
     public function scopeOverdue($query)
     {
         return $query->where('status', 'pending')
-                     ->where('due_date', '<', now()->toDateString());
+            ->where('due_date', '<', now()->toDateString());
     }
 
-    public function scopeDpd($query, int $from, int $to = null)
+    public function scopeDpd($query, int $from, ?int $to = null)
     {
         $q = $query->where('status', 'pending')
-                   ->whereRaw('DATEDIFF(CURDATE(), due_date) >= ?', [$from]);
+            ->whereRaw('DATEDIFF(CURDATE(), due_date) >= ?', [$from]);
 
         if ($to !== null) {
             $q->whereRaw('DATEDIFF(CURDATE(), due_date) <= ?', [$to]);
@@ -100,11 +100,12 @@ class RepaymentSchedule extends Model
     public function ifrs9Stage(): int
     {
         $dpd = $this->daysOverdue();
+        $settings = LendingSetting::current();
 
-        return match(true) {
-            $dpd >= 90 => 3,
-            $dpd >= 30 => 2,
-            default    => 1,
+        return match (true) {
+            $dpd >= $settings->ifrs9_stage3_dpd => 3,
+            $dpd >= $settings->ifrs9_stage2_dpd => 2,
+            default => 1,
         };
     }
 }

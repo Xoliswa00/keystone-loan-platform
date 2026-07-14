@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\{
-    FundingFacility, FundingFacilityTransaction,
-    arbatch, arbatch_entries, gl_accounts, glmapping
-};
+use App\Models\arbatch;
+use App\Models\arbatch_entries;
+use App\Models\FundingFacility;
+use App\Models\FundingFacilityTransaction;
+use App\Models\gl_accounts;
+use App\Models\glmapping;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 /**
  * Handles all GL-integrated transactions for funding facilities:
@@ -32,11 +34,11 @@ class FundingFacilityService
 
     public function recordDrawdown(
         FundingFacility $facility,
-        float           $amount,
-        string          $date,
-        string          $reference,
-        int             $userId,
-        ?string         $notes = null
+        float $amount,
+        string $date,
+        string $reference,
+        int $userId,
+        ?string $notes = null
     ): FundingFacilityTransaction {
 
         return DB::transaction(function () use ($facility, $amount, $date, $reference, $userId, $notes) {
@@ -46,12 +48,12 @@ class FundingFacilityService
             }
 
             // GL: Dr Bank / Cr Loans Payable (or Shareholder Loan)
-            $bankGlKey    = 'loan_repayment_dr'; // business bank account = account 1100
-            $liabGlKey    = $facility->funder_type === 'shareholder_loan'
+            $bankGlKey = 'loan_repayment_dr'; // business bank account = account 1100
+            $liabGlKey = $facility->funder_type === 'shareholder_loan'
                 ? 'shareholder_loan_cr'
                 : 'loans_payable_cr';
 
-            $ref = "FF-DRAW-{$facility->facility_code}-" . now()->format('Ymd');
+            $ref = "FF-DRAW-{$facility->facility_code}-".now()->format('Ymd');
 
             $this->postGl($facility, $bankGlKey, $liabGlKey, 'debit', $amount, $ref, $userId,
                 "Drawdown from {$facility->funder_name} — {$reference}");
@@ -61,18 +63,19 @@ class FundingFacilityService
             $facility->increment('current_balance', $amount);
 
             $txn = FundingFacilityTransaction::create([
-                'facility_id'        => $facility->id,
-                'transaction_type'   => 'drawdown',
-                'amount'             => $amount,
-                'transaction_date'   => $date,
-                'reference'          => $reference,
+                'facility_id' => $facility->id,
+                'transaction_type' => 'drawdown',
+                'amount' => $amount,
+                'transaction_date' => $date,
+                'reference' => $reference,
                 'gl_batch_reference' => $ref,
-                'gl_posted'          => true,
-                'notes'              => $notes,
-                'created_by'         => $userId,
+                'gl_posted' => true,
+                'notes' => $notes,
+                'created_by' => $userId,
             ]);
 
             Log::info("Facility #{$facility->id} drawdown R{$amount} from {$facility->funder_name}");
+
             return $txn;
         });
     }
@@ -83,11 +86,11 @@ class FundingFacilityService
 
     public function recordRepayment(
         FundingFacility $facility,
-        float           $amount,
-        string          $date,
-        string          $reference,
-        int             $userId,
-        ?string         $notes = null
+        float $amount,
+        string $date,
+        string $reference,
+        int $userId,
+        ?string $notes = null
     ): FundingFacilityTransaction {
 
         return DB::transaction(function () use ($facility, $amount, $date, $reference, $userId, $notes) {
@@ -101,7 +104,7 @@ class FundingFacilityService
                 : 'loans_payable_cr';
             $bankGlKey = 'loan_repayment_dr';
 
-            $ref = "FF-REP-{$facility->facility_code}-" . now()->format('Ymd');
+            $ref = "FF-REP-{$facility->facility_code}-".now()->format('Ymd');
 
             $this->postGl($facility, $liabGlKey, $bankGlKey, 'credit', $amount, $ref, $userId,
                 "Principal repayment to {$facility->funder_name} — {$reference}");
@@ -113,15 +116,15 @@ class FundingFacilityService
             }
 
             return FundingFacilityTransaction::create([
-                'facility_id'        => $facility->id,
-                'transaction_type'   => 'repayment',
-                'amount'             => $amount,
-                'transaction_date'   => $date,
-                'reference'          => $reference,
+                'facility_id' => $facility->id,
+                'transaction_type' => 'repayment',
+                'amount' => $amount,
+                'transaction_date' => $date,
+                'reference' => $reference,
                 'gl_batch_reference' => $ref,
-                'gl_posted'          => true,
-                'notes'              => $notes,
-                'created_by'         => $userId,
+                'gl_posted' => true,
+                'notes' => $notes,
+                'created_by' => $userId,
             ]);
         });
     }
@@ -137,26 +140,26 @@ class FundingFacilityService
             $amount = $facility->monthlyInterestDue();
 
             if ($amount <= 0) {
-                throw new Exception("No interest to accrue — balance or rate is zero.");
+                throw new Exception('No interest to accrue — balance or rate is zero.');
             }
 
-            $ref = "FF-ACCR-{$facility->facility_code}-" . now()->format('Ym');
+            $ref = "FF-ACCR-{$facility->facility_code}-".now()->format('Ym');
 
             $this->postGl($facility, 'interest_expense_dr', 'accrued_interest_cr', 'debit', $amount,
-                $ref, $userId, "Interest accrual — {$facility->funder_name} " . now()->format('M Y'));
+                $ref, $userId, "Interest accrual — {$facility->funder_name} ".now()->format('M Y'));
 
             $facility->increment('accrued_interest', $amount);
 
             return FundingFacilityTransaction::create([
-                'facility_id'        => $facility->id,
-                'transaction_type'   => 'interest_accrual',
-                'amount'             => $amount,
-                'transaction_date'   => now()->toDateString(),
-                'reference'          => $ref,
+                'facility_id' => $facility->id,
+                'transaction_type' => 'interest_accrual',
+                'amount' => $amount,
+                'transaction_date' => now()->toDateString(),
+                'reference' => $ref,
                 'gl_batch_reference' => $ref,
-                'gl_posted'          => true,
-                'notes'              => 'Monthly interest accrual',
-                'created_by'         => $userId,
+                'gl_posted' => true,
+                'notes' => 'Monthly interest accrual',
+                'created_by' => $userId,
             ]);
         });
     }
@@ -167,16 +170,16 @@ class FundingFacilityService
 
     public function payInterest(
         FundingFacility $facility,
-        float           $amount,
-        string          $date,
-        string          $reference,
-        int             $userId,
-        ?string         $notes = null
+        float $amount,
+        string $date,
+        string $reference,
+        int $userId,
+        ?string $notes = null
     ): FundingFacilityTransaction {
 
         return DB::transaction(function () use ($facility, $amount, $date, $reference, $userId, $notes) {
 
-            $ref = "FF-INT-{$facility->facility_code}-" . now()->format('Ymd');
+            $ref = "FF-INT-{$facility->facility_code}-".now()->format('Ymd');
 
             $this->postGl($facility, 'accrued_interest_cr', 'loan_repayment_dr', 'credit', $amount,
                 $ref, $userId, "Interest payment to {$facility->funder_name} — {$reference}");
@@ -184,15 +187,15 @@ class FundingFacilityService
             $facility->decrement('accrued_interest', min($amount, $facility->accrued_interest));
 
             return FundingFacilityTransaction::create([
-                'facility_id'        => $facility->id,
-                'transaction_type'   => 'interest_payment',
-                'amount'             => $amount,
-                'transaction_date'   => $date,
-                'reference'          => $reference,
+                'facility_id' => $facility->id,
+                'transaction_type' => 'interest_payment',
+                'amount' => $amount,
+                'transaction_date' => $date,
+                'reference' => $reference,
                 'gl_batch_reference' => $ref,
-                'gl_posted'          => true,
-                'notes'              => $notes,
-                'created_by'         => $userId,
+                'gl_posted' => true,
+                'notes' => $notes,
+                'created_by' => $userId,
             ]);
         });
     }
@@ -211,7 +214,7 @@ class FundingFacilityService
                 $results['accrued']++;
             } catch (Exception $e) {
                 $results['skipped']++;
-                $results['errors'][] = "Facility #{$facility->id}: " . $e->getMessage();
+                $results['errors'][] = "Facility #{$facility->id}: ".$e->getMessage();
             }
         });
 
@@ -222,20 +225,21 @@ class FundingFacilityService
 
     protected function postGl(
         FundingFacility $facility,
-        string          $drKey,
-        string          $crKey,
-        string          $primarySide,   // which account is the "main" side (for description)
-        float           $amount,
-        string          $ref,
-        int             $userId,
-        string          $description
+        string $drKey,
+        string $crKey,
+        string $primarySide,   // which account is the "main" side (for description)
+        float $amount,
+        string $ref,
+        int $userId,
+        string $description
     ): void {
 
         $drGl = $this->resolveGl($drKey);
         $crGl = $this->resolveGl($crKey);
 
-        if (!$drGl || !$crGl) {
+        if (! $drGl || ! $crGl) {
             Log::warning("Missing GL accounts for facility transaction: {$drKey} / {$crKey}");
+
             return; // post without GL if mappings not set — don't block the transaction
         }
 
@@ -244,20 +248,20 @@ class FundingFacilityService
         $systemCustomer = \App\Models\Customer::first(); // fallback
 
         $arBatch = arbatch::create([
-            'reference'    => $ref,
-            'customer_id'  => $systemCustomer?->id ?? 1,
-            'source_type'  => FundingFacility::class,
-            'source_id'    => $facility->id,
+            'reference' => $ref,
+            'customer_id' => $systemCustomer?->id ?? 1,
+            'source_type' => FundingFacility::class,
+            'source_id' => $facility->id,
             'total_amount' => $amount,
-            'status'       => 'approved',
-            'created_by'   => $userId,
-            'approved_by'  => $userId,
-            'approved_at'  => now(),
+            'status' => 'approved',
+            'created_by' => $userId,
+            'approved_by' => $userId,
+            'approved_at' => now(),
         ]);
 
         arbatch_entries::insert([
-            ['arbatch_id'=>$arBatch->id,'gl_account_id'=>$drGl->id,'entry_type'=>'debit', 'amount'=>$amount,'description'=>$description,'created_at'=>now(),'updated_at'=>now()],
-            ['arbatch_id'=>$arBatch->id,'gl_account_id'=>$crGl->id,'entry_type'=>'credit','amount'=>$amount,'description'=>$description,'created_at'=>now(),'updated_at'=>now()],
+            ['arbatch_id' => $arBatch->id, 'gl_account_id' => $drGl->id, 'entry_type' => 'debit', 'amount' => $amount, 'description' => $description, 'created_at' => now(), 'updated_at' => now()],
+            ['arbatch_id' => $arBatch->id, 'gl_account_id' => $crGl->id, 'entry_type' => 'credit', 'amount' => $amount, 'description' => $description, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $this->glPosting->postArBatch($arBatch, $userId);
@@ -267,11 +271,12 @@ class FundingFacilityService
     protected function resolveGl(string $key): ?gl_accounts
     {
         $mapping = glmapping::where('key', $key)->where('is_active', 1)->first();
-        if (!$mapping) {
+        if (! $mapping) {
             Log::warning("GL mapping not found: {$key}");
+
             return null;
         }
 
-        return gl_accounts::whereHas('chartOfAccount', fn($q) => $q->where('account_code', $mapping->account_code))->first();
+        return gl_accounts::whereHas('chartOfAccount', fn ($q) => $q->where('account_code', $mapping->account_code))->first();
     }
 }

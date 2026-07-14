@@ -22,10 +22,10 @@ class nupay_transaction extends Model
     ];
 
     protected $casts = [
-        'amount'     => 'decimal:2',
-        'fee'        => 'decimal:2',
+        'amount' => 'decimal:2',
+        'fee' => 'decimal:2',
         'net_amount' => 'decimal:2',
-        'posted_at'  => 'datetime',
+        'posted_at' => 'datetime',
     ];
 
     public function loanRepayment()

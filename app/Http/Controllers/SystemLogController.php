@@ -2,37 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class SystemLogController extends Controller
 {
-    const LOG_PATH    = 'logs/laravel.log';
-    const MAX_LINES   = 500;   // max lines to parse per request
-    const TAIL_BYTES  = 500000; // read last ~500KB of log file
+    const LOG_PATH = 'logs/laravel.log';
+
+    const MAX_LINES = 500;   // max lines to parse per request
+
+    const TAIL_BYTES = 500000; // read last ~500KB of log file
 
     /**
      * Main log dashboard — errors, warnings, failed jobs, health.
      */
     public function index(Request $request)
     {
-        $level  = $request->get('level', 'all');
+        $level = $request->get('level', 'all');
         $search = $request->get('search', '');
-        $date   = $request->get('date', now()->toDateString());
+        $date = $request->get('date', now()->toDateString());
 
-        $entries    = $this->parseLog($level, $search, $date);
+        $entries = $this->parseLog($level, $search, $date);
         $failedJobs = $this->getFailedJobs();
-        $health     = $this->systemHealth();
+        $health = $this->systemHealth();
 
         // Summary counts
         $counts = [
-            'error'   => $this->countByLevel('ERROR',   $date),
-            'warning' => $this->countByLevel('WARNING',  $date),
-            'info'    => $this->countByLevel('INFO',     $date),
+            'error' => $this->countByLevel('ERROR', $date),
+            'warning' => $this->countByLevel('WARNING', $date),
+            'info' => $this->countByLevel('INFO', $date),
         ];
 
         return view('admin.system.logs', compact(
@@ -50,9 +51,10 @@ class SystemLogController extends Controller
 
         try {
             \Illuminate\Support\Facades\Artisan::call('queue:retry', ['id' => [$uuid]]);
+
             return back()->with('success', "Job {$uuid} queued for retry.");
         } catch (\Exception $e) {
-            return back()->with('error', 'Retry failed: ' . $e->getMessage());
+            return back()->with('error', 'Retry failed: '.$e->getMessage());
         }
     }
 
@@ -62,6 +64,7 @@ class SystemLogController extends Controller
     public function clearFailed()
     {
         DB::table('failed_jobs')->truncate();
+
         return back()->with('success', 'All failed jobs cleared.');
     }
 
@@ -71,10 +74,29 @@ class SystemLogController extends Controller
     public function download()
     {
         $path = storage_path(self::LOG_PATH);
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return back()->with('error', 'Log file not found.');
         }
-        return response()->download($path, 'laravel-' . now()->format('Y-m-d') . '.log');
+
+        return response()->download($path, 'laravel-'.now()->format('Y-m-d').'.log');
+    }
+
+    /**
+     * Manually trigger a cron-only job — allowlisted, not a raw command
+     * string, since this reaches Artisan::call().
+     */
+    public function runJob(Request $request)
+    {
+        $request->validate(['job' => 'required|in:escalate-arrears,send-payment-reminders']);
+
+        try {
+            \Illuminate\Support\Facades\Artisan::call('keystone:'.$request->job);
+            $output = trim(\Illuminate\Support\Facades\Artisan::output());
+
+            return back()->with('success', $output !== '' ? $output : 'Job completed with no output.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Job failed: '.$e->getMessage());
+        }
     }
 
     /**
@@ -82,8 +104,8 @@ class SystemLogController extends Controller
      */
     public function clearLog()
     {
-        $path    = storage_path(self::LOG_PATH);
-        $archive = storage_path('logs/laravel-' . now()->format('Y-m-d-His') . '.log');
+        $path = storage_path(self::LOG_PATH);
+        $archive = storage_path('logs/laravel-'.now()->format('Y-m-d-His').'.log');
 
         if (file_exists($path)) {
             rename($path, $archive);
@@ -99,12 +121,12 @@ class SystemLogController extends Controller
     {
         $path = storage_path(self::LOG_PATH);
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return [];
         }
 
         // Read the tail of the file to avoid loading gigabytes
-        $size   = filesize($path);
+        $size = filesize($path);
         $offset = max(0, $size - self::TAIL_BYTES);
 
         $fh = fopen($path, 'r');
@@ -117,7 +139,7 @@ class SystemLogController extends Controller
             $content = substr($content, strpos($content, "\n") + 1);
         }
 
-        $lines   = explode("\n", $content);
+        $lines = explode("\n", $content);
         $entries = [];
         $current = null;
 
@@ -128,7 +150,9 @@ class SystemLogController extends Controller
             if (preg_match($pattern, $line, $m)) {
                 if ($current) {
                     $entries[] = $current;
-                    if (count($entries) >= self::MAX_LINES) break;
+                    if (count($entries) >= self::MAX_LINES) {
+                        break;
+                    }
                 }
 
                 $entryDate = substr($m[1], 0, 10);
@@ -137,12 +161,14 @@ class SystemLogController extends Controller
                 // Filter by date
                 if ($entryDate !== $date) {
                     $current = null;
+
                     continue;
                 }
 
                 // Filter by level
                 if ($level !== 'all' && strtolower($entryLevel) !== strtolower($level)) {
                     $current = null;
+
                     continue;
                 }
 
@@ -151,6 +177,7 @@ class SystemLogController extends Controller
                 // Filter by search
                 if ($search && stripos($message, $search) === false) {
                     $current = null;
+
                     continue;
                 }
 
@@ -167,10 +194,10 @@ class SystemLogController extends Controller
 
                 $current = [
                     'timestamp' => $m[1],
-                    'level'     => $entryLevel,
-                    'message'   => rtrim($message),
-                    'context'   => $context,
-                    'extra'     => [],
+                    'level' => $entryLevel,
+                    'message' => rtrim($message),
+                    'context' => $context,
+                    'extra' => [],
                 ];
             } elseif ($current && trim($line)) {
                 // Stack trace continuation
@@ -188,13 +215,15 @@ class SystemLogController extends Controller
     protected function countByLevel(string $level, string $date): int
     {
         $path = storage_path(self::LOG_PATH);
-        if (!file_exists($path)) return 0;
+        if (! file_exists($path)) {
+            return 0;
+        }
 
-        $count   = 0;
+        $count = 0;
         $pattern = "/^\[{$date}.*?\] \w+\.{$level}: /";
-        $fh      = fopen($path, 'r');
+        $fh = fopen($path, 'r');
 
-        while (!feof($fh)) {
+        while (! feof($fh)) {
             $line = fgets($fh, 4096);
             if (preg_match($pattern, $line)) {
                 $count++;
@@ -202,6 +231,7 @@ class SystemLogController extends Controller
         }
 
         fclose($fh);
+
         return $count;
     }
 
@@ -214,13 +244,14 @@ class SystemLogController extends Controller
                 ->get()
                 ->map(function ($job) {
                     $payload = json_decode($job->payload, true);
+
                     return [
-                        'id'          => $job->id,
-                        'uuid'        => $job->uuid,
-                        'queue'       => $job->queue,
-                        'display_name'=> $payload['displayName'] ?? 'Unknown',
-                        'failed_at'   => $job->failed_at,
-                        'exception'   => $this->extractException($job->exception),
+                        'id' => $job->id,
+                        'uuid' => $job->uuid,
+                        'queue' => $job->queue,
+                        'display_name' => $payload['displayName'] ?? 'Unknown',
+                        'failed_at' => $job->failed_at,
+                        'exception' => $this->extractException($job->exception),
                     ];
                 })
                 ->toArray();
@@ -242,10 +273,10 @@ class SystemLogController extends Controller
         // Queue pending jobs
         try {
             $health['queue_pending'] = DB::table('jobs')->count();
-            $health['queue_failed']  = DB::table('failed_jobs')->count();
+            $health['queue_failed'] = DB::table('failed_jobs')->count();
         } catch (\Exception $e) {
             $health['queue_pending'] = '—';
-            $health['queue_failed']  = '—';
+            $health['queue_failed'] = '—';
         }
 
         // Log file size
@@ -255,7 +286,7 @@ class SystemLogController extends Controller
             : '0 B';
 
         // Storage disk space
-        $health['disk_free']  = $this->formatBytes(disk_free_space(storage_path()));
+        $health['disk_free'] = $this->formatBytes(disk_free_space(storage_path()));
         $health['disk_total'] = $this->formatBytes(disk_total_space(storage_path()));
 
         // Last GL reconciliation
@@ -278,10 +309,10 @@ class SystemLogController extends Controller
         // Current period status
         try {
             $currentPeriod = \App\Models\FinancialPeriod::current();
-            $health['current_period']        = $currentPeriod?->displayLabel() ?? now()->format('F Y');
-            $health['current_period_status']  = ucfirst($currentPeriod?->status ?? 'open');
+            $health['current_period'] = $currentPeriod?->displayLabel() ?? now()->format('F Y');
+            $health['current_period_status'] = ucfirst($currentPeriod?->status ?? 'open');
         } catch (\Exception $e) {
-            $health['current_period']        = '—';
+            $health['current_period'] = '—';
             $health['current_period_status'] = '—';
         }
 
@@ -290,9 +321,16 @@ class SystemLogController extends Controller
 
     protected function formatBytes(int $bytes): string
     {
-        if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 2) . ' GB';
-        if ($bytes >= 1048576)    return number_format($bytes / 1048576, 2) . ' MB';
-        if ($bytes >= 1024)       return number_format($bytes / 1024, 2) . ' KB';
-        return $bytes . ' B';
+        if ($bytes >= 1073741824) {
+            return number_format($bytes / 1073741824, 2).' GB';
+        }
+        if ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2).' MB';
+        }
+        if ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2).' KB';
+        }
+
+        return $bytes.' B';
     }
 }

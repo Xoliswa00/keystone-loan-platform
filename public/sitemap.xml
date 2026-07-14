@@ -3,7 +3,7 @@
   
   <!-- Home page -->
   <url>
-    <loc>https://www.ligerholding.co.za/</loc>
+    <loc>https://www.keystonecapital.co.za/</loc>
     <lastmod>2025-11-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -11,7 +11,7 @@
 
   <!-- About page -->
   <url>
-    <loc>https://www.ligerholding.co.za/about</loc>
+    <loc>https://www.keystonecapital.co.za/about</loc>
     <lastmod>2025-11-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -19,7 +19,7 @@
 
   <!-- Services page -->
   <url>
-    <loc>https://www.ligerholding.co.za/logon</loc>
+    <loc>https://www.keystonecapital.co.za/services</loc>
     <lastmod>2025-11-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -27,7 +27,7 @@
 
   <!-- Contact page -->
   <url>
-    <loc>https://www.ligerholding.co.za/contact</loc>
+    <loc>https://www.keystonecapital.co.za/contact</loc>
     <lastmod>2025-11-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

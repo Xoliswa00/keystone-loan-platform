@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\cashbook_accounts;
-use Illuminate\Auth\Access\Response;
+use App\Models\User;
 
 class CashbookAccountsPolicy
 {

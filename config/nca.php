@@ -33,10 +33,10 @@ return [
     |
     */
 
-    'interest_rate_cap_monthly'   => (float) env('NCA_INTEREST_RATE_CAP_MONTHLY', 0.05),
-    'initiation_fee_flat_cap'     => (float) env('NCA_INITIATION_FEE_FLAT_CAP', 150.00),
+    'interest_rate_cap_monthly' => (float) env('NCA_INTEREST_RATE_CAP_MONTHLY', 0.05),
+    'initiation_fee_flat_cap' => (float) env('NCA_INITIATION_FEE_FLAT_CAP', 150.00),
     'initiation_fee_absolute_cap' => (float) env('NCA_INITIATION_FEE_ABSOLUTE_CAP', 1050.00),
-    'monthly_service_fee_cap'     => (float) env('NCA_MONTHLY_SERVICE_FEE_CAP', 60.00),
-    'in_duplum_multiple'          => (float) env('NCA_IN_DUPLUM_MULTIPLE', 1.0),
+    'monthly_service_fee_cap' => (float) env('NCA_MONTHLY_SERVICE_FEE_CAP', 60.00),
+    'in_duplum_multiple' => (float) env('NCA_IN_DUPLUM_MULTIPLE', 1.0),
 
 ];

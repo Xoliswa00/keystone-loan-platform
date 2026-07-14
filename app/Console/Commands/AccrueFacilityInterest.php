@@ -8,7 +8,8 @@ use Illuminate\Console\Command;
 
 class AccrueFacilityInterest extends Command
 {
-    protected $signature   = 'keystone:accrue-facility-interest {--admin-id= : User ID (defaults to first admin)}';
+    protected $signature = 'keystone:accrue-facility-interest {--admin-id= : User ID (defaults to first admin)}';
+
     protected $description = 'Run monthly interest accrual on all active funding facilities. Schedule on last business day of month.';
 
     public function handle(FundingFacilityService $service): int
@@ -22,7 +23,7 @@ class AccrueFacilityInterest extends Command
         $this->info("  Accrued : {$results['accrued']}");
         $this->info("  Skipped : {$results['skipped']}");
 
-        if (!empty($results['errors'])) {
+        if (! empty($results['errors'])) {
             foreach ($results['errors'] as $err) {
                 $this->warn("  {$err}");
             }

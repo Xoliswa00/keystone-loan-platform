@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,10 +6,12 @@
 
 @layer base {
     html {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Source Sans 3', sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
+
+    [x-cloak] { display: none !important; }
 
     h1, h2, h3, .font-display {
         font-family: 'Playfair Display', Georgia, serif;
@@ -65,7 +67,10 @@
 
     /* ── Buttons ── */
     .kc-btn-primary {
-        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-gold text-kc-navy font-semibold text-sm shadow-kc-gold hover:bg-kc-gold-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-gold/50;
+        /* NOTE: white-on-gold measures ~2.56:1 contrast (fails WCAG AA's 4.5:1
+           for text); navy-on-gold measures ~6.76:1. Trying white per explicit
+           request — revisit if it reads as hard to see in practice. */
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-gold text-white font-semibold text-sm shadow-kc-gold hover:bg-kc-gold-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-gold/50;
     }
     .kc-btn-secondary {
         @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-navy text-white font-semibold text-sm shadow-kc-navy hover:bg-kc-navy-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-navy/40;
@@ -97,6 +102,7 @@
     .kc-badge-red     { @apply kc-badge bg-red-50 text-red-700; }
     .kc-badge-silver  { @apply kc-badge bg-kc-silver-light text-kc-charcoal/70; }
     .kc-badge-navy    { @apply kc-badge bg-kc-navy text-white; }
+    .kc-badge-charcoal{ @apply kc-badge bg-kc-charcoal text-kc-white; }
 
     /* ── Table ── */
     .kc-table {
@@ -125,12 +131,50 @@
         @apply flex-1 h-px bg-kc-gold/30;
     }
 
-    /* ── Page header ── */
+    /* ── Page header ──
+       Truncate rather than wrap/overflow — the topbar is a fixed-height
+       flex row shared with the sidebar toggle and user menu, so long
+       titles/subtitles need an ellipsis instead of pushing those out of
+       alignment on narrow screens. */
     .kc-page-title {
-        @apply font-display text-2xl font-semibold text-kc-navy;
+        @apply font-display text-2xl font-semibold text-kc-navy truncate;
     }
     .kc-page-subtitle {
-        @apply text-sm text-kc-charcoal/50 mt-0.5;
+        @apply text-sm text-kc-charcoal/50 mt-0.5 truncate;
+    }
+
+    /* ── Marketing typography (public-facing pages) ──
+       Canonical eyebrow/display tokens — replaces one-off tracking values
+       hand-copied across welcome.blade.php / guest.blade.php. */
+    .kc-eyebrow {
+        @apply text-kc-gold text-xs font-semibold uppercase tracking-[0.25em];
+    }
+    .kc-display-1 {
+        @apply font-display text-4xl sm:text-5xl xl:text-6xl font-semibold leading-tight;
+    }
+    .kc-display-2 {
+        @apply font-display text-2xl sm:text-3xl font-semibold text-kc-navy leading-snug;
+    }
+
+    /* ── Marketing section wrappers — structured layout, strong whitespace ──
+       Full-bleed background band; wrap content in its own max-w-* container
+       so the color spans the viewport while text stays readable-width. */
+    .kc-section {
+        @apply px-6 py-16 sm:py-20 relative;
+    }
+    .kc-section-dark {
+        @apply kc-section bg-kc-navy text-white shadow-[0_-12px_28px_-18px_rgba(0,0,0,0.35)];
+    }
+    .kc-section-light {
+        /* Soft shadow at the top edge so consecutive white sections still
+           read as distinct layers instead of one endless flow. */
+        @apply kc-section bg-kc-white text-kc-charcoal shadow-[0_-12px_28px_-18px_rgba(7,27,52,0.12)];
+    }
+
+    /* ── Gold foil / accent animation (brand doc: "gold accent animations") ── */
+    .kc-text-gold-foil {
+        @apply bg-gradient-to-r from-kc-gold-muted via-kc-gold-light to-kc-gold-muted
+               bg-[length:200%_auto] bg-clip-text text-transparent animate-shimmer;
     }
 
     /* ── Alert boxes ── */
@@ -148,6 +192,17 @@
 /* ── Sidebar mobile overlay ── */
 .kc-overlay {
     @apply fixed inset-0 bg-black/40 z-30 lg:hidden;
+}
+
+/* ── Respect reduced motion for AOS (scroll-reveal) ──
+   AOS has no built-in reduced-motion guard; without this, entrance
+   animations run unconditionally for users who've asked to disable them. */
+@media (prefers-reduced-motion: reduce) {
+    [data-aos] {
+        transition: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+    }
 }
 
 /* ── Scrollbar ── */

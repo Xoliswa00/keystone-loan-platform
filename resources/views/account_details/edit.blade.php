@@ -2,7 +2,7 @@
     <div class="container">
         <h1>Edit Account Detail</h1>
 
-        <form action="{{ route('account_details.update', $accountDetail) }}" method="POST">
+        <form action="{{ route('accountdetails.update', $accountDetail) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -49,7 +49,7 @@
                 <label for="account_type">Account Type</label>
                 <select name="account_type" id="account_type" class="form-control" required>
                     <option value="savings" {{ old('account_type', $accountDetail->account_type) == 'savings' ? 'selected' : '' }}>Savings</option>
-                    <option value="current" {{ old('account_type', $accountDetail->account_type) == 'current' ? 'selected' : '' }}>Current</option>
+                    <option value="checking" {{ old('account_type', $accountDetail->account_type) == 'checking' ? 'selected' : '' }}>Cheque / Current</option>
                 </select>
                 @error('account_type')
                     <div class="alert alert-danger">{{ $message }}</div>

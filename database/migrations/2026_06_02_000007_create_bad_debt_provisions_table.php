@@ -44,10 +44,6 @@ return new class extends Migration
 
         // ── Add missing columns to loan_repayments ──────────────────────────
         Schema::table('loan_repayments', function (Blueprint $table) {
-            $table->foreignId('user_id')
-                ->nullable()->after('loan_id')
-                ->constrained('users')->nullOnDelete();
-
             $table->foreignId('repayment_schedule_id')
                 ->nullable()->after('user_id')
                 ->constrained('repayment_schedules')->nullOnDelete();
@@ -55,9 +51,9 @@ return new class extends Migration
             $table->unsignedBigInteger('nupay_staging_id')->nullable()->after('repayment_schedule_id');
 
             $table->decimal('principal_amount', 12, 2)->default(0)->after('payment_amount');
-            $table->decimal('interest_amount',  12, 2)->default(0)->after('principal_amount');
-            $table->decimal('fee_amount',       12, 2)->default(0)->after('interest_amount');
-            $table->decimal('nupay_fee',        12, 2)->default(0)->after('fee_amount');
+            $table->decimal('interest_amount', 12, 2)->default(0)->after('principal_amount');
+            $table->decimal('fee_amount', 12, 2)->default(0)->after('interest_amount');
+            $table->decimal('nupay_fee', 12, 2)->default(0)->after('fee_amount');
 
             $table->string('gl_batch_reference')->nullable()->after('notes');
             $table->string('transaction_type')->nullable()->after('gl_batch_reference'); // success|failed|canceled|reversed
@@ -79,9 +75,9 @@ return new class extends Migration
         Schema::dropIfExists('bad_debt_provisions');
 
         Schema::table('loan_repayments', function (Blueprint $table) {
-            $table->dropForeign(['user_id', 'repayment_schedule_id']);
+            $table->dropForeign(['repayment_schedule_id']);
             $table->dropColumn([
-                'user_id', 'repayment_schedule_id', 'nupay_staging_id',
+                'repayment_schedule_id', 'nupay_staging_id',
                 'principal_amount', 'interest_amount', 'fee_amount', 'nupay_fee',
                 'gl_batch_reference', 'transaction_type',
             ]);

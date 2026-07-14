@@ -50,7 +50,7 @@ return new class extends Migration
             // NCA Section classification
             $table->enum('nca_credit_type', [
                 'small_agreement',       // ≤ R15,000, ≤ 6 months
-                'intermediate_agreement',// ≤ R250,000
+                'intermediate_agreement', // ≤ R250,000
                 'large_agreement',       // > R250,000
                 'developmental',
                 'incidental',

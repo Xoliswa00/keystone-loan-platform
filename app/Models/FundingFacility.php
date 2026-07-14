@@ -24,30 +24,30 @@ class FundingFacility extends Model
     ];
 
     protected $casts = [
-        'facility_limit'       => 'decimal:2',
-        'drawn_amount'         => 'decimal:2',
-        'current_balance'      => 'decimal:2',
-        'interest_rate'        => 'decimal:4',
-        'prime_margin'         => 'decimal:4',
-        'accrued_interest'     => 'decimal:2',
-        'facility_start_date'  => 'date',
-        'maturity_date'        => 'date',
+        'facility_limit' => 'decimal:2',
+        'drawn_amount' => 'decimal:2',
+        'current_balance' => 'decimal:2',
+        'interest_rate' => 'decimal:4',
+        'prime_margin' => 'decimal:4',
+        'accrued_interest' => 'decimal:2',
+        'facility_start_date' => 'date',
+        'maturity_date' => 'date',
     ];
 
     const FUNDER_TYPES = [
-        'shareholder_loan'  => 'Shareholder / Director Loan',
-        'bank_credit_line'  => 'Bank Credit Line',
-        'private_investor'  => 'Private Investor',
-        'family_office'     => 'Family Office',
-        'other'             => 'Other',
+        'shareholder_loan' => 'Shareholder / Director Loan',
+        'bank_credit_line' => 'Bank Credit Line',
+        'private_investor' => 'Private Investor',
+        'family_office' => 'Family Office',
+        'other' => 'Other',
     ];
 
     const STATUS_CLASSES = [
-        'active'       => 'kc-badge-green',
-        'paused'       => 'kc-badge-gold',
+        'active' => 'kc-badge-green',
+        'paused' => 'kc-badge-gold',
         'fully_repaid' => 'kc-badge-silver',
-        'in_default'   => 'kc-badge-red',
-        'closed'       => 'kc-badge-silver',
+        'in_default' => 'kc-badge-red',
+        'closed' => 'kc-badge-silver',
     ];
 
     // ── Relationships ──

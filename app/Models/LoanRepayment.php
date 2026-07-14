@@ -32,14 +32,14 @@ class LoanRepayment extends Model
     ];
 
     protected $casts = [
-        'payment_amount'  => 'decimal:2',
-        'principal_amount'=> 'decimal:2',
+        'payment_amount' => 'decimal:2',
+        'principal_amount' => 'decimal:2',
         'interest_amount' => 'decimal:2',
-        'fee_amount'      => 'decimal:2',
-        'nupay_fee'       => 'decimal:2',
-        'total_paid'      => 'decimal:2',
-        'payment_date'    => 'date',
-        'due_date'        => 'date',
+        'fee_amount' => 'decimal:2',
+        'nupay_fee' => 'decimal:2',
+        'total_paid' => 'decimal:2',
+        'payment_date' => 'date',
+        'due_date' => 'date',
     ];
 
     // ── Relationships ──

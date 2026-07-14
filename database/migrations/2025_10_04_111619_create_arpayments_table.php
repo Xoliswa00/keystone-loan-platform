@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('arpayments', function (Blueprint $table) {
             $table->id();
-               $table->foreignId('invoice_id')->constrained('arinvoices');
+            $table->foreignId('invoice_id')->constrained('arinvoices');
             $table->foreignId('customer_id')->constrained('customers');
             $table->decimal('amount_paid', 15, 2);
             $table->date('payment_date');
             $table->string('payment_method'); // cash, card, bank transfer
             $table->string('reference')->nullable(); // e.g., bank ref or receipt
-         
+
             $table->timestamps();
         });
     }

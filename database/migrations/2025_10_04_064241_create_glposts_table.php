@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('glposts', function (Blueprint $table) {
             $table->id();
-               $table->foreignId('entry_id')->constrained('glentries');
+            $table->foreignId('entry_id')->constrained('glentries');
             $table->foreignId('account_id')->constrained('glamfs');
             $table->decimal('debit', 15, 2)->default(0);
             $table->decimal('credit', 15, 2)->default(0);

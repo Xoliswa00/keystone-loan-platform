@@ -4,7 +4,7 @@ namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Gate; 
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -22,17 +22,25 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
-        Gate::define('access-admin', function ($user) {
-    return in_array($user->role, ['owner', 'admin', 'approver', 'finance_clerk']);
-});
+        // These checked the legacy `role` column (values like 'owner',
+        // 'approver') which no user actually has post-migration to
+        // `system_role` — the gates always evaluated false. Real endpoint
+        // security lives in the `role:` route middleware; these only gate
+        // Blade nav visibility (@can('access-admin')).
+        $staffRole = function ($user) {
+            return $user->system_role ?? ($user->rule_id === 2 ? 'admin' : 'client');
+        };
 
-Gate::define('approve-loans', fn($user) => in_array($user->role, ['owner', 'approver']));
-Gate::define('recon-finance', fn($user) => in_array($user->role, ['owner', 'finance_clerk']));
+        Gate::define('access-admin', function ($user) use ($staffRole) {
+            return in_array($staffRole($user), ['admin', 'finance', 'it_admin', 'loan_officer']);
+        });
 
+        Gate::define('approve-loans', function ($user) use ($staffRole) {
+            return in_array($staffRole($user), ['admin', 'loan_officer']);
+        });
 
+        Gate::define('recon-finance', function ($user) use ($staffRole) {
+            return in_array($staffRole($user), ['admin', 'finance']);
+        });
     }
-
-   
-
 }

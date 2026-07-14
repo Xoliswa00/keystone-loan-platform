@@ -5,7 +5,7 @@
     {{-- Heading --}}
     <div class="mb-6">
         <h2 class="font-display text-2xl font-semibold text-kc-navy">Open an account</h2>
-        <p class="mt-1 text-sm text-kc-charcoal/50">Complete the form below to apply for lending services</p>
+        <p class="mt-1 text-sm text-kc-navy/80">Complete the form below to apply for lending services</p>
     </div>
 
     {{-- Gold divider --}}
@@ -27,13 +27,32 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data"
-        class="space-y-5" x-data="{ step: 1, totalSteps: 4 }">
+    @php
+        // A validation failure re-renders this page with the Alpine wizard
+        // reset to step 1 by default — if the actual error is on step 2/3,
+        // it sits hidden behind x-show and looks like the form did nothing.
+        // Jump straight to the first step that actually has an error.
+        $stepFields = [
+            1 => ['name', 'ID_Number', 'email'],
+            2 => ['phone', 'address', 'ID_copy', 'salary_payment_day'],
+            3 => ['password', 'password_confirmation', 'terms', 'popia_consent'],
+        ];
+        $initialStep = 1;
+        foreach ($stepFields as $stepNumber => $fields) {
+            if ($errors->hasAny($fields)) {
+                $initialStep = $stepNumber;
+                break;
+            }
+        }
+    @endphp
+
+    <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data" novalidate
+        class="space-y-5" x-data="{ step: {{ $initialStep }}, totalSteps: 3 }">
         @csrf
 
         {{-- Step indicator --}}
         <div class="flex items-center gap-1 mb-6">
-            @foreach(['Personal', 'Contact', 'Employment', 'Security'] as $i => $label)
+            @foreach(['Personal', 'Contact', 'Security'] as $i => $label)
             <div class="flex-1 flex flex-col items-center gap-1">
                 <div :class="step >= {{ $i + 1 }} ? 'bg-kc-gold text-kc-navy' : 'bg-kc-silver-light text-kc-charcoal/40'"
                     class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors">
@@ -44,7 +63,7 @@
                     {{ $label }}
                 </span>
             </div>
-            @if($i < 3)
+            @if($i < 2)
             <div :class="step > {{ $i + 1 }} ? 'bg-kc-gold/40' : 'bg-kc-silver-light'"
                 class="h-px flex-1 transition-colors mb-3"></div>
             @endif
@@ -113,6 +132,15 @@
                     <p class="mt-1 text-[11px] text-kc-charcoal/40">Clear copy — JPG, PNG or PDF, max 5MB</p>
                     <x-input-error :messages="$errors->get('ID_copy')"/>
                 </div>
+
+                <div>
+                    <label class="kc-label">Salary Payment Day of Month</label>
+                    <input type="number" name="salary_payment_day" value="{{ old('salary_payment_day') }}" required
+                        min="1" max="31" placeholder="e.g. 25"
+                        class="kc-input @error('salary_payment_day') border-red-400 @enderror">
+                    <p class="mt-1 text-[11px] text-kc-charcoal/40">So repayment dates can be set to match your payday</p>
+                    <x-input-error :messages="$errors->get('salary_payment_day')"/>
+                </div>
             </div>
 
             <div class="flex gap-3 mt-6">
@@ -121,63 +149,8 @@
             </div>
         </div>
 
-        {{-- ── STEP 3: Employment ── --}}
+        {{-- ── STEP 3: Security ── --}}
         <div x-show="step === 3" x-transition>
-            <p class="text-xs font-semibold uppercase tracking-widest text-kc-gold mb-4">Employment & Income</p>
-            <p class="text-xs text-kc-charcoal/50 mb-4 -mt-2">
-                Required for NCR affordability assessment under the National Credit Act.
-            </p>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="kc-label">Employment Status</label>
-                    <select name="employment_status" required
-                        class="kc-select @error('employment_status') border-red-400 @enderror">
-                        <option value="" disabled {{ old('employment_status') ? '' : 'selected' }}>Select status</option>
-                        <option value="Full-time"     {{ old('employment_status') === 'Full-time' ? 'selected' : '' }}>Full-time employed</option>
-                        <option value="Part-time"     {{ old('employment_status') === 'Part-time' ? 'selected' : '' }}>Part-time employed</option>
-                        <option value="Self-employed" {{ old('employment_status') === 'Self-employed' ? 'selected' : '' }}>Self-employed</option>
-                        <option value="Unemployed"    {{ old('employment_status') === 'Unemployed' ? 'selected' : '' }}>Unemployed</option>
-                    </select>
-                    <x-input-error :messages="$errors->get('employment_status')"/>
-                </div>
-
-                <div>
-                    <label class="kc-label">Net Monthly Income (R)</label>
-                    <input type="number" name="net_salary" value="{{ old('net_salary') }}" required
-                        min="0" step="0.01" placeholder="e.g. 8500.00"
-                        class="kc-input @error('net_salary') border-red-400 @enderror">
-                    <x-input-error :messages="$errors->get('net_salary')"/>
-                </div>
-
-                <div>
-                    <label class="kc-label">Salary Frequency</label>
-                    <select name="salary_frequency" required
-                        class="kc-select @error('salary_frequency') border-red-400 @enderror">
-                        <option value="" disabled {{ old('salary_frequency') ? '' : 'selected' }}>Select frequency</option>
-                        <option value="Monthly"    {{ old('salary_frequency') === 'Monthly' ? 'selected' : '' }}>Monthly</option>
-                        <option value="Bi-weekly"  {{ old('salary_frequency') === 'Bi-weekly' ? 'selected' : '' }}>Bi-weekly</option>
-                    </select>
-                    <x-input-error :messages="$errors->get('salary_frequency')"/>
-                </div>
-
-                <div>
-                    <label class="kc-label">Salary Payment Day of Month</label>
-                    <input type="number" name="salary_payment_day" value="{{ old('salary_payment_day') }}" required
-                        min="1" max="31" placeholder="e.g. 25"
-                        class="kc-input @error('salary_payment_day') border-red-400 @enderror">
-                    <x-input-error :messages="$errors->get('salary_payment_day')"/>
-                </div>
-            </div>
-
-            <div class="flex gap-3 mt-6">
-                <button type="button" @click="step = 2" class="kc-btn-ghost flex-1 justify-center">Back</button>
-                <button type="button" @click="step = 4" class="kc-btn-primary flex-1 justify-center">Continue</button>
-            </div>
-        </div>
-
-        {{-- ── STEP 4: Security ── --}}
-        <div x-show="step === 4" x-transition>
             <p class="text-xs font-semibold uppercase tracking-widest text-kc-gold mb-4">Account Security</p>
 
             <div class="space-y-4" x-data="{ show: false, showConfirm: false }">
@@ -225,16 +198,31 @@
                 <label class="flex items-start gap-2.5 cursor-pointer">
                     <input type="checkbox" name="terms" required
                         class="mt-0.5 w-3.5 h-3.5 rounded border-kc-silver text-kc-gold focus:ring-kc-gold/30">
-                    <span class="text-xs text-kc-charcoal/60">
+                    <span class="text-xs text-kc-navy/80">
                         I agree to the
                         <a href="{{ route('terms') ?? '#' }}" class="text-kc-gold hover:underline" target="_blank">Terms & Conditions</a>
-                        and consent to credit checks under the National Credit Act. I confirm all information provided is true and accurate.
+                        and confirm all information provided is true and accurate.
+                    </span>
+                </label>
+            </div>
+
+            {{-- POPIA / NCA consent — kept distinct from the Terms & Conditions
+                 acknowledgement above so this consent is specific and informed,
+                 not inferred from agreeing to the site's general terms. --}}
+            <div class="mt-2 p-3 rounded-lg border border-kc-silver-light bg-kc-white">
+                <label class="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" name="popia_consent" required
+                        class="mt-0.5 w-3.5 h-3.5 rounded border-kc-silver text-kc-gold focus:ring-kc-gold/30">
+                    <span class="text-xs text-kc-navy/80">
+                        I consent to credit checks under the National Credit Act, and to my personal
+                        information being processed for credit assessment and account administration purposes
+                        under POPIA.
                     </span>
                 </label>
             </div>
 
             <div class="flex gap-3 mt-6">
-                <button type="button" @click="step = 3" class="kc-btn-ghost flex-1 justify-center">Back</button>
+                <button type="button" @click="step = 2" class="kc-btn-ghost flex-1 justify-center">Back</button>
                 <button type="submit" class="kc-btn-primary flex-1 justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -245,7 +233,7 @@
         </div>
 
         {{-- Sign in link --}}
-        <p class="text-center text-xs text-kc-charcoal/50 pt-2">
+        <p class="text-center text-xs text-kc-navy/80 pt-2">
             Already have an account?
             <a href="{{ route('login') }}" class="text-kc-gold hover:text-kc-gold-muted transition font-medium">
                 Sign in

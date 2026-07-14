@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\TwoFactorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class TwoFactorController extends Controller
 {
-    const CODE_TTL_MINUTES = 10;
-    const MAX_ATTEMPTS     = 3;
+    const CODE_TTL_MINUTES = TwoFactorService::CODE_TTL_MINUTES;
+
+    const MAX_ATTEMPTS = TwoFactorService::MAX_ATTEMPTS;
+
+    public function __construct(protected TwoFactorService $twoFactor) {}
 
     /**
      * Show the OTP verification form.
@@ -21,12 +22,12 @@ class TwoFactorController extends Controller
      */
     public function show(Request $request)
     {
-        if (!session('2fa_user_id')) {
+        if (! session('2fa_user_id')) {
             return redirect()->route('login');
         }
 
         // Auto-send code if none sent yet in this session
-        if (!session('2fa_code_sent')) {
+        if (! session('2fa_code_sent')) {
             $this->sendCode($request);
         }
 
@@ -41,6 +42,7 @@ class TwoFactorController extends Controller
     public function send(Request $request)
     {
         $this->sendCode($request);
+
         return back()->with('success', 'A new verification code has been sent to your email.');
     }
 
@@ -53,37 +55,29 @@ class TwoFactorController extends Controller
 
         $userId = session('2fa_user_id');
 
-        if (!$userId) {
+        if (! $userId) {
             return redirect()->route('login')
                 ->with('error', 'Session expired. Please sign in again.');
         }
 
         // Throttle: max 3 wrong attempts
         $attemptKey = "2fa_attempts_{$userId}";
-        $attempts   = session($attemptKey, 0);
+        $attempts = session($attemptKey, 0);
 
         if ($attempts >= self::MAX_ATTEMPTS) {
             Auth::logout();
             $request->session()->flush();
+
             return redirect()->route('login')
                 ->with('error', 'Too many incorrect attempts. Please sign in again.');
         }
 
-        $record = DB::table('two_factor_codes')
-            ->where('user_id', $userId)
-            ->where('code', $request->code)
-            ->whereNull('used_at')
-            ->where('expires_at', '>', now())
-            ->first();
-
-        if (!$record) {
+        if (! $this->twoFactor->verifyCode($userId, $request->code)) {
             session([$attemptKey => $attempts + 1]);
-            return back()->with('error', 'Invalid or expired code. ' .
-                (self::MAX_ATTEMPTS - $attempts - 1) . ' attempt(s) remaining.');
-        }
 
-        // Mark code used
-        DB::table('two_factor_codes')->where('id', $record->id)->update(['used_at' => now()]);
+            return back()->with('error', 'Invalid or expired code. '.
+                (self::MAX_ATTEMPTS - $attempts - 1).' attempt(s) remaining.');
+        }
 
         // Complete the login
         $user = User::findOrFail($userId);
@@ -92,10 +86,7 @@ class TwoFactorController extends Controller
         $request->session()->forget(['2fa_user_id', '2fa_code_sent', $attemptKey]);
         $request->session()->regenerate();
 
-        // Update last verified
-        $user->update(['two_factor_verified_at' => now()]);
-
-        Log::info("2FA verified for admin user #{$user->id} from IP " . $request->ip());
+        Log::info("2FA verified for admin user #{$user->id} from IP ".$request->ip());
 
         return redirect()->intended(route('admin.dashboard'));
     }
@@ -105,50 +96,20 @@ class TwoFactorController extends Controller
     protected function sendCode(Request $request): void
     {
         $userId = session('2fa_user_id');
-        if (!$userId) return;
-
-        // Expire old codes
-        DB::table('two_factor_codes')
-            ->where('user_id', $userId)
-            ->whereNull('used_at')
-            ->delete();
-
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        DB::table('two_factor_codes')->insert([
-            'user_id'    => $userId,
-            'code'       => $code,
-            'expires_at' => now()->addMinutes(self::CODE_TTL_MINUTES),
-            'ip_address' => $request->ip(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $user = User::find($userId);
-        if ($user) {
-            try {
-                Mail::to($user->email)->send(new \App\Mail\LoanNotificationMail(
-                    'Your Keystone Login Verification Code',
-                    [
-                        "Dear {$user->name},",
-                        "Your verification code is: {$code}",
-                        "This code expires in " . self::CODE_TTL_MINUTES . " minutes.",
-                        "If you did not request this, please contact IT immediately.",
-                    ],
-                    null
-                ));
-                session(['2fa_code_sent' => true]);
-            } catch (\Exception $e) {
-                Log::error("2FA email failed for user #{$userId}: " . $e->getMessage());
-            }
+        if (! $userId) {
+            return;
         }
+
+        $this->twoFactor->sendCode($userId, $request->ip());
+        session(['2fa_code_sent' => true]);
     }
 
     protected function maskedEmail(int $userId): string
     {
         $email = User::find($userId)?->email ?? '';
         [$local, $domain] = explode('@', $email) + ['', ''];
-        $masked = substr($local, 0, 2) . str_repeat('*', max(0, strlen($local) - 4)) . substr($local, -2);
-        return $masked . '@' . $domain;
+        $masked = substr($local, 0, 2).str_repeat('*', max(0, strlen($local) - 4)).substr($local, -2);
+
+        return $masked.'@'.$domain;
     }
 }

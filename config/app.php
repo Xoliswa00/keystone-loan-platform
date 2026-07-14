@@ -70,7 +70,7 @@ return [
     |
     */
 
-'timezone' => 'Africa/Johannesburg',
+    'timezone' => 'Africa/Johannesburg',
 
     /*
     |--------------------------------------------------------------------------
@@ -164,7 +164,7 @@ return [
          * Application Service Providers...
          */
         Illuminate\Mail\MailServiceProvider::class,
-Illuminate\Notifications\NotificationServiceProvider::class, // optional but useful
+        Illuminate\Notifications\NotificationServiceProvider::class, // optional but useful
 
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,

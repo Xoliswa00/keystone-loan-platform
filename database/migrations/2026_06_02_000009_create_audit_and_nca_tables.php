@@ -148,17 +148,7 @@ return new class extends Migration
             $table->index(['user_id', 'consent_type']);
         });
 
-        // Seed NCR purpose codes
-        \Illuminate\Support\Facades\DB::table('ncr_purpose_codes')->insert([
-            ['code' => 'DC',    'description' => 'Debt Consolidation',     'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['code' => 'EDU',   'description' => 'Education',              'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['code' => 'MED',   'description' => 'Medical Expenses',       'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['code' => 'HH',    'description' => 'Household Necessities',  'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['code' => 'EMRG',  'description' => 'Emergency Expenses',     'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['code' => 'BUS',   'description' => 'Business Purposes',      'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['code' => 'VEHI',  'description' => 'Vehicle Purchase/Repair','active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['code' => 'OTHER', 'description' => 'Other',                  'active' => true, 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        // Seed data lives in database/seeders/NcrPurposeCodesSeeder.php, not here.
     }
 
     public function down(): void

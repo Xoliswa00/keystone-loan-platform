@@ -28,12 +28,12 @@ class BadDebtProvision extends Model
 
     protected $casts = [
         'outstanding_balance' => 'decimal:2',
-        'provision_rate'      => 'decimal:4',
-        'provision_amount'    => 'decimal:2',
-        'prior_provision'     => 'decimal:2',
-        'provision_movement'  => 'decimal:2',
-        'gl_posted'           => 'boolean',
-        'provision_date'      => 'date',
+        'provision_rate' => 'decimal:4',
+        'provision_amount' => 'decimal:2',
+        'prior_provision' => 'decimal:2',
+        'provision_movement' => 'decimal:2',
+        'gl_posted' => 'boolean',
+        'provision_date' => 'date',
     ];
 
     public function loan()
@@ -53,7 +53,7 @@ class BadDebtProvision extends Model
 
     public function getStageLabelAttribute(): string
     {
-        return match($this->ifrs9_stage) {
+        return match ($this->ifrs9_stage) {
             1 => 'Stage 1 — Performing',
             2 => 'Stage 2 — Under-performing',
             3 => 'Stage 3 — Non-performing',

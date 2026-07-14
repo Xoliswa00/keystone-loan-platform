@@ -1,12 +1,13 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\LoanApiController;
 use App\Http\Controllers\Api\ProfileApiController;
+use App\Http\Controllers\Api\SystemLogApiController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +21,8 @@ use App\Http\Controllers\Api\ProfileApiController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthApiController::class, 'login'])->middleware('throttle:login');
-    Route::get('/ping',   fn() => response()->json(['status'=>'ok','app'=>config('app.name')]));
+    Route::post('/two-factor/verify', [AuthApiController::class, 'verifyTwoFactor'])->middleware('throttle:login');
+    Route::get('/ping', fn () => response()->json(['status' => 'ok', 'app' => config('app.name')]));
 });
 
 // ── Authenticated (Sanctum token) ────────────────────────────────────────────
@@ -29,21 +31,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Auth
     Route::post('/auth/logout', [AuthApiController::class, 'logout']);
-    Route::get('/auth/user',    [AuthApiController::class, 'user']);
+    Route::get('/auth/user', [AuthApiController::class, 'user']);
 
     // Dashboard
     Route::get('/dashboard', [DashboardApiController::class, 'summary']);
 
     // Loans & applications
-    Route::get('/products',    [LoanApiController::class, 'products']);
-    Route::post('/calculate',  [LoanApiController::class, 'calculate']);
-    Route::get('/loans',       [LoanApiController::class, 'index']);
-    Route::get('/applications',[LoanApiController::class, 'applications']);
-    Route::get('/schedule',    [LoanApiController::class, 'schedule']);
-    Route::get('/payments',    [LoanApiController::class, 'payments']);
+    Route::get('/products', [LoanApiController::class, 'products']);
+    Route::post('/calculate', [LoanApiController::class, 'calculate']);
+    Route::get('/loans', [LoanApiController::class, 'index']);
+    Route::get('/applications', [LoanApiController::class, 'applications']);
+    Route::get('/schedule', [LoanApiController::class, 'schedule']);
+    Route::get('/payments', [LoanApiController::class, 'payments']);
 
     // Profile
-    Route::get('/profile',        [ProfileApiController::class, 'show']);
+    Route::get('/profile', [ProfileApiController::class, 'show']);
     Route::put('/profile/income', [ProfileApiController::class, 'updateIncome']);
 
     // Statement (async)
@@ -57,7 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
         }
 
         $genKey = "statement_generating_{$user->id}_{$period}";
-        if (!\Illuminate\Support\Facades\Cache::get($genKey)) {
+        if (! \Illuminate\Support\Facades\Cache::get($genKey)) {
             \Illuminate\Support\Facades\Cache::put($genKey, true, now()->addMinutes(5));
             \App\Jobs\GenerateClientStatement::dispatch($user->id, $period, false);
         }
@@ -66,28 +68,29 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/statement/status', function (Request $request) {
-        $user   = $request->user();
+        $user = $request->user();
         $period = now()->format('Y-m');
-        $path   = \Illuminate\Support\Facades\Cache::get("statement_{$user->id}_{$period}");
-        $ready  = $path && \Illuminate\Support\Facades\Storage::disk('public')->exists($path);
+        $path = \Illuminate\Support\Facades\Cache::get("statement_{$user->id}_{$period}");
+        $ready = $path && \Illuminate\Support\Facades\Storage::disk('public')->exists($path);
 
         return response()->json([
-            'ready'      => $ready,
+            'ready' => $ready,
             'generating' => (bool) \Illuminate\Support\Facades\Cache::get("statement_generating_{$user->id}_{$period}"),
             'download_url' => $ready ? url('/api/statement/download') : null,
         ]);
     });
 
     Route::get('/statement/download', function (Request $request) {
-        $user   = $request->user();
+        $user = $request->user();
         $period = now()->format('Y-m');
-        $path   = \Illuminate\Support\Facades\Cache::get("statement_{$user->id}_{$period}");
+        $path = \Illuminate\Support\Facades\Cache::get("statement_{$user->id}_{$period}");
 
-        if (!$path || !\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+        if (! $path || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
             return response()->json(['message' => 'Statement not ready.'], 404);
         }
 
-        $filename = 'KCP-Statement-' . str_pad($user->id, 6, '0', STR_PAD_LEFT) . '-' . $period . '.pdf';
+        $filename = 'KCP-Statement-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.$period.'.pdf';
+
         return response()->download(\Illuminate\Support\Facades\Storage::disk('public')->path($path), $filename, ['Content-Type' => 'application/pdf']);
     });
 
@@ -96,48 +99,62 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json([
             'data' => \App\Models\NcaAgreement::where('user_id', $request->user()->id)
                 ->orderBy('created_at', 'desc')->get()
-                ->map(fn($a) => [
-                    'id'            => $a->id,
-                    'reference'     => $a->reference,
+                ->map(fn ($a) => [
+                    'id' => $a->id,
+                    'reference' => $a->reference,
                     'document_type' => $a->document_type,
-                    'type_label'    => $a->getTypeLabel(),
-                    'generated_at'  => $a->generated_at,
-                    'accepted_at'   => $a->accepted_at,
-                    'is_signed'     => $a->isSigned(),
-                    'download_url'  => url("/api/agreements/{$a->id}/download"),
+                    'type_label' => $a->getTypeLabel(),
+                    'generated_at' => $a->generated_at,
+                    'accepted_at' => $a->accepted_at,
+                    'is_signed' => $a->isSigned(),
+                    'download_url' => url("/api/agreements/{$a->id}/download"),
                 ]),
         ]);
     });
 
     Route::get('/agreements/{agreement}/download', function (Request $request, \App\Models\NcaAgreement $agreement) {
-        if ($agreement->user_id !== $request->user()->id) abort(403);
-        if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($agreement->file_path)) {
+        if ($agreement->user_id !== $request->user()->id) {
+            abort(403);
+        }
+        if (! \Illuminate\Support\Facades\Storage::disk('public')->exists($agreement->file_path)) {
             return response()->json(['message' => 'Document not found.'], 404);
         }
+
         return response()->download(
             \Illuminate\Support\Facades\Storage::disk('public')->path($agreement->file_path),
-            $agreement->reference . '.pdf',
+            $agreement->reference.'.pdf',
             ['Content-Type' => 'application/pdf']
         );
     });
 
     Route::post('/agreements/{agreement}/accept', function (Request $request, \App\Models\NcaAgreement $agreement) {
-        if ($agreement->user_id !== $request->user()->id) abort(403);
-        if ($agreement->isSigned()) return response()->json(['message' => 'Already signed.']);
+        if ($agreement->user_id !== $request->user()->id) {
+            abort(403);
+        }
+        if ($agreement->isSigned()) {
+            return response()->json(['message' => 'Already signed.']);
+        }
         app(\App\Services\LoanAgreementService::class)->recordAcceptance($agreement, 'mobile_app');
+
         return response()->json(['message' => 'Agreement accepted.', 'accepted_at' => $agreement->fresh()->accepted_at]);
     });
 
     // ── Admin / Staff monitoring endpoints ────────────────────────────────────
     // Requires staff role token (obtained via same POST /api/auth/login but staff account)
     Route::prefix('admin')->middleware('role:admin,finance,it_admin,loan_officer')->group(function () {
-        Route::get('/dashboard',                           [AdminApiController::class, 'dashboard']);
-        Route::get('/disbursements',                       [AdminApiController::class, 'disbursements']);
-        Route::post('/disbursements/{id}/approve',         [AdminApiController::class, 'approveDisbursement']);
-        Route::post('/disbursements/{id}/reject',          [AdminApiController::class, 'rejectDisbursement']);
-        Route::get('/overdue',                             [AdminApiController::class, 'overdue']);
-        Route::get('/collections',                         [AdminApiController::class, 'collections']);
-        Route::get('/alerts',                              [AdminApiController::class, 'alerts']);
-        Route::get('/portfolio',                           [AdminApiController::class, 'portfolio']);
+        Route::get('/dashboard', [AdminApiController::class, 'dashboard']);
+        Route::get('/disbursements', [AdminApiController::class, 'disbursements']);
+        Route::post('/disbursements/{id}/approve', [AdminApiController::class, 'approveDisbursement']);
+        Route::post('/disbursements/{id}/reject', [AdminApiController::class, 'rejectDisbursement']);
+        Route::get('/overdue', [AdminApiController::class, 'overdue']);
+        Route::get('/collections', [AdminApiController::class, 'collections']);
+        Route::get('/alerts', [AdminApiController::class, 'alerts']);
+        Route::get('/portfolio', [AdminApiController::class, 'portfolio']);
+        Route::get('/loan-applications/{id}/clo-decision', [AdminApiController::class, 'cloDecision']);
+    });
+
+    // ── System logs — sensitive operational data, admin/it_admin only ────────
+    Route::prefix('admin')->middleware('role:it_admin')->group(function () {
+        Route::get('/system-logs', [SystemLogApiController::class, 'index']);
     });
 });

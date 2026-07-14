@@ -24,15 +24,9 @@ class User extends Authenticatable
         'phone',
         'ID_Number',
         'address',
-        'employment_status',
-        'salary_frequency',
-        'net_salary',
         'ID_copy',
-     
+        'status',
         'salary_payment_day',
-        'credit_score',
-     
-      
     ];
 
     /**
@@ -52,6 +46,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'two_factor_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
@@ -65,18 +60,15 @@ class User extends Authenticatable
         return $this->hasMany(Loan::class);
     }
 
- 
-
     public function accountDetails()
     {
         return $this->hasMany(AccountDetail::class);
     }
-    
+
     public function loanDisbursements()
     {
         return $this->hasMany(LoanDisbursement::class, 'approver_id');
     }
-
 
     public function customer()
     {
@@ -98,11 +90,27 @@ class User extends Authenticatable
     public function hasRole(string ...$roles): bool
     {
         $role = $this->system_role ?? ($this->rule_id === 2 ? 'admin' : 'client');
+
         return $role === 'admin' || in_array($role, $roles);
     }
 
-    public function isAdmin(): bool       { return $this->hasRole('admin'); }
-    public function isLoanOfficer(): bool { return $this->hasRole('loan_officer'); }
-    public function isFinance(): bool     { return $this->hasRole('finance'); }
-    public function isClient(): bool      { return ($this->system_role ?? 'client') === 'client'; }
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function isLoanOfficer(): bool
+    {
+        return $this->hasRole('loan_officer');
+    }
+
+    public function isFinance(): bool
+    {
+        return $this->hasRole('finance');
+    }
+
+    public function isClient(): bool
+    {
+        return ($this->system_role ?? 'client') === 'client';
+    }
 }

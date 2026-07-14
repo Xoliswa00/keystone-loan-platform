@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
-use App\Models\cashbook_transactions;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TransactionController extends Controller
 {
@@ -13,7 +13,13 @@ class TransactionController extends Controller
      */
     public function index()
     {
-        $transactions = cashbook_transactions::all();
+        // Was querying cashbook_transactions::all() — an unrelated model
+        // that exposed every internal cashbook transaction across all
+        // customers. Scoped to the authenticated user's own loan transactions.
+        $transactions = Transaction::whereHas('loan', function ($query) {
+            $query->where('user_id', Auth::id());
+        })->latest('transaction_date')->get();
+
         return view('transactions.index', compact('transactions'));
     }
 
@@ -47,6 +53,8 @@ class TransactionController extends Controller
      */
     public function show(Transaction $transaction)
     {
+        abort_unless($transaction->loan?->user_id === Auth::id(), 403);
+
         return view('transactions.show', compact('transaction'));
     }
 
@@ -55,6 +63,8 @@ class TransactionController extends Controller
      */
     public function edit(Transaction $transaction)
     {
+        abort_unless($transaction->loan?->user_id === Auth::id(), 403);
+
         return view('transactions.edit', compact('transaction'));
     }
 
@@ -63,6 +73,8 @@ class TransactionController extends Controller
      */
     public function update(Request $request, Transaction $transaction)
     {
+        abort_unless($transaction->loan?->user_id === Auth::id(), 403);
+
         $validatedData = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
             'type' => ['required', 'in:credit,debit'],
@@ -80,6 +92,8 @@ class TransactionController extends Controller
      */
     public function destroy(Transaction $transaction)
     {
+        abort_unless($transaction->loan?->user_id === Auth::id(), 403);
+
         $transaction->delete();
 
         return redirect()->route('transactions.index')->with('success', 'Transaction deleted successfully.');

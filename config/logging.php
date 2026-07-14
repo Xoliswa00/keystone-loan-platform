@@ -54,8 +54,14 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            'channels' => ['single', 'database'],
             'ignore_exceptions' => false,
+        ],
+
+        'database' => [
+            'driver' => 'monolog',
+            'handler' => \App\Logging\DatabaseLogHandler::class,
+            'level' => env('LOG_LEVEL', 'debug'),
         ],
 
         'single' => [

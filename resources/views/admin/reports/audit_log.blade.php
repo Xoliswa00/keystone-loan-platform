@@ -49,7 +49,7 @@
           <td class="text-xs text-kc-charcoal/40">{{ $log->ip_address }}</td>
           <td class="text-xs max-w-xs truncate text-kc-charcoal/60">
             @if($log->new_values)
-              {{ implode(', ', array_map(fn($k,$v) => "{$k}: {$v}", array_keys($log->new_values ?? []), array_values($log->new_values ?? []))) }}
+              {{ implode(', ', array_map(fn($k,$v) => $k.': '.(is_array($v) ? json_encode($v) : $v), array_keys($log->new_values ?? []), array_values($log->new_values ?? []))) }}
             @endif
           </td>
         </tr>
