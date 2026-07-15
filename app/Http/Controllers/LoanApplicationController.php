@@ -388,6 +388,11 @@ class LoanApplicationController extends Controller
         return view('terms');
     }
 
+    public function privacyPolicy()
+    {
+        return view('privacy-policy');
+    }
+
     // ── Private helpers ──────────────────────────────────────────────────────
 
     /**

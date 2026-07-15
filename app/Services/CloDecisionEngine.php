@@ -7,9 +7,9 @@ use App\Models\CloDecision;
 use App\Models\CustomerDocument;
 use App\Models\LendingSetting;
 use App\Models\LoanApplication;
+use App\Models\PopiaConsent;
 use App\Models\RepaymentSchedule;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 /**
  * CLO Decision Engine — advisory governance layer (see /CLO/*.md).
@@ -96,11 +96,10 @@ class CloDecisionEngine
         }
 
         // ── 5. POPIA consent ──
-        $hasConsent = DB::table('popia_consents')
-            ->where('user_id', $user->id)
-            ->where('consent_type', 'data_processing')
-            ->where('granted', true)
-            ->exists();
+        // Checks the CURRENT state (most recent row), not merely whether
+        // consent was ever granted — a user can withdraw it later via
+        // their profile, and a stale historical grant must not count.
+        $hasConsent = PopiaConsent::isGranted($user->id, 'data_processing');
 
         if (! $hasConsent) {
             $policyReferences[] = 'POPIA consent';

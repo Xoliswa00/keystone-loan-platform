@@ -216,7 +216,9 @@
                     <span class="text-xs text-kc-navy/80">
                         I consent to credit checks under the National Credit Act, and to my personal
                         information being processed for credit assessment and account administration purposes
-                        under POPIA.
+                        under our
+                        <a href="{{ route('privacy') }}" class="text-kc-gold hover:underline" target="_blank">Privacy Policy</a>
+                        and POPIA. You can view or withdraw this consent at any time from your account settings.
                     </span>
                 </label>
             </div>

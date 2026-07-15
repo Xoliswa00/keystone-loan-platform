@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Loan;
+use App\Models\PopiaConsent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,8 +18,15 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $userId = $request->user()->id;
+
         return view('profile.edit', [
             'user' => $request->user(),
+            'consents' => [
+                'data_processing' => PopiaConsent::isGranted($userId, 'data_processing'),
+                'credit_bureau_check' => PopiaConsent::isGranted($userId, 'credit_bureau_check'),
+            ],
+            'hasActiveLoan' => Loan::where('user_id', $userId)->active()->exists(),
         ]);
     }
 

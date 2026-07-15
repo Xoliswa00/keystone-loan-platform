@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\PopiaConsent;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
@@ -80,7 +80,7 @@ class RegisteredUserController extends Controller
         // specifically on 'data_processing', and NCA credit checks are a
         // separate consent type even though they're granted together here.
         foreach (['data_processing', 'credit_bureau_check'] as $consentType) {
-            DB::table('popia_consents')->insert([
+            PopiaConsent::create([
                 'user_id' => $user->id,
                 'consent_type' => $consentType,
                 'granted' => true,

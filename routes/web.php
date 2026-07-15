@@ -14,6 +14,7 @@ use App\Http\Controllers\LoanProductController;
 use App\Http\Controllers\LoanRepaymentController;
 use App\Http\Controllers\NupayTransactionController;
 use App\Http\Controllers\NupayTransactionsStagingController;
+use App\Http\Controllers\PopiaConsentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepaymentScheduleController;
 use App\Http\Controllers\TransactionController;
@@ -30,6 +31,7 @@ Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:6,1')
     ->name('contact.store');
 Route::get('/terms', [LoanApplicationController::class, 'terms'])->name('terms');
+Route::get('/privacy-policy', [LoanApplicationController::class, 'privacyPolicy'])->name('privacy');
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Dashboard — redirect admins to admin panel
@@ -67,6 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/consent', [PopiaConsentController::class, 'update'])->name('profile.consent.update');
 
     // ── Customer financial profile & documents ───────────────────────────────
     Route::prefix('my-profile')->name('customer-profile.')->group(function () {

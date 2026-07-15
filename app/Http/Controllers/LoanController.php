@@ -8,6 +8,7 @@ use App\Models\Loan;
 use App\Models\LoanApplication;
 use App\Models\LoanDisbursement;
 use App\Models\LoanFee;
+use App\Models\PopiaConsent;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -88,7 +89,12 @@ class LoanController extends Controller
         ]);
 
         $loanApplication = LoanApplication::findOrFail($id);
-        $this->approveApplication($loanApplication, $request->approval_comments);
+
+        try {
+            $this->approveApplication($loanApplication, $request->approval_comments);
+        } catch (\RuntimeException $e) {
+            return redirect()->route('admin.dashboard')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('admin.dashboard')
             ->with('success', 'Loan approved and disbursement created.');
@@ -138,6 +144,16 @@ class LoanController extends Controller
 
     protected function approveApplication(LoanApplication $loanApplication, ?string $comments): void
     {
+        // CloDecisionEngine's own consent check is advisory-only (forces
+        // REVIEW, doesn't block) — this is the actual hard gate. Credit
+        // assessment and reporting cannot lawfully proceed without both
+        // consents currently in force, so a withdrawn consent must stop
+        // approval outright, not just flag it for a human to notice.
+        if (! PopiaConsent::isGranted($loanApplication->user_id, 'data_processing')
+            || ! PopiaConsent::isGranted($loanApplication->user_id, 'credit_bureau_check')) {
+            throw new \RuntimeException('Cannot approve — applicant does not currently have POPIA data-processing and credit-bureau consent in force.');
+        }
+
         // ── 1. Mark application approved ──────────────────────────────────────
         $loanApplication->update([
             'status' => 'approved',
