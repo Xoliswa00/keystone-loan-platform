@@ -1,10 +1,22 @@
 <x-app-layout>
   <x-slot name="header">
     <span class="kc-page-title">Loan Applications</span>
-    <p class="kc-page-subtitle">Pending review · {{ $pendingApplications->total() }} application(s)</p>
+    <p class="kc-page-subtitle">{{ ucfirst(str_replace('_',' ',$statusFilter)) }} · {{ $pendingApplications->total() }} application(s)</p>
   </x-slot>
 
+  {{-- Status filter — this is the only staff-facing application list, so it's
+       also how staff reach an already-approved application (e.g. to use
+       "Reverse Approval" on the show page) rather than only ever seeing
+       'pending' ones. --}}
+  <div class="flex flex-wrap gap-2 mb-4">
+    @foreach(['pending' => 'Pending', 'under_review' => 'Under Review', 'affordability_review' => 'Affordability Review', 'approved' => 'Approved', 'rejected' => 'Rejected'] as $value => $label)
+    <a href="{{ route('admin.loans', ['status' => $value]) }}"
+       class="kc-badge text-xs {{ $statusFilter === $value ? 'kc-badge-navy' : 'kc-badge-silver' }}">{{ $label }}</a>
+    @endforeach
+  </div>
+
   <div class="kc-card">
+    @if(Auth::user()->hasRole('loan_officer', 'it_admin'))
     <div id="bulk-action-bar" class="hidden mb-4 flex items-center gap-3 kc-alert-success">
       <span><span id="bulk-selected-count">0</span> selected</span>
       <form method="POST" action="{{ route('loans.bulkApprove') }}" id="bulk-approve-form" class="inline">
@@ -31,6 +43,7 @@
         </form>
       </div>
     </div>
+    @endif
 
     <div class="kc-table-scroll">
       <table class="kc-table">

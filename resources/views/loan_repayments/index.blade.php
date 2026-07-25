@@ -33,6 +33,7 @@
       <table class="kc-table">
         <thead><tr>
           <th>#</th><th>Due Date</th><th>Instalment</th><th>Principal</th><th>Interest</th><th>Fees</th><th>Status</th><th>Paid At</th>
+          @if(Auth::user()->hasRole('loan_officer', 'finance', 'it_admin'))<th></th>@endif
         </tr></thead>
         <tbody>
           @forelse($loanRepayments as $s)
@@ -57,9 +58,16 @@
             <td data-label="Paid At" class="text-xs text-kc-charcoal/50">
               {{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}
             </td>
+            @if(Auth::user()->hasRole('loan_officer', 'finance', 'it_admin'))
+            <td data-label="">
+              @if($s->status === 'paid' && $s->paidRepayment)
+              <a href="{{ route('loanrepayments.show', $s->paidRepayment->id) }}" class="text-xs text-kc-gold hover:underline">View Payment →</a>
+              @endif
+            </td>
+            @endif
           </tr>
           @empty
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/40">No repayment schedule yet.</td></tr>
+          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/40">No repayment schedule yet.</td></tr>
           @endforelse
         </tbody>
       </table>

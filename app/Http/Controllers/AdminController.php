@@ -6,8 +6,11 @@ use App\Models\CloDecision;
 use App\Models\Customer;
 use App\Models\Loan;
 use App\Models\LoanApplication;
+use App\Models\LoanCounterOffer;
 use App\Models\LoanDisbursement;
+use App\Models\LoanProduct;
 use App\Models\RepaymentSchedule;
+use App\Services\AffordabilityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,35 +20,73 @@ class AdminController extends Controller
     // Admin Dashboard
     // ──────────────────────────────────────────────────────────────────────────
 
+    /**
+     * KPIs are role-scoped, not one-size-fits-all — loan officer, finance,
+     * and IT each get the numbers relevant to their remit (matches the
+     * nav split in resources/views/layouts/navigation.blade.php) instead of
+     * every staff role landing on identical cards regardless of what they
+     * actually work in.
+     */
     public function index()
     {
-        // TODAY's repayments due — uses correct join direction
-        $todaysRepayments = RepaymentSchedule::where('status', 'pending')
-            ->whereDate('due_date', today())
-            ->sum('emi_amount');
+        $role = auth()->user()->system_role ?? (auth()->user()->rule_id === 2 ? 'admin' : 'client');
 
-        return view('admin.dashboard', [
+        $data = [
+            'role' => $role,
+            // Cross-cutting — meaningful to every staff role.
             'pendingLoansCount' => LoanApplication::where('status', 'pending')->count(),
             'customerCount' => Customer::count(),
-            'todaysRepayments' => $todaysRepayments,
             'overdueLoansCount' => RepaymentSchedule::where('status', 'pending')
                 ->whereDate('due_date', '<', today())->count(),
-            'recentApplications' => LoanApplication::with('user')->latest()->take(5)->get(),
-            'totalLoansDisbursed' => LoanDisbursement::where('status', 'waiting_for_approval')->count(),
-        ]);
+        ];
+
+        if (in_array($role, ['admin', 'loan_officer', 'viewer'], true)) {
+            $data['todaysRepayments'] = RepaymentSchedule::where('status', 'pending')
+                ->whereDate('due_date', today())->sum('emi_amount');
+            $data['recentApplications'] = LoanApplication::with('user')->latest()->take(5)->get();
+            $data['totalLoansDisbursed'] = LoanDisbursement::where('status', 'waiting_for_approval')->count();
+            $data['recoveredNeedingFollowup'] = \App\Models\DebtRecovery::where('status', 'recovered')->count();
+            $data['pendingPaymentVerifications'] = \App\Models\LoanRepayment::where('status', 'pending_review')->count();
+        }
+
+        if (in_array($role, ['admin', 'finance', 'viewer'], true)) {
+            $data['unpostedNupayBatches'] = \App\Models\import_batch::where('source', 'nupay')
+                ->where('status', 'CAPTURED')->count();
+            $currentPeriod = \App\Models\FinancialPeriod::forDate(now()->toDateString());
+            $data['currentPeriodLabel'] = $currentPeriod?->displayLabel() ?? 'Not opened';
+            $data['currentPeriodOpen'] = $currentPeriod?->isOpen() ?? false;
+        }
+
+        if (in_array($role, ['admin', 'it_admin', 'viewer'], true)) {
+            $data['failedJobsCount'] = DB::table('failed_jobs')->count();
+            $data['staffCount'] = \App\Models\User::whereNotNull('system_role')
+                ->where('system_role', '!=', 'client')->count();
+        }
+
+        return view('admin.dashboard', $data);
     }
 
-    public function Loans()
+    public function Loans(Request $request)
     {
-        $pendingApplications = LoanApplication::with('user', 'product', 'loanfee')
-            ->where('status', 'pending')
-            ->latest()
-            ->paginate(15);
+        // Defaults to 'pending' (the day-to-day queue). The status filter
+        // exists so staff can reach an already-approved application — e.g.
+        // to use the "Reverse Approval" action on
+        // admin/loan_applications/show.blade.php — which had no path to it
+        // otherwise: this is the only staff-facing list of applications,
+        // and it only ever showed 'pending' ones before this.
+        $statuses = ['pending', 'under_review', 'affordability_review', 'approved', 'rejected'];
+        $statusFilter = in_array($request->status, $statuses, true) ? $request->status : 'pending';
 
-        return view('admin.loan_applications.index', compact('pendingApplications'));
+        $pendingApplications = LoanApplication::with('user', 'product', 'loanfee')
+            ->where('status', $statusFilter)
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.loan_applications.index', compact('pendingApplications', 'statusFilter'));
     }
 
-    public function show($id)
+    public function show($id, AffordabilityService $affordability)
     {
         $application = LoanApplication::with('user', 'user.customerProfile', 'loanfee', 'product', 'repaymentSchedules')
             ->findOrFail($id);
@@ -53,7 +94,49 @@ class AdminController extends Controller
             ->where('id', '<>', $application->id)->get();
         $cloDecision = CloDecision::latestFor($application->id)->first();
 
-        return view('admin.loan_applications.show', compact('application', 'previousLoans', 'cloDecision'));
+        $counterOfferSuggestions = [];
+        $counterOffers = collect();
+
+        if (in_array($application->status, ['pending', 'under_review', 'affordability_review'], true)) {
+            // Recomputed fresh here rather than trusting anything stored at
+            // submission — the client's declared income/expenses could have
+            // been updated since, and this is what actually bounds what
+            // staff are allowed to offer (LoanCounterOfferController::store()
+            // re-validates against the same calculation, not this list).
+            $affordResult = $affordability->calculate($application->user);
+            $requestedMonths = $application->loan_term_months ?? 1;
+
+            $counterOfferSuggestions = LoanProduct::availableFor($application->user)->get()
+                ->map(function (LoanProduct $candidate) use ($affordability, $affordResult, $requestedMonths) {
+                    $months = max($candidate->min_months, min($requestedMonths, $candidate->max_months));
+                    $amount = $affordability->maxLoanAmount($candidate, $affordResult['max_instalment'], $months);
+
+                    if ($amount <= 0) {
+                        return null;
+                    }
+
+                    return [
+                        'product_id' => $candidate->id,
+                        'product_name' => $candidate->name,
+                        'amount' => $amount,
+                        'months' => $months,
+                        'instalment' => $candidate->calculateRepayment($amount, $months)['base_instalment'],
+                    ];
+                })
+                ->filter()
+                ->sortByDesc('amount')
+                ->values()
+                ->all();
+
+            $counterOffers = LoanCounterOffer::where('loan_application_id', $application->id)
+                ->with('product', 'proposedBy')
+                ->latest()
+                ->get();
+        }
+
+        return view('admin.loan_applications.show', compact(
+            'application', 'previousLoans', 'cloDecision', 'counterOfferSuggestions', 'counterOffers'
+        ));
     }
 
     public function Disbursement()
@@ -258,31 +341,43 @@ class AdminController extends Controller
 
         $totalPrincipalDisbursed = Loan::whereNotNull('disbursed_date')->sum('principal_amount');
 
-        // ── Income: split by type (for IFRS 9 / NCR disclosure) ───────────────
-        // Only include income from loans that have been disbursed (not just approved)
-        $interestIncome = DB::table('loan_fees as lf')
-            ->join('loans as l', 'l.loan_application_id', '=', 'lf.loan_application_id')
-            ->whereNotNull('l.disbursed_date')
-            ->whereBetween('l.disbursed_date', [$from, $to])
-            ->sum('lf.interest_amount');
+        // ── Income: GL-driven, matching the Income Statement's recognition
+        // basis — the previous version summed the LoanFee snapshot recorded
+        // at disbursement, which assumed the full interest/fee amount was
+        // recognised immediately regardless of loan term. DisbursementService
+        // actually defers recognition for multi-month loans (credited to the
+        // Deferred Interest/Fee Income liability accounts instead, released
+        // as instalments are paid), so that snapshot overstated "recognised"
+        // income for any multi-month loan still in progress. Reading the GL
+        // keeps this dashboard's figures consistent with what the Income
+        // Statement and Balance Sheet actually show for the same period.
+        $glMovement = function (string $accountCode, string $category = 'income') use ($from, $to) {
+            $isDebitNormal = $category === 'expense';
 
-        $initiationFeeIncome = DB::table('loan_fees as lf')
-            ->join('loans as l', 'l.loan_application_id', '=', 'lf.loan_application_id')
-            ->whereNotNull('l.disbursed_date')
-            ->whereBetween('l.disbursed_date', [$from, $to])
-            ->sum('lf.initiation_fee');
+            return (float) DB::table('glentries as ge')
+                ->join('glbatches as gb', 'ge.batch_id', '=', 'gb.id')
+                ->join('gl_accounts as ga', 'ge.account_id', '=', 'ga.id')
+                ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+                ->where('coa.account_code', $accountCode)
+                ->whereBetween('gb.posted_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
+                ->selectRaw($isDebitNormal
+                    ? 'COALESCE(SUM(ge.debit),0) - COALESCE(SUM(ge.credit),0) as amount'
+                    : 'COALESCE(SUM(ge.credit),0) - COALESCE(SUM(ge.debit),0) as amount')
+                ->value('amount') ?? 0;
+        };
 
-        $serviceFeeIncome = DB::table('loan_fees as lf')
-            ->join('loans as l', 'l.loan_application_id', '=', 'lf.loan_application_id')
-            ->whereNotNull('l.disbursed_date')
-            ->whereBetween('l.disbursed_date', [$from, $to])
-            ->sum('lf.service_fee');
+        $interestIncome = round($glMovement('4100'), 2);
+        // The GL records one combined Fee Income account (4200) — initiation
+        // vs service fee is a LoanFee-snapshot-only distinction that doesn't
+        // exist as separate GL accounts, so that breakdown is no longer
+        // shown here now that this reads the GL.
+        $feeIncome = round($glMovement('4200'), 2);
 
-        // VAT on fees (15% of initiation + service fees)
-        $vatOnFees = round(($initiationFeeIncome + $serviceFeeIncome) * 0.15, 2);
+        // VAT on fees (15% — fee income is recorded excl. VAT, per
+        // DisbursementService's 'fee_income_cr' mapping)
+        $vatOnFees = round($feeIncome * 0.15, 2);
 
-        $totalFeeIncome = $initiationFeeIncome + $serviceFeeIncome;
-        $totalGrossIncome = $interestIncome + $totalFeeIncome;
+        $totalGrossIncome = round($interestIncome + $feeIncome, 2);
 
         // ── Collected vs expected ──────────────────────────────────────────────
         $collectedRevenue = DB::table('repayment_schedules as rs')
@@ -300,23 +395,29 @@ class AdminController extends Controller
         $totalCollected = $collectedRevenue + $collectedFees;
 
         // ── Deferred income remaining (multi-month loans) ─────────────────────
-        $totalDeferredInterest = Loan::whereIn('status', ['disbursed'])->sum('deferred_interest');
-        $totalDeferredFees = Loan::whereIn('status', ['disbursed'])->sum('deferred_fees');
+        // GL liability balances (2100/2110), not the Loan model's dual-
+        // written columns — matches how the balance sheet sources this.
+        $totalDeferredInterest = (float) DB::table('gl_accounts as ga')
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+            ->where('coa.account_code', '2100')->sum('ga.current_balance');
+        $totalDeferredFees = (float) DB::table('gl_accounts as ga')
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+            ->where('coa.account_code', '2110')->sum('ga.current_balance');
 
-        // ── Credit loss expense (IFRS 9 provisions) ───────────────────────────
-        $creditLossExpense = DB::table('bad_debt_provisions')
-            ->whereBetween('provision_date', [$from, $to])
-            ->sum('provision_movement'); // net movement (can be negative = recovery)
+        // ── Credit loss expense (IFRS 9 provisions) — GL-driven (5100),
+        // matching the Income Statement, instead of summing
+        // bad_debt_provisions.provision_movement directly ─────────────────
+        $creditLossExpense = round($glMovement('5100', 'expense'), 2);
 
         $writtenOff = Loan::where('status', 'written_off')
             ->whereBetween('written_off_date', [$from, $to])
             ->sum('write_off_amount');
 
         // ── Net revenue (correct definition) ──────────────────────────────────
-        // Net revenue = collected income - credit loss expense - NuPay bank charges
-        $bankCharges = DB::table('loan_repayments')
-            ->whereBetween('payment_date', [$from, $to])
-            ->sum('nupay_fee');
+        // Net revenue = collected income - credit loss expense - bank charges.
+        // Bank charges now GL-driven (5200), matching the Income Statement,
+        // instead of summing loan_repayments.nupay_fee directly.
+        $bankCharges = round($glMovement('5200', 'expense'), 2);
 
         $netRevenue = $totalCollected - $creditLossExpense - $bankCharges;
 
@@ -366,8 +467,8 @@ class AdminController extends Controller
 
         return view('admin.reports.profitability', compact(
             'totalPrincipalDisbursed',
-            'interestIncome', 'initiationFeeIncome', 'serviceFeeIncome',
-            'totalFeeIncome', 'totalGrossIncome', 'vatOnFees',
+            'interestIncome', 'feeIncome',
+            'totalGrossIncome', 'vatOnFees',
             'collectedRevenue', 'collectedFees', 'totalCollected',
             'totalDeferredInterest', 'totalDeferredFees',
             'creditLossExpense', 'writtenOff', 'bankCharges',
@@ -542,7 +643,20 @@ class AdminController extends Controller
             ->orderByDesc('lr.payment_date')
             ->get();
 
-        return view('admin.reports.reversals', compact('reversals', 'from', 'to'));
+        // Loan-approval/disbursement reversals (LoanReversalService) never
+        // touch loan_repayments — before disbursement there's no LoanRepayment
+        // row at all, and after disbursement it's a Loan/LoanDisbursement/GL-
+        // level reversal, not a repayment one. They only exist as an
+        // AuditLog('reversed') entry, so this page was blind to them
+        // entirely — the query above is the only thing it ever read.
+        $approvalReversals = \App\Models\AuditLog::where('event', 'reversed')
+            ->where('auditable_type', \App\Models\LoanApplication::class)
+            ->whereBetween('created_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
+            ->with(['user', 'auditable.user'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('admin.reports.reversals', compact('reversals', 'approvalReversals', 'from', 'to'));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -722,44 +836,115 @@ class AdminController extends Controller
         $from = $request->from_date ?? now()->startOfYear()->toDateString();
         $to = $request->to_date ?? now()->toDateString();
 
-        $data = [
-            // Revenue
-            'interest_income' => DB::table('repayment_schedules as rs')
-                ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
-                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from.' 00:00:00', $to.' 23:59:59'])
-                ->sum('rs.interest_amount'),
+        // GL-driven, matching FinancialPeriodService::generateTrialBalance()'s
+        // established account_category-based P&L calculation (used for
+        // year-end closing) — the previous version computed revenue from
+        // repayment_schedules.status='paid' (cash-received basis), while
+        // DisbursementService recognises interest/fees on 1-month loans
+        // immediately at disbursement (accrual basis) and only defers them
+        // for multi-month loans. Those two bases disagree the moment a loan
+        // hasn't been paid yet: a freshly-disbursed 1-month loan already has
+        // real income in the GL that a cash-basis read shows as zero.
+        // Reading the GL keeps this statement consistent with the balance
+        // sheet and with what year-end closing actually sweeps into
+        // Retained Earnings.
+        //
+        // Starts from every active chart_of_accounts row for the category —
+        // not from glentries — so an account with no activity this period
+        // still shows as a R0.00 line instead of vanishing entirely (which
+        // is what querying glentries directly would do, since there'd be no
+        // row to group on). The date range is applied inside a subquery
+        // that's then LEFT JOINed, not a WHERE clause, so it filters which
+        // entries count without turning the LEFT JOIN into an INNER JOIN
+        // and dropping untouched accounts.
+        //
+        // Filters accept either specific account codes or account_group
+        // names — interest income (4100) has to be split out of the
+        // 'Revenue' group by code (fee/penalty income share that group),
+        // while expenses split cleanly along the existing group names
+        // (Credit Loss / Finance Cost / Operating Expense).
+        $glMovement = function (string $category, ?array $onlyCodes = null, ?array $excludeCodes = null, ?array $onlyGroups = null, ?array $excludeGroups = null) use ($from, $to) {
+            $isDebitNormal = $category === 'expense';
 
-            'fee_income_excl_vat' => DB::table('repayment_schedules as rs')
-                ->join('loans as l', 'l.loan_application_id', '=', 'rs.loan_id')
-                ->where('rs.status', 'paid')->whereBetween('rs.paid_at', [$from.' 00:00:00', $to.' 23:59:59'])
-                ->selectRaw('ROUND(SUM(rs.fee_amount) / 1.15, 2) as excl')->value('excl') ?? 0,
+            $rangedEntries = DB::table('glentries as ge')
+                ->join('glbatches as gb', 'ge.batch_id', '=', 'gb.id')
+                ->whereBetween('gb.posted_at', ["{$from} 00:00:00", "{$to} 23:59:59"])
+                ->select('ge.account_id', 'ge.debit', 'ge.credit');
 
-            'penalty_income' => DB::table('loan_repayments')
-                ->where('transaction_type', 'manual')->whereBetween('payment_date', [$from, $to])
-                ->sum('fee_amount'),
+            return DB::table('chart_of_accounts as coa')
+                ->leftJoin('gl_accounts as ga', 'ga.chart_of_account_id', '=', 'coa.id')
+                ->leftJoinSub($rangedEntries, 're', 're.account_id', '=', 'ga.id')
+                ->leftJoin('glmappings as gm', function ($j) use ($isDebitNormal) {
+                    $j->on('gm.account_code', '=', 'coa.account_code')
+                        ->where('gm.entry_type', $isDebitNormal ? 'debit' : 'credit');
+                })
+                ->where('coa.account_category', $category)
+                ->where('coa.is_active', true)
+                ->when($onlyCodes, fn ($q) => $q->whereIn('coa.account_code', $onlyCodes))
+                ->when($excludeCodes, fn ($q) => $q->whereNotIn('coa.account_code', $excludeCodes))
+                ->when($onlyGroups, fn ($q) => $q->whereIn('coa.account_group', $onlyGroups))
+                ->when($excludeGroups, fn ($q) => $q->whereNotIn('coa.account_group', $excludeGroups))
+                ->groupBy('coa.account_code', 'coa.account_group', 'gm.description')
+                ->select(
+                    'coa.account_code',
+                    'coa.account_group',
+                    DB::raw('COALESCE(gm.description, coa.account_group) as label'),
+                    DB::raw($isDebitNormal
+                        ? 'COALESCE(SUM(re.debit),0) - COALESCE(SUM(re.credit),0) as amount'
+                        : 'COALESCE(SUM(re.credit),0) - COALESCE(SUM(re.debit),0) as amount')
+                )
+                ->orderBy('coa.account_code')
+                ->get()
+                ->groupBy('account_group');
+        };
 
-            // Credit loss
-            'credit_loss_expense' => DB::table('bad_debt_provisions')
-                ->whereBetween('provision_date', [$from, $to])
-                ->sum('provision_movement'),
+        // Industry-standard bank/lender presentation (per Capitec's and
+        // FirstRand's audited financial statements): interest expense is
+        // netted directly against interest income to produce Net Interest
+        // Income — the lending industry's equivalent of gross profit — not
+        // listed as "cost of sales" or lumped in with operating expenses.
+        // Credit losses come out next ("credit impairments" in both real
+        // filings), then non-interest income (fees, penalties, recoveries)
+        // is added, then operating expenses are deducted.
+        $interestIncomeLines = $glMovement('income', onlyCodes: ['4100']);
+        $nonInterestIncomeGroups = $glMovement('income', excludeCodes: ['4100']);
+        $interestExpenseLines = $glMovement('expense', onlyGroups: ['Finance Cost']);
+        $creditLossLines = $glMovement('expense', onlyGroups: ['Credit Loss']);
+        $operatingExpenseGroups = $glMovement('expense', excludeGroups: ['Finance Cost', 'Credit Loss']);
 
-            // Operating expenses
-            'bank_charges' => DB::table('loan_repayments')
-                ->whereBetween('payment_date', [$from, $to])->sum('nupay_fee'),
+        $interestIncome = round($interestIncomeLines->flatten()->sum('amount'), 2);
+        $interestExpense = round($interestExpenseLines->flatten()->sum('amount'), 2);
+        $netInterestIncome = round($interestIncome - $interestExpense, 2);
 
-            // Deferred income (not yet in P&L — balance sheet item)
-            'deferred_interest' => Loan::where('status', 'disbursed')->sum('deferred_interest'),
-            'deferred_fees' => Loan::where('status', 'disbursed')->sum('deferred_fees'),
+        $creditLossExpense = round($creditLossLines->flatten()->sum('amount'), 2);
+        $netInterestIncomeAfterCreditLosses = round($netInterestIncome - $creditLossExpense, 2);
 
-            'from' => $from,
-            'to' => $to,
-        ];
+        $nonInterestIncome = round($nonInterestIncomeGroups->flatten()->sum('amount'), 2);
+        $totalIncome = round($netInterestIncomeAfterCreditLosses + $nonInterestIncome, 2);
 
-        $data['gross_income'] = $data['interest_income'] + $data['fee_income_excl_vat'] + $data['penalty_income'];
-        $data['total_expenses'] = $data['credit_loss_expense'] + $data['bank_charges'];
-        $data['net_profit'] = $data['gross_income'] - $data['total_expenses'];
+        $operatingExpenses = round($operatingExpenseGroups->flatten()->sum('amount'), 2);
+        $netProfit = round($totalIncome - $operatingExpenses, 2);
 
-        return view('admin.reports.income_statement', $data);
+        // Deferred (not-yet-recognised) interest/fees on multi-month loans —
+        // read from the GL (2100/2110 liability balances), not the Loan
+        // model's dual-written columns, matching how the balance sheet
+        // already sources this figure.
+        $deferredInterest = (float) DB::table('gl_accounts as ga')
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+            ->where('coa.account_code', '2100')->sum('ga.current_balance');
+        $deferredFees = (float) DB::table('gl_accounts as ga')
+            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+            ->where('coa.account_code', '2110')->sum('ga.current_balance');
+
+        return view('admin.reports.income_statement', compact(
+            'interestIncomeLines', 'interestIncome',
+            'interestExpenseLines', 'interestExpense', 'netInterestIncome',
+            'creditLossLines', 'creditLossExpense', 'netInterestIncomeAfterCreditLosses',
+            'nonInterestIncomeGroups', 'nonInterestIncome',
+            'operatingExpenseGroups', 'operatingExpenses',
+            'totalIncome', 'netProfit',
+            'deferredInterest', 'deferredFees', 'from', 'to'
+        ));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -770,6 +955,8 @@ class AdminController extends Controller
     {
         $asAt = $request->as_at_date ?? now()->toDateString();
 
+        // Loans Receivable / ECL stay loan-level (real-time, not dependent on
+        // GL posting cadence) — unchanged.
         $loansReceivableGross = Loan::whereNotIn('status', ['settled', 'rejected', 'archived', 'written_off'])
             ->sum('remaining_balance');
 
@@ -778,23 +965,74 @@ class AdminController extends Controller
                 fn ($j) => $j->on('p.loan_id', '=', 'latest.loan_id')->on('p.provision_date', '=', 'latest.latest'))
             ->sum('p.provision_amount');
 
-        $deferredInterest = Loan::where('status', 'disbursed')->sum('deferred_interest');
-        $deferredFees = Loan::where('status', 'disbursed')->sum('deferred_fees');
-
-        $cashAtBank = DB::table('gl_accounts as ga')
+        // Summed across every gl_accounts row for the code, not ->value() on
+        // one — ->value() silently returned a single branch's balance
+        // instead of the company-wide total the moment a second branch
+        // existed.
+        $cashAtBank = (float) DB::table('gl_accounts as ga')
             ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
             ->where('coa.account_code', '1100')
-            ->value('ga.current_balance') ?? 0;
+            ->sum('ga.current_balance');
 
-        $vatOutput = DB::table('gl_accounts as ga')
-            ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
-            ->where('coa.account_code', '2200')
-            ->value('ga.current_balance') ?? 0;
+        // Liabilities/Equity are driven generically from whatever's actually
+        // in the chart of accounts, grouped by account_group (Current
+        // Liability, Long-term Liability, Shareholder Loans, ...) per IFRS
+        // Statement of Financial Position presentation — rather than a
+        // hand-picked subset of accounts, which is exactly the bug this
+        // replaces: funding-facility liabilities and the entire Equity
+        // section existed in the chart of accounts and were being GL-posted,
+        // but never once appeared on this statement. New accounts added
+        // later show up here automatically instead of silently being
+        // excluded again. Reads the GL directly rather than the Loan model's
+        // deferred_interest/deferred_fees columns — those are dual-written
+        // alongside the GL by NuPayService/DisbursementService, which is two
+        // sources of truth for the same figure; the GL is the one this
+        // statement should trust.
+        $glGroup = function (string $category) {
+            return DB::table('gl_accounts as ga')
+                ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+                ->leftJoin('glmappings as gm', function ($j) {
+                    $j->on('gm.account_code', '=', 'coa.account_code')->where('gm.entry_type', 'credit');
+                })
+                ->where('coa.account_category', $category)
+                ->where('coa.is_active', true)
+                ->groupBy('coa.account_code', 'coa.account_group', 'gm.description')
+                ->select(
+                    'coa.account_code',
+                    'coa.account_group',
+                    DB::raw('COALESCE(gm.description, coa.account_group) as label'),
+                    DB::raw('SUM(ga.current_balance) as balance')
+                )
+                ->orderBy('coa.account_code')
+                ->get()
+                ->groupBy('account_group');
+        };
+
+        $liabilityGroups = $glGroup('liability');
+        $equityGroups = $glGroup('equity');
+
+        // Current Period Earnings — unclosed net income sitting in the
+        // Income/Expense accounts. Those only zero out at a formal year-end
+        // close (FinancialPeriodService), so mid-period their current_balance
+        // already correctly reflects "earned since the last close" — no
+        // date-range recomputation needed, just read it like any other
+        // account. Without this, an interim balance sheet (any point before
+        // the next close) can never actually balance: real profit sits
+        // recognised on the books with nowhere to appear on this statement.
+        $currentPeriodEarnings = round(
+            $glGroup('income')->flatten()->sum('balance') - $glGroup('expense')->flatten()->sum('balance'),
+            2
+        );
+
+        $totalAssets = $cashAtBank + $loansReceivableGross - $allowanceForCreditLoss;
+        $totalLiabilities = $liabilityGroups->flatten()->sum('balance');
+        $totalEquity = $equityGroups->flatten()->sum('balance') + $currentPeriodEarnings;
 
         return view('admin.reports.balance_sheet', compact(
             'loansReceivableGross', 'allowanceForCreditLoss',
-            'deferredInterest', 'deferredFees',
-            'cashAtBank', 'vatOutput', 'asAt'
+            'cashAtBank', 'asAt',
+            'liabilityGroups', 'equityGroups', 'currentPeriodEarnings',
+            'totalAssets', 'totalLiabilities', 'totalEquity'
         ));
     }
 
@@ -911,5 +1149,4 @@ class AdminController extends Controller
 
         return view('admin.reports.audit_log', compact('logs', 'users'));
     }
-
 }

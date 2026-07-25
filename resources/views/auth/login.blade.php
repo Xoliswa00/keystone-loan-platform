@@ -34,6 +34,16 @@
         <div class="kc-alert-success mb-6">{{ session('status') }}</div>
     @endif
 
+    {{-- e.g. session/CSRF token expired — see App\Exceptions\Handler --}}
+    @if (session('error'))
+        <div class="kc-alert-error mb-6 flex items-start gap-2">
+            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p>{{ session('error') }}</p>
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('login') }}" class="space-y-5">
         @csrf
 

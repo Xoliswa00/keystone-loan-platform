@@ -227,43 +227,51 @@ class FinancialPeriodService
 
     public function closePeriod(FinancialPeriod $fp, int $adminId): FinancialPeriod
     {
-        if (! in_array($fp->status, ['open', 'closing'])) {
-            throw new Exception("Period {$fp->period} is already {$fp->status}.");
-        }
+        DB::transaction(function () use ($fp, $adminId) {
+            // lockForUpdate(): without it, two near-simultaneous close
+            // requests both pass the status check below before either
+            // commits, and both would run runYearEnd() — posting the
+            // year-end retained-earnings closing journal twice.
+            $fp = FinancialPeriod::lockForUpdate()->findOrFail($fp->id);
 
-        if (! $fp->checklistComplete()) {
-            $missing = [];
-            if (! $fp->provisioning_complete) {
-                $missing[] = 'IFRS 9 Provisioning';
+            if (! in_array($fp->status, ['open', 'closing'])) {
+                throw new Exception("Period {$fp->period} is already {$fp->status}.");
             }
-            if (! $fp->facility_interest_accrued) {
-                $missing[] = 'Facility Interest Accrual';
+
+            if (! $fp->checklistComplete()) {
+                $missing = [];
+                if (! $fp->provisioning_complete) {
+                    $missing[] = 'IFRS 9 Provisioning';
+                }
+                if (! $fp->facility_interest_accrued) {
+                    $missing[] = 'Facility Interest Accrual';
+                }
+                if (! $fp->bank_recon_complete) {
+                    $missing[] = 'Bank Reconciliation';
+                }
+                if (! $fp->trial_balance_generated) {
+                    $missing[] = 'Trial Balance';
+                }
+                throw new Exception('Pre-close checklist incomplete. Missing: '.implode(', ', $missing));
             }
-            if (! $fp->bank_recon_complete) {
-                $missing[] = 'Bank Reconciliation';
+
+            $fp->update([
+                'status' => 'closed',
+                'closed_by' => $adminId,
+                'closed_at' => now(),
+            ]);
+
+            // If year-end, run the year-end close journal
+            if ($fp->is_year_end) {
+                $this->runYearEnd($fp, $adminId);
             }
-            if (! $fp->trial_balance_generated) {
-                $missing[] = 'Trial Balance';
-            }
-            throw new Exception('Pre-close checklist incomplete. Missing: '.implode(', ', $missing));
-        }
 
-        $fp->update([
-            'status' => 'closed',
-            'closed_by' => $adminId,
-            'closed_at' => now(),
-        ]);
+            // Auto-open next period
+            $next = Carbon::createFromFormat('Y-m', $fp->period)->addMonth()->format('Y-m');
+            $this->openPeriod($next);
 
-        // If year-end, run the year-end close journal
-        if ($fp->is_year_end) {
-            $this->runYearEnd($fp, $adminId);
-        }
-
-        // Auto-open next period
-        $next = Carbon::createFromFormat('Y-m', $fp->period)->addMonth()->format('Y-m');
-        $this->openPeriod($next);
-
-        Log::info("Period {$fp->period} closed by user #{$adminId}");
+            Log::info("Period {$fp->period} closed by user #{$adminId}");
+        });
 
         return $fp->fresh();
     }

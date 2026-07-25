@@ -192,10 +192,20 @@ class SystemLogController extends Controller
                     }
                 }
 
+                // QueryException messages embed the full SQL statement + every
+                // bound value inline (see the NuPay import errors — a 47-column
+                // INSERT running to 2000+ characters on one line). Left in the
+                // one-line preview, that pushes the whole page wider than the
+                // screen instead of staying inside the card. Split it out so
+                // the preview stays a short, readable summary and the SQL is
+                // only shown (scrollable, contained) when the entry is expanded.
+                [$message, $sql] = $this->splitSqlMessage(rtrim($message));
+
                 $current = [
                     'timestamp' => $m[1],
                     'level' => $entryLevel,
-                    'message' => rtrim($message),
+                    'message' => $message,
+                    'sql' => $sql,
                     'context' => $context,
                     'extra' => [],
                 ];
@@ -210,6 +220,24 @@ class SystemLogController extends Controller
         }
 
         return array_slice($entries, 0, self::MAX_LINES);
+    }
+
+    /**
+     * Splits a Laravel QueryException-style message — "<reason> (Connection:
+     * mysql, SQL: insert into ... values (...))" — into a short summary and
+     * the full SQL. Non-greedy up to the first "(Connection:" so the summary
+     * is just the human-readable part; greedy capture after "SQL:" so the
+     * SQL's own closing parens don't truncate it early.
+     *
+     * @return array{0: string, 1: ?string} [summary, sql]
+     */
+    protected function splitSqlMessage(string $message): array
+    {
+        if (preg_match('/^(.*?)\s*\(Connection:\s*\w+,\s*SQL:\s*(.+)\)$/s', $message, $m)) {
+            return [trim($m[1]), trim($m[2])];
+        }
+
+        return [$message, null];
     }
 
     protected function countByLevel(string $level, string $date): int

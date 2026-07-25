@@ -39,16 +39,26 @@ class NupayTransactionsStagingController extends Controller
             // content-sniffs and rejects legitimate CSV/Excel exports (BOM,
             // odd encodings); `extensions` trusts the file's extension.
             'file' => 'required|file|extensions:csv,txt,xlsx,xls|max:20480',
+            // Only required for CSV/TXT — a flat file has no tab to infer the
+            // type from. Excel uploads self-identify per sheet and ignore this.
+            'transaction_type' => 'nullable|in:success,failed,tracking,reversed',
         ]);
 
         $file = $request->file('file');
         $originalName = $file->getClientOriginalName();
+        $ext = strtolower($file->getClientOriginalExtension());
+
+        if (in_array($ext, ['csv', 'txt'], true) && ! $request->filled('transaction_type')) {
+            return redirect()->back()
+                ->with('error', 'Please select a transaction type for CSV/TXT uploads.');
+        }
 
         try {
             $batch = $this->importService->importAndStage(
                 $file->getPathname(),
                 $originalName,
-                Auth::id()
+                Auth::id(),
+                $request->input('transaction_type')
             );
 
             $warnings = $this->importService->warnings();
@@ -60,7 +70,14 @@ class NupayTransactionsStagingController extends Controller
                 $msg .= ' '.count($warnings).' row(s) skipped (already imported).';
             }
             if (! empty($errors)) {
-                $msg .= ' '.count($errors).' row(s) had errors — check logs.';
+                // Show the actual reasons, not just a count — "check logs"
+                // means opening a file most admin users can't reach; the
+                // first few rows' errors already say exactly what's wrong
+                // (which mandate_id, which column).
+                $msg .= ' '.count($errors).' row(s) had errors: '.implode(' | ', array_slice($errors, 0, 5));
+                if (count($errors) > 5) {
+                    $msg .= ' (+'.(count($errors) - 5).' more — see logs)';
+                }
             }
 
             return redirect()
@@ -70,7 +87,10 @@ class NupayTransactionsStagingController extends Controller
         } catch (\Throwable $e) {
             Log::error('NuPay upload failed', [
                 'file' => $originalName,
-                'error' => $e->getMessage(),
+                'uploaded_by' => Auth::id(),
+                'exception_class' => get_class($e),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()->back()

@@ -92,10 +92,17 @@ class NuPayService
                 'posted_at' => now(),
             ]);
 
-            // Update batch status only if all transactions in the batch are posted
+            // Update batch status only if all *postable* transactions are
+            // posted. 'tracking' rows are deliberately excluded — they're
+            // still-in-flight mandates with no resolved outcome yet (see the
+            // 'default' throw above), so posted_at never gets set for them;
+            // counting them here would mean a batch with any tracking rows
+            // could never reach PROCESSED.
             if ($batch) {
                 $unposted = nupay_transactions_staging::where('import_ref', $txn->import_ref)
-                    ->whereNull('posted_at')->count();
+                    ->whereNull('posted_at')
+                    ->where('transaction_type', '!=', 'tracking')
+                    ->count();
                 if ($unposted === 0) {
                     $batch->update(['status' => 'PROCESSED']);
                 }
@@ -105,6 +112,7 @@ class NuPayService
             nupay_transaction::updateOrCreate(
                 ['import_ref' => $txn->import_ref, 'mandate_id' => $txn->mandate_id],
                 [
+                    'mandate_request_tran_id' => $txn->mandate_request_tran_id,
                     'debtor_id' => $txn->debtor_id,
                     'loan_repayment_id' => $repayment?->id,
                     'amount' => round($txn->instalment_amount, 2),

@@ -74,6 +74,29 @@
   </table>
   @endforeach
 
+  {{-- Account ledger — running balance, like a bank statement ─────────────── --}}
+  @if(!empty($ledger))
+  <div class="section-title">ACCOUNT LEDGER</div>
+  <table class="schedule-table" style="margin-bottom:14px">
+    <thead>
+      <tr>
+        <th>Date</th><th>Description</th><th>Money Out</th><th>Money In</th><th>Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach($ledger as $event)
+      <tr>
+        <td>{{ $event['date']->format('d M Y') }}</td>
+        <td>{{ $event['description'] }}</td>
+        <td>{{ $event['out'] > 0 ? 'R '.number_format($event['out'], 2) : '—' }}</td>
+        <td>{{ $event['in'] > 0 ? 'R '.number_format($event['in'], 2) : '—' }}</td>
+        <td class="bold">R {{ number_format($event['balance'], 2) }}</td>
+      </tr>
+      @endforeach
+    </tbody>
+  </table>
+  @endif
+
   {{-- Transaction history ──────────────────────────────────────────────────── --}}
   @if($repayments->isNotEmpty())
   <div class="section-title">PAYMENT HISTORY</div>

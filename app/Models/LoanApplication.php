@@ -91,6 +91,11 @@ class LoanApplication extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereIn('status', ['pending', 'under_review', 'approved']);
+        return $query->whereIn('status', ['pending', 'under_review', 'affordability_review', 'approved']);
+    }
+
+    public function counterOffers()
+    {
+        return $this->hasMany(LoanCounterOffer::class);
     }
 }

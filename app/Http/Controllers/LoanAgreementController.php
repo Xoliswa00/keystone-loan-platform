@@ -58,9 +58,16 @@ class LoanAgreementController extends Controller
     }
 
     // ── Generate settlement quote ─────────────────────────────────────────
+    // A client's own NCA s.125 right, not staff-only — see routes/web.php's
+    // comment on this route. Staff can generate one for any client.
 
     public function generateSettlementQuote(Loan $loan)
     {
+        abort_unless(
+            Auth::user()->hasRole('admin', 'loan_officer', 'finance', 'it_admin') || $loan->user_id === Auth::id(),
+            403
+        );
+
         $agreement = $this->agreements->generateSettlementQuote($loan, Auth::id());
 
         return redirect()->back()

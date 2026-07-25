@@ -8,15 +8,29 @@
     <div class="kc-card">
       <h4 class="font-display font-semibold text-kc-navy mb-4">Upload Nu-Pay File</h4>
       <div class="p-3 rounded-lg border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/70 mb-4">
-        <strong>Accepted:</strong> .csv (preferred — direct Nu-Pay export) or .xlsx/.xls
+        <strong>Accepted:</strong> .csv/.txt (single transaction type per file) or the full .xlsx/.xls
+        Nu-Pay export (Success/Failed/Tracking/Reversed tabs, read automatically)
         · Duplicate transactions are automatically skipped.
       </div>
-      <form method="POST" action="{{ route('nupay.upload') }}" enctype="multipart/form-data" class="space-y-4">
+      <form method="POST" action="{{ route('nupay.upload') }}" enctype="multipart/form-data" class="space-y-4"
+        x-data="{ ext: '' }">
         @csrf
         <div>
           <label class="kc-label">Select File</label>
-          <input type="file" name="file" accept=".csv,.xlsx,.xls" class="kc-input py-2 cursor-pointer" required>
+          <input type="file" name="file" accept=".csv,.txt,.xlsx,.xls" class="kc-input py-2 cursor-pointer" required
+            @change="ext = $event.target.value.split('.').pop().toLowerCase()">
           <p class="text-xs text-kc-charcoal/40 mt-1">Max 20 MB</p>
+        </div>
+        <div x-show="ext === 'csv' || ext === 'txt'" x-cloak>
+          <label class="kc-label">Transaction Type</label>
+          <select name="transaction_type" class="kc-select">
+            <option value="">Select...</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+            <option value="tracking">Tracking</option>
+            <option value="reversed">Reversed</option>
+          </select>
+          <p class="text-xs text-kc-charcoal/40 mt-1">A CSV/TXT file has no tab to identify its type from — required for these formats only.</p>
         </div>
         <button type="submit" class="kc-btn-primary w-full justify-center">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

@@ -49,6 +49,28 @@ class RepaymentSchedule extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function loanRepayments()
+    {
+        return $this->hasMany(LoanRepayment::class, 'repayment_schedule_id');
+    }
+
+    // Most recent manual-payment claim against this schedule (pending_review
+    // / paid / rejected) — lets the client-facing view show a submitted
+    // claim's status instead of the upload form once one exists.
+    public function latestManualClaim()
+    {
+        return $this->hasOne(LoanRepayment::class, 'repayment_schedule_id')->latestOfMany();
+    }
+
+    // The posted LoanRepayment that actually paid this schedule — staff
+    // navigate here to find the "Reverse Payment" action (loan_repayments.
+    // show.blade.php), which otherwise has no list to be reached from.
+    public function paidRepayment()
+    {
+        return $this->hasOne(LoanRepayment::class, 'repayment_schedule_id')
+            ->where('status', 'paid')->latestOfMany();
+    }
+
     public function customer()
     {
         return $this->hasOneThrough(

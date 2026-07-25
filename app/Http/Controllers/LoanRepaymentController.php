@@ -2,22 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Loan;
 use App\Models\LoanRepayment;
 use App\Models\RepaymentSchedule;
-use App\Services\DisbursementService;
+use App\Services\ManualPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class LoanRepaymentController extends Controller
 {
-    protected DisbursementService $disbursement;
+    protected ManualPaymentService $manualPayment;
 
-    public function __construct(DisbursementService $disbursement)
+    public function __construct(ManualPaymentService $manualPayment)
     {
-        $this->disbursement = $disbursement;
+        $this->manualPayment = $manualPayment;
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -27,7 +25,7 @@ class LoanRepaymentController extends Controller
 
     public function index()
     {
-        $query = RepaymentSchedule::with(['loanApplication.user', 'loanApplication.loan'])
+        $query = RepaymentSchedule::with(['loanApplication.user', 'loanApplication.loan', 'paidRepayment'])
             ->where('status', '!=', 'rejected')
             ->orderBy('due_date', 'asc');
 
@@ -44,8 +42,12 @@ class LoanRepaymentController extends Controller
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Manual payment record — for cash/EFT payments outside Nu-Pay
-    // Posts to GL and marks schedule as paid atomically
+    // Manual payment record — staff directly recording a cash/EFT payment on
+    // a client's behalf. Staff's own action is the attestation, so this
+    // posts immediately via ManualPaymentService::recordAndPost() (real GL
+    // batch + balances + schedule), same posting path client-submitted
+    // proof-of-payment goes through once staff approve it (see
+    // approveManualPayment() below).
     // ──────────────────────────────────────────────────────────────────────────
 
     public function store(Request $request)
@@ -59,100 +61,125 @@ class LoanRepaymentController extends Controller
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        DB::beginTransaction();
+        $schedule = RepaymentSchedule::findOrFail($validated['repayment_schedule_id']);
 
         try {
-            $schedule = RepaymentSchedule::lockForUpdate()->findOrFail($validated['repayment_schedule_id']);
-
-            if ($schedule->status === 'paid') {
-                DB::rollBack();
-
-                return back()->with('error', 'This instalment has already been paid.');
-            }
-
-            // Load the loan via the schedule's loan application
-            $loanApplication = $schedule->loanApplication;
-            $loan = $loanApplication?->loan;
-
-            if (! $loan) {
-                DB::rollBack();
-
-                return back()->with('error', 'Cannot find the associated loan record.');
-            }
-
-            $customer = $loan->user->customer;
-
-            // For multi-month loans — recognise deferred income on this payment
-            if ($loan->loan_term_months > 1 && ! $schedule->gl_posted) {
-                $this->disbursement->recogniseInstallmentIncome($schedule->id, Auth::id());
-            }
-
-            $paymentAmount = (float) $validated['payment_amount'];
-            $principalAmount = (float) $schedule->principal_amount;
-            $interestAmount = (float) $schedule->interest_amount;
-            $feeAmount = (float) $schedule->fee_amount;
-
-            // ── Create LoanRepayment record ───────────────────────────────────
-            $repayment = LoanRepayment::create([
-                'loan_id' => $loan->id,
-                'user_id' => $loan->user_id,
-                'repayment_schedule_id' => $schedule->id,
-                'payment_amount' => $paymentAmount,
-                'principal_amount' => $principalAmount,
-                'interest_amount' => $interestAmount,
-                'fee_amount' => $feeAmount,
-                'payment_date' => $validated['payment_date'],
-                'due_date' => $schedule->due_date,
-                'status' => 'paid',
-                'payment_method' => $validated['payment_method'],
-                'payment_reference' => $validated['payment_reference'],
-                'notes' => $validated['notes'],
-                'payment_received_by' => Auth::id(),
-                'transaction_type' => 'manual',
-            ]);
-
-            // ── Update loan balance ───────────────────────────────────────────
-            $loan->decrement('remaining_balance', $paymentAmount);
-            $customer->decrement('current_balance', $paymentAmount);
-
-            // ── Mark schedule row paid ────────────────────────────────────────
-            $schedule->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-                'gl_posted' => true,
-            ]);
-
-            // ── Check if loan fully settled ───────────────────────────────────
-            $unpaidCount = RepaymentSchedule::where('loan_id', $loanApplication->id)
-                ->where('status', 'pending')
-                ->count();
-
-            if ($unpaidCount === 0) {
-                $loan->update(['status' => 'settled']);
-            }
-
-            DB::commit();
-
-            // Outside the transaction — a notification failure must never
-            // roll back a payment that already recorded successfully.
-            try {
-                $loan->user?->notify(new \App\Notifications\PaymentReceivedNotification($repayment));
-            } catch (\Exception $e) {
-                Log::warning('Payment notification failed: '.$e->getMessage());
-            }
+            $repayment = $this->manualPayment->recordAndPost($schedule, $validated, $request->user());
 
             return redirect()->route('repaymentSchedules.index')
                 ->with('success', 'Payment recorded successfully. Reference: '.($validated['payment_reference'] ?? $repayment->id));
-
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Manual payment store failed', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->withInput()
-                ->with('error', 'Payment failed to record: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Payment failed to record: '.$e->getMessage());
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Client: submit proof of payment for a manual payment that didn't come
+    // through NuPay — sits pending until staff verify it (see
+    // approveManualPayment()/rejectManualPayment() below).
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function submitProof(Request $request, RepaymentSchedule $repaymentSchedule)
+    {
+        abort_unless(
+            $repaymentSchedule->loanApplication?->user_id === Auth::id(),
+            403
+        );
+        abort_unless(in_array($repaymentSchedule->status, ['pending', 'payment_failed'], true), 404);
+
+        $validated = $request->validate([
+            'payment_amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_date' => ['required', 'date', 'before_or_equal:today'],
+            'payment_reference' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'proof_of_payment' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+        ]);
+
+        $validated['proof_of_payment_path'] = $request->file('proof_of_payment')
+            ->store("proof_of_payment/{$request->user()->id}", 'public');
+
+        $this->manualPayment->submitForReview($repaymentSchedule, $request->user(), $validated);
+
+        return back()->with('success', 'Proof of payment submitted — our team will review it shortly.');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Staff: verification queue for client-submitted proof of payment
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function pendingVerification()
+    {
+        $pendingPayments = LoanRepayment::where('status', 'pending_review')
+            ->with(['user', 'repaymentSchedule', 'submittedBy'])
+            ->orderBy('created_at')
+            ->paginate(20);
+
+        return view('admin.manual_payments.index', compact('pendingPayments'));
+    }
+
+    public function approveManualPayment(LoanRepayment $loanRepayment)
+    {
+        abort_unless($loanRepayment->status === 'pending_review', 404);
+
+        try {
+            $this->manualPayment->recordAndPost(
+                $loanRepayment->repaymentSchedule,
+                [
+                    'payment_amount' => (float) $loanRepayment->payment_amount,
+                    'payment_date' => $loanRepayment->payment_date,
+                    'payment_method' => $loanRepayment->payment_method,
+                    'payment_reference' => $loanRepayment->payment_reference,
+                    'notes' => $loanRepayment->notes,
+                ],
+                Auth::user(),
+                $loanRepayment
+            );
+
+            return back()->with('success', 'Payment verified and posted.');
+        } catch (\Exception $e) {
+            Log::error('Manual payment approval failed', ['loan_repayment_id' => $loanRepayment->id, 'error' => $e->getMessage()]);
+
+            return back()->with('error', 'Could not verify this payment: '.$e->getMessage());
+        }
+    }
+
+    public function rejectManualPayment(Request $request, LoanRepayment $loanRepayment)
+    {
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        try {
+            $this->manualPayment->reject($loanRepayment, Auth::user(), $validated['rejection_reason']);
+
+            return back()->with('success', 'Payment claim rejected.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Undo an already-posted payment that turns out to have been verified/
+     * recorded in error — see ManualPaymentService::reversePayment(). Works
+     * regardless of the payment's origin (manual or NuPay).
+     */
+    public function reversePayment(Request $request, LoanRepayment $loanRepayment)
+    {
+        $validated = $request->validate([
+            'reversal_reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        try {
+            $this->manualPayment->reversePayment($loanRepayment, Auth::user(), $validated['reversal_reason']);
+
+            return back()->with('success', 'Payment reversed.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
     }
 

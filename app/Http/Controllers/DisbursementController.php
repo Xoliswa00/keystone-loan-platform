@@ -7,6 +7,7 @@ use App\Models\LoanDisbursement;
 use App\Services\DisbursementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -68,18 +69,31 @@ class DisbursementController extends Controller
 
     public function reject(Request $request, $id)
     {
-        $disbursement = LoanDisbursement::findOrFail($id);
+        try {
+            $disbursement = DB::transaction(function () use ($id, $request) {
+                // lockForUpdate(): without it, two near-simultaneous requests
+                // (double-click, retry) both read status='waiting_for_approval'
+                // before either write lands, and both proceed — duplicate
+                // rejection notifications at minimum, and a race against
+                // approve() on the same row.
+                $disbursement = LoanDisbursement::lockForUpdate()->findOrFail($id);
 
-        if ($disbursement->status !== 'waiting_for_approval') {
-            return back()->with('error', 'This disbursement cannot be rejected in its current state.');
+                if ($disbursement->status !== 'waiting_for_approval') {
+                    throw new \RuntimeException('This disbursement cannot be rejected in its current state.');
+                }
+
+                $disbursement->update([
+                    'status' => 'rejected',
+                    'rejected_by' => Auth::id(),
+                    'rejected_at' => now(),
+                    'rejection_reason' => $request->input('rejection_reason', 'No reason provided'),
+                ]);
+
+                return $disbursement;
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $disbursement->update([
-            'status' => 'rejected',
-            'rejected_by' => Auth::id(),
-            'rejected_at' => now(),
-            'rejection_reason' => $request->input('rejection_reason', 'No reason provided'),
-        ]);
 
         // Notify via loan → loanApplication chain
         $loanApplication = $disbursement->loan?->loanApplication;
@@ -107,18 +121,26 @@ class DisbursementController extends Controller
 
     public function release($id)
     {
-        $disbursement = LoanDisbursement::findOrFail($id);
+        try {
+            $disbursement = DB::transaction(function () use ($id) {
+                $disbursement = LoanDisbursement::lockForUpdate()->findOrFail($id);
 
-        if ($disbursement->status !== 'approved') {
-            return back()->with('error', 'Only approved disbursements can be released.');
+                if ($disbursement->status !== 'approved') {
+                    throw new \RuntimeException('Only approved disbursements can be released.');
+                }
+
+                $disbursement->update([
+                    'status' => 'released',
+                    'released_by' => Auth::id(),
+                    'released_at' => now(),
+                    'disbursement_method' => 'bank_transfer',
+                ]);
+
+                return $disbursement;
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $disbursement->update([
-            'status' => 'released',
-            'released_by' => Auth::id(),
-            'released_at' => now(),
-            'disbursement_method' => 'bank_transfer',
-        ]);
 
         $loanApplication = $disbursement->loan?->loanApplication;
 

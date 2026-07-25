@@ -27,7 +27,7 @@ class charts_of_accounts
 
             gl_accounts::create([
                 'chart_of_account_id' => $chart_of_accounts->id,
-                'branch_id' => $branch->i,
+                'branch_id' => $branch->id,
                 'full_account_no' => $glCode,
                 'location_code' => $branch->location ?? '000',
             ]);

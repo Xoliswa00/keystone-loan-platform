@@ -94,6 +94,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/loan-applications/{id}/note',
         [LoanApplicationController::class, 'updateNote'])->name('loanapplications.updateNote');
 
+    // Counter-offers (client response) — proposing one is staff-only, see
+    // the staff group below; ownership is checked inside the controller.
+    Route::post('/loan-applications/{application}/counter-offer/accept',
+        [\App\Http\Controllers\LoanCounterOfferController::class, 'accept'])->name('counter-offers.accept');
+    Route::post('/loan-applications/{application}/counter-offer/decline',
+        [\App\Http\Controllers\LoanCounterOfferController::class, 'decline'])->name('counter-offers.decline');
+
     // ── Loans (client-facing) ────────────────────────────────────────────────
     // Only index is client-facing (scoped to the authenticated user's own
     // loans). show/edit/update/destroy/update-payment mutate or expose
@@ -114,6 +121,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('repaymentSchedules', RepaymentScheduleController::class)
         ->only(['index', 'show'])
         ->whereNumber('repaymentSchedule');
+    // Client-side proof of payment for a manual payment that didn't come
+    // through NuPay — ownership checked in the controller. Sits pending
+    // until staff verify it (see the staff group below).
+    Route::post('/repayment-schedules/{repaymentSchedule}/proof-of-payment',
+        [LoanRepaymentController::class, 'submitProof'])->name('repaymentSchedules.submit-proof');
     // Explicit ->parameters(): see the accountdetails comment below the
     // staff group — same case-mismatch class ({loanrepayment} vs
     // controller's $loanRepayment) silently breaks implicit model binding.
@@ -128,6 +140,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/download/{agreement}', [LoanAgreementController::class, 'download'])->name('download');
         Route::post('/accept/{agreement}', [LoanAgreementController::class, 'accept'])->name('accept');
     });
+
+    // Settlement quote (NCA s.125) — a client's own legal right to request
+    // one on their own loan, not a staff-only action; ownership is checked
+    // in the controller the same way download()/accept() above are. Was
+    // previously registered only inside the staff-only role group below,
+    // so the "Request Settlement Quote" button on the client's own loan
+    // page (resources/views/loans/show.blade.php) 403'd for every client.
+    Route::post('/admin/agreements/{loan}/settlement-quote',
+        [LoanAgreementController::class, 'generateSettlementQuote'])->name('admin.agreements.settlement-quote');
 
     // ── Transactions ──────────────────────────────────────────────────────────
     Route::resource('transactions', TransactionController::class);
@@ -152,19 +173,34 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
     // ── Dashboards & overview ────────────────────────────────────────────────
     Route::get('/Admins', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/Admin', [AdminController::class, 'Loans'])->name('admin.loans');
-    Route::get('/Admind', [AdminController::class, 'Disbursement'])->name('Admin.Disbursement');
+    // Legacy duplicate of disbursements.index (unlinked from any nav/view) —
+    // its buttons already post to the now-restricted disbursements.* routes
+    // below, so gate the page itself the same way to avoid a dead-button
+    // page for finance.
+    Route::middleware('role:admin,loan_officer,it_admin')
+        ->get('/Admind', [AdminController::class, 'Disbursement'])->name('Admin.Disbursement');
     Route::get('/summary', [AdminController::class, 'summary'])->name('admin.summary');
 
     // ── Application management ───────────────────────────────────────────────
     Route::get('/admin/applications', [LoanApplicationController::class, 'adminIndex'])
         ->name('admin.applications.index');
 
-    // Approve / reject actions (POST to avoid accidental GET triggers)
-    Route::post('admin/loans/{id}/approve', [LoanController::class, 'approve'])->name('loans.approve');
-    Route::post('admin/loans/{id}/reject', [LoanController::class, 'reject'])->name('loans.reject');
-    Route::post('admin/loans/bulk-approve', [LoanController::class, 'bulkApprove'])->name('loans.bulkApprove');
-    Route::post('admin/loans/bulk-reject', [LoanController::class, 'bulkReject'])->name('loans.bulkReject');
-    Route::post('admin/loans/{loan}/disburse', [LoanController::class, 'disburse'])->name('loans.disburse');
+    // Approve / reject actions (POST to avoid accidental GET triggers) —
+    // loan officer's exclusive "loan movement" remit, same reasoning as the
+    // recon/import groups excluding loan_officer above but mirrored: finance
+    // is excluded here. it_admin keeps break-glass access, same as elsewhere.
+    Route::middleware('role:admin,loan_officer,it_admin')->group(function () {
+        Route::post('admin/loans/{id}/approve', [LoanController::class, 'approve'])->name('loans.approve');
+        Route::post('admin/loans/{id}/reject', [LoanController::class, 'reject'])->name('loans.reject');
+        Route::post('admin/loans/bulk-approve', [LoanController::class, 'bulkApprove'])->name('loans.bulkApprove');
+        Route::post('admin/loans/bulk-reject', [LoanController::class, 'bulkReject'])->name('loans.bulkReject');
+        Route::post('admin/loans/{loan}/disburse', [LoanController::class, 'disburse'])->name('loans.disburse');
+        Route::post('admin/loans/{id}/reverse', [LoanController::class, 'reverseApproval'])->name('loans.reverse');
+    });
+
+    // Propose a counter-offer on an application stuck in affordability_review
+    Route::post('admin/loan-applications/{application}/counter-offer',
+        [\App\Http\Controllers\LoanCounterOfferController::class, 'store'])->name('admin.counter-offers.store');
 
     // Staff-only loan record management (see client group above for why
     // these aren't client-facing)
@@ -211,17 +247,18 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         ->whereNumber('loanProduct');
 
     // ── NCA Agreement generation (admin only) ─────────────────────────────────
+    // (settlement-quote moved to the shared client/staff group above — see
+    // the comment there.)
     Route::post('/admin/agreements/{application}/pre-agreement',
         [LoanAgreementController::class, 'generatePreAgreement'])->name('admin.agreements.pre-agreement');
     Route::post('/admin/agreements/{application}/loan-agreement',
         [LoanAgreementController::class, 'generateLoanAgreement'])->name('admin.agreements.loan-agreement');
-    Route::post('/admin/agreements/{loan}/settlement-quote',
-        [LoanAgreementController::class, 'generateSettlementQuote'])->name('admin.agreements.settlement-quote');
     Route::get('/admin/agreements/{application}/preview/{type?}',
         [LoanAgreementController::class, 'preview'])->name('admin.agreements.preview');
 
-    // ── Disbursements ────────────────────────────────────────────────────────
-    Route::prefix('admin/disbursements')->name('disbursements.')->group(function () {
+    // ── Disbursements — loan movement, same finance-excluded remit as loan
+    // approval above (no officer/finance segregation-of-duties split here). ──
+    Route::middleware('role:admin,loan_officer,it_admin')->prefix('admin/disbursements')->name('disbursements.')->group(function () {
         Route::get('/', [DisbursementController::class, 'index'])->name('index');
         Route::post('/{id}/approve', [DisbursementController::class, 'approve'])->name('approve');
         Route::post('/{id}/reject', [DisbursementController::class, 'reject'])->name('reject');
@@ -229,29 +266,63 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::post('/approve-all', [DisbursementController::class, 'approveAll'])->name('approveAll');
     });
 
-    // ── Document verification ─────────────────────────────────────────────────
-    Route::post('admin/documents/{document}/verify',
-        [CustomerProfileController::class, 'verifyDocument'])->name('admin.documents.verify');
+    // ── Document verification — loan officer's "verifications" remit; finance
+    // is excluded the same way it's excluded from loan approval/disbursement.
+    Route::middleware('role:admin,loan_officer,it_admin')
+        ->post('admin/documents/{document}/verify',
+            [CustomerProfileController::class, 'verifyDocument'])->name('admin.documents.verify');
 
-    // ── Funding Facilities ────────────────────────────────────────────────────
-    Route::prefix('admin/funding')->name('admin.funding.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\FundingFacilityController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\FundingFacilityController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\FundingFacilityController::class, 'store'])->name('store');
-        Route::get('/{fundingFacility}', [\App\Http\Controllers\FundingFacilityController::class, 'show'])->name('show');
-        Route::get('/{fundingFacility}/edit', [\App\Http\Controllers\FundingFacilityController::class, 'edit'])->name('edit');
-        Route::put('/{fundingFacility}', [\App\Http\Controllers\FundingFacilityController::class, 'update'])->name('update');
-        Route::post('/{fundingFacility}/transaction', [\App\Http\Controllers\FundingFacilityController::class, 'recordTransaction'])->name('transaction');
-        Route::post('/accrue-all', [\App\Http\Controllers\FundingFacilityController::class, 'accrueAll'])->name('accrue-all');
-        Route::post('/{fundingFacility}/upload-agreement', [\App\Http\Controllers\FundingFacilityController::class, 'uploadAgreement'])->name('upload-agreement');
-    });
+    // ── Funding Facilities, Business Bank Statement, Financial Periods, Bank
+    // Recon Workspace — all restricted to admin/finance/it_admin (see the
+    // comment on the lending-settings group above for why loan_officer is
+    // excluded: these move/recognise money and don't belong to loan
+    // origination). Matches finance's exclusive "recons and imports of
+    // financial data" remit.
+    Route::middleware('role:admin,finance,it_admin')->group(function () {
+        Route::prefix('admin/funding')->name('admin.funding.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\FundingFacilityController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\FundingFacilityController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\FundingFacilityController::class, 'store'])->name('store');
+            Route::get('/{fundingFacility}', [\App\Http\Controllers\FundingFacilityController::class, 'show'])->name('show');
+            Route::get('/{fundingFacility}/edit', [\App\Http\Controllers\FundingFacilityController::class, 'edit'])->name('edit');
+            Route::put('/{fundingFacility}', [\App\Http\Controllers\FundingFacilityController::class, 'update'])->name('update');
+            Route::post('/{fundingFacility}/transaction', [\App\Http\Controllers\FundingFacilityController::class, 'recordTransaction'])->name('transaction');
+            Route::post('/accrue-all', [\App\Http\Controllers\FundingFacilityController::class, 'accrueAll'])->name('accrue-all');
+            Route::post('/{fundingFacility}/upload-agreement', [\App\Http\Controllers\FundingFacilityController::class, 'uploadAgreement'])->name('upload-agreement');
+        });
 
-    // ── Business Bank Statement ───────────────────────────────────────────────
-    Route::prefix('admin/finance')->name('admin.finance.')->group(function () {
-        Route::get('/business-bank', [\App\Http\Controllers\BusinessBankStatementController::class, 'showUpload'])->name('business-bank.upload');
-        Route::post('/business-bank', [\App\Http\Controllers\BusinessBankStatementController::class, 'handleUpload'])->name('business-bank.store');
-        Route::get('/business-bank/{batch}', [\App\Http\Controllers\BusinessBankStatementController::class, 'show'])->name('business-bank.show');
-        Route::post('/business-bank/{batch}/reconcile', [\App\Http\Controllers\BusinessBankStatementController::class, 'reconcile'])->name('business-bank.reconcile');
+        Route::prefix('admin/finance')->name('admin.finance.')->group(function () {
+            Route::get('/business-bank', [\App\Http\Controllers\BusinessBankStatementController::class, 'showUpload'])->name('business-bank.upload');
+            Route::post('/business-bank', [\App\Http\Controllers\BusinessBankStatementController::class, 'handleUpload'])->name('business-bank.store');
+            Route::get('/business-bank/{batch}', [\App\Http\Controllers\BusinessBankStatementController::class, 'show'])->name('business-bank.show');
+            Route::post('/business-bank/{batch}/reconcile', [\App\Http\Controllers\BusinessBankStatementController::class, 'reconcile'])->name('business-bank.reconcile');
+        });
+
+        // ── Financial Periods ─────────────────────────────────────────────────
+        Route::prefix('admin/periods')->name('admin.periods.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\FinancialPeriodController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\FinancialPeriodController::class, 'store'])->name('store');
+            Route::get('/{period}', [\App\Http\Controllers\FinancialPeriodController::class, 'show'])->name('show');
+            Route::post('/{period}/start-close', [\App\Http\Controllers\FinancialPeriodController::class, 'startClose'])->name('start-close');
+            Route::post('/{period}/provisioning', [\App\Http\Controllers\FinancialPeriodController::class, 'runProvisioning'])->name('provisioning');
+            Route::post('/{period}/facility-interest', [\App\Http\Controllers\FinancialPeriodController::class, 'runFacilityInterest'])->name('facility-interest');
+            Route::post('/{period}/bank-recon', [\App\Http\Controllers\FinancialPeriodController::class, 'markBankRecon'])->name('bank-recon');
+            Route::post('/{period}/bank-recon-no-activity', [\App\Http\Controllers\FinancialPeriodController::class, 'markBankReconNoActivity'])->name('bank-recon-no-activity');
+            Route::post('/{period}/trial-balance', [\App\Http\Controllers\FinancialPeriodController::class, 'generateTrialBalance'])->name('trial-balance');
+            Route::post('/{period}/close', [\App\Http\Controllers\FinancialPeriodController::class, 'close'])->name('close');
+            Route::post('/{period}/lock', [\App\Http\Controllers\FinancialPeriodController::class, 'lock'])->name('lock');
+        });
+
+        // ── Bank Reconciliation Workspace (full allocation engine) ─────────────
+        Route::prefix('admin/finance/recon')->name('admin.finance.recon.')->group(function () {
+            Route::get('/{batch}', [\App\Http\Controllers\BankAllocationController::class, 'workspace'])->name('workspace');
+            Route::post('/{batch}/auto-match', [\App\Http\Controllers\BankAllocationController::class, 'autoMatch'])->name('auto-match');
+            Route::post('/{batch}/allocate', [\App\Http\Controllers\BankAllocationController::class, 'allocateLine'])->name('allocate');
+            Route::post('/{batch}/bulk-allocate', [\App\Http\Controllers\BankAllocationController::class, 'bulkAllocate'])->name('bulk-allocate');
+            Route::post('/{batch}/unallocate', [\App\Http\Controllers\BankAllocationController::class, 'unallocateLine'])->name('unallocate');
+            Route::post('/{batch}/balances', [\App\Http\Controllers\BankAllocationController::class, 'updateBalances'])->name('balances');
+            Route::post('/{batch}/complete', [\App\Http\Controllers\BankAllocationController::class, 'markComplete'])->name('complete');
+        });
     });
 
     // ── System Logs ───────────────────────────────────────────────────────────
@@ -262,32 +333,6 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::get('/logs/download', [\App\Http\Controllers\SystemLogController::class, 'download'])->name('logs.download');
         Route::post('/logs/clear', [\App\Http\Controllers\SystemLogController::class, 'clearLog'])->name('logs.clear');
         Route::post('/jobs/run', [\App\Http\Controllers\SystemLogController::class, 'runJob'])->name('jobs.run');
-    });
-
-    // ── Financial Periods ─────────────────────────────────────────────────────
-    Route::prefix('admin/periods')->name('admin.periods.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\FinancialPeriodController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\FinancialPeriodController::class, 'store'])->name('store');
-        Route::get('/{period}', [\App\Http\Controllers\FinancialPeriodController::class, 'show'])->name('show');
-        Route::post('/{period}/start-close', [\App\Http\Controllers\FinancialPeriodController::class, 'startClose'])->name('start-close');
-        Route::post('/{period}/provisioning', [\App\Http\Controllers\FinancialPeriodController::class, 'runProvisioning'])->name('provisioning');
-        Route::post('/{period}/facility-interest', [\App\Http\Controllers\FinancialPeriodController::class, 'runFacilityInterest'])->name('facility-interest');
-        Route::post('/{period}/bank-recon', [\App\Http\Controllers\FinancialPeriodController::class, 'markBankRecon'])->name('bank-recon');
-        Route::post('/{period}/bank-recon-no-activity', [\App\Http\Controllers\FinancialPeriodController::class, 'markBankReconNoActivity'])->name('bank-recon-no-activity');
-        Route::post('/{period}/trial-balance', [\App\Http\Controllers\FinancialPeriodController::class, 'generateTrialBalance'])->name('trial-balance');
-        Route::post('/{period}/close', [\App\Http\Controllers\FinancialPeriodController::class, 'close'])->name('close');
-        Route::post('/{period}/lock', [\App\Http\Controllers\FinancialPeriodController::class, 'lock'])->name('lock');
-    });
-
-    // ── Bank Reconciliation Workspace (full allocation engine) ────────────────
-    Route::prefix('admin/finance/recon')->name('admin.finance.recon.')->group(function () {
-        Route::get('/{batch}', [\App\Http\Controllers\BankAllocationController::class, 'workspace'])->name('workspace');
-        Route::post('/{batch}/auto-match', [\App\Http\Controllers\BankAllocationController::class, 'autoMatch'])->name('auto-match');
-        Route::post('/{batch}/allocate', [\App\Http\Controllers\BankAllocationController::class, 'allocateLine'])->name('allocate');
-        Route::post('/{batch}/bulk-allocate', [\App\Http\Controllers\BankAllocationController::class, 'bulkAllocate'])->name('bulk-allocate');
-        Route::post('/{batch}/unallocate', [\App\Http\Controllers\BankAllocationController::class, 'unallocateLine'])->name('unallocate');
-        Route::post('/{batch}/balances', [\App\Http\Controllers\BankAllocationController::class, 'updateBalances'])->name('balances');
-        Route::post('/{batch}/complete', [\App\Http\Controllers\BankAllocationController::class, 'markComplete'])->name('complete');
     });
 
     // ── Company Settings ──────────────────────────────────────────────────────
@@ -342,52 +387,81 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
             ->name('loan-products.toggle-active');
     });
 
-    // ── Nu-Pay imports ────────────────────────────────────────────────────────
-    Route::get('/nupay/upload', [NupayTransactionsStagingController::class, 'showUploadForm'])->name('nupay.upload.form');
-    Route::post('/nupay/upload', [NupayTransactionsStagingController::class, 'handleUpload'])
-        ->name('nupay.upload')
-        ->middleware('throttle:nupay_import');
+    // ── Nu-Pay imports — finance's exclusive "imports of financial data"
+    // remit; these post directly to the GL (see GLPostingService), so
+    // loan_officer is excluded the same way as the funding/periods/recon
+    // groups above.
+    Route::middleware('role:admin,finance,it_admin')->group(function () {
+        Route::get('/nupay/upload', [NupayTransactionsStagingController::class, 'showUploadForm'])->name('nupay.upload.form');
+        Route::post('/nupay/upload', [NupayTransactionsStagingController::class, 'handleUpload'])
+            ->name('nupay.upload')
+            ->middleware('throttle:nupay_import');
 
-    Route::prefix('nu-pay/import')->name('nu-pay.import.')->group(function () {
-        Route::get('/', [NupayTransactionController::class, 'index'])->name('index');
-        Route::get('/{importRef}', [NupayTransactionController::class, 'show'])->name('show');
-        Route::post('/{importRef}/post', [NupayTransactionController::class, 'post'])->name('post');
+        Route::prefix('nu-pay/import')->name('nu-pay.import.')->group(function () {
+            Route::get('/', [NupayTransactionController::class, 'index'])->name('index');
+            Route::get('/{importRef}', [NupayTransactionController::class, 'show'])->name('show');
+            Route::post('/{importRef}/post', [NupayTransactionController::class, 'post'])->name('post');
+            // {transaction} binds to nupay_transactions_staging — separate from
+            // {importRef} above, which is a plain string (the batch's import_ref)
+            Route::put('/{importRef}/transactions/{transaction}', [NupayTransactionController::class, 'updateTransaction'])->name('transactions.update');
+        });
     });
 
     // ── Reports ───────────────────────────────────────────────────────────────
+    // Cross-cutting operational reports — loan officer's day-to-day (arrears,
+    // collections, portfolio, scorecard) but harmless/useful for finance and
+    // IT to see too, so left in the shared staff group.
     Route::prefix('admin/reports')->name('reports.')->group(function () {
-        Route::get('/summary', [AdminController::class, 'profitability'])->name('summary');
-        Route::get('/profitability', [AdminController::class, 'profitability'])->name('profitability');
         Route::get('/portfolio', [AdminController::class, 'portfolio'])->name('portfolio');
         Route::get('/arrears', [AdminController::class, 'arrears'])->name('arrears');
         Route::get('/collections', [AdminController::class, 'collections'])->name('collections');
         Route::get('/disbursements', [AdminController::class, 'disbursements'])->name('disbursements');
-        Route::get('/gl-reconciliation', [AdminController::class, 'glReconciliation'])->name('gl-recon');
-        Route::get('/gl-summary', [AdminController::class, 'glReconciliation'])->name('gl_summary');
-        Route::get('/reversals', [AdminController::class, 'reversalAudit'])->name('reversals');
         Route::get('/scorecard', [AdminController::class, 'scorecard'])->name('scorecard');
         Route::get('/reviewer/{id}', [AdminController::class, 'reviewer'])->name('reviewer');
         Route::get('/alerts', [AdminController::class, 'alerts'])->name('alerts');
-        Route::get('/ncr-export', [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('ncr-export');
 
-        // ── Finance-specific ──────────────────────────────────────────────────
-        Route::get('/vat-201', [AdminController::class, 'vat201'])->name('vat201');
-        Route::get('/income-statement', [AdminController::class, 'incomeStatement'])->name('income-statement');
-        Route::get('/balance-sheet', [AdminController::class, 'balanceSheet'])->name('balance-sheet');
-        Route::get('/write-off-register', [AdminController::class, 'writeOffRegister'])->name('write-off-register');
-        Route::get('/audit-log', [AdminController::class, 'auditLog'])->name('audit-log');
-        Route::get('/npl', [AdminController::class, 'nplReport'])->name('npl');
+        // ── Finance-specific — profitability, GL, and the statutory/
+        // financial-statement reports live under finance's exclusive recon
+        // remit, same as the Nu-Pay/funding/periods groups above.
+        Route::middleware('role:admin,finance,it_admin')->group(function () {
+            Route::get('/summary', [AdminController::class, 'profitability'])->name('summary');
+            Route::get('/profitability', [AdminController::class, 'profitability'])->name('profitability');
+            Route::get('/gl-reconciliation', [AdminController::class, 'glReconciliation'])->name('gl-recon');
+            Route::get('/gl-summary', [AdminController::class, 'glReconciliation'])->name('gl_summary');
+            Route::get('/reversals', [AdminController::class, 'reversalAudit'])->name('reversals');
+            Route::get('/ncr-export', [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('ncr-export');
+            Route::get('/vat-201', [AdminController::class, 'vat201'])->name('vat201');
+            Route::get('/income-statement', [AdminController::class, 'incomeStatement'])->name('income-statement');
+            Route::get('/balance-sheet', [AdminController::class, 'balanceSheet'])->name('balance-sheet');
+            Route::get('/write-off-register', [AdminController::class, 'writeOffRegister'])->name('write-off-register');
+            Route::get('/npl', [AdminController::class, 'nplReport'])->name('npl');
+        });
+
+        // ── IT's exclusive "monitors everyone's audit report" remit ────────────
+        Route::middleware('role:admin,it_admin')->group(function () {
+            Route::get('/audit-log', [AdminController::class, 'auditLog'])->name('audit-log');
+        });
     });
 
-    // ── Bank statement import ─────────────────────────────────────────────────
-    Route::get('/bank-statement/upload', [\App\Http\Controllers\BankStatementController::class, 'showUpload'])->name('bank-statement.upload');
-    Route::post('/bank-statement/upload', [\App\Http\Controllers\BankStatementController::class, 'handleUpload'])->name('bank-statement.store');
-    Route::get('/bank-statement/{batch}', [\App\Http\Controllers\BankStatementController::class, 'show'])->name('bank-statement.show');
-    Route::post('/bank-statement/{batch}/reconcile', [\App\Http\Controllers\BankStatementController::class, 'reconcile'])->name('bank-statement.reconcile');
+    // ── Bank statement import — finance's recon remit, same as Nu-Pay/
+    // business-bank/funding/periods above ──────────────────────────────────
+    Route::middleware('role:admin,finance,it_admin')->group(function () {
+        Route::get('/bank-statement/upload', [\App\Http\Controllers\BankStatementController::class, 'showUpload'])->name('bank-statement.upload');
+        Route::post('/bank-statement/upload', [\App\Http\Controllers\BankStatementController::class, 'handleUpload'])->name('bank-statement.store');
+        Route::get('/bank-statement/{batch}', [\App\Http\Controllers\BankStatementController::class, 'show'])->name('bank-statement.show');
+        Route::post('/bank-statement/{batch}/reconcile', [\App\Http\Controllers\BankStatementController::class, 'reconcile'])->name('bank-statement.reconcile');
+    });
 
     // ── Client statement PDF ──────────────────────────────────────────────────
+    // client.my-statement is NOT re-registered here — it already exists in
+    // the plain client auth group above (Route::get('/my-statement', ...) —
+    // scoped to Auth::user() internally, no {user} param, so no legitimate
+    // reason to also gate it behind staff roles). Registering the same
+    // method+URI twice doesn't add a second route: Laravel's RouteCollection
+    // keys routes by method+URI, so this second registration silently
+    // replaced the first, meaning every client hit the role check below and
+    // got 403'd trying to view their own statement.
     Route::get('/client/statement/{user}', [\App\Http\Controllers\ClientStatementController::class, 'download'])->name('client.statement');
-    Route::get('/my-statement', [\App\Http\Controllers\ClientStatementController::class, 'myStatement'])->name('client.my-statement');
 
     // ── Admin operations: notes + document verification ───────────────────────
     Route::post('/admin/notes/{application}', [\App\Http\Controllers\AdminOpsController::class, 'addNote'])->name('admin.notes.store');
@@ -396,8 +470,28 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
     Route::post('/admin/collections/log', [\App\Http\Controllers\AdminOpsController::class, 'logContactAttempt'])->name('admin.collections.log');
     Route::get('/admin/collections', [\App\Http\Controllers\AdminOpsController::class, 'collectionsQueue'])->name('admin.collections');
 
-    // ── NCR export (download) ─────────────────────────────────────────────────
-    Route::get('/admin/ncr-export', [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('admin.ncr-export');
+    // ── Manual payment verification — client-submitted proof of payment
+    // needs staff sign-off before it's treated as paid/posted to GL. Loan
+    // officer's "verifications" remit, same restriction as document
+    // verification (finance excluded).
+    Route::middleware('role:admin,loan_officer,it_admin')->prefix('admin/manual-payments')->name('admin.manual-payments.')->group(function () {
+        Route::get('/', [LoanRepaymentController::class, 'pendingVerification'])->name('index');
+        Route::post('/{loanRepayment}/approve', [LoanRepaymentController::class, 'approveManualPayment'])->name('approve');
+        Route::post('/{loanRepayment}/reject', [LoanRepaymentController::class, 'rejectManualPayment'])->name('reject');
+    });
+
+    // Reverse an already-posted payment (manual OR NuPay origin — not
+    // limited to ones that went through the verification queue above), same
+    // role remit as payment verification.
+    Route::middleware('role:admin,loan_officer,it_admin')
+        ->post('admin/payments/{loanRepayment}/reverse', [LoanRepaymentController::class, 'reversePayment'])
+        ->name('admin.payments.reverse');
+
+    // ── NCR export (download) — same finance-only restriction as
+    // reports.ncr-export above; this is a legacy duplicate route to the same
+    // controller method, gated identically so it isn't a bypass.
+    Route::middleware('role:admin,finance,it_admin')
+        ->get('/admin/ncr-export', [\App\Http\Controllers\AdminOpsController::class, 'ncrExportDownload'])->name('admin.ncr-export');
 
     // ── Debt recovery ─────────────────────────────────────────────────────────
     Route::prefix('admin/recovery')->name('admin.recovery.')->group(function () {

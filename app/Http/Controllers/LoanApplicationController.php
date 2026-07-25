@@ -204,19 +204,75 @@ class LoanApplicationController extends Controller
             // ── 4. Calculate repayment using product rules ────────────────────
             $repayment = $product->calculateRepayment($loanAmount, $months);
 
+            // Affordability snapshot — recorded on the application either way,
+            // it's immutable audit data regardless of the outcome below.
+            $affordabilitySnapshot = [
+                'affordability_checked' => true,
+                'affordability_disposable_income' => $affordResult['disposable_income'],
+                'affordability_max_instalment' => $affordResult['max_instalment'],
+                'affordability_instalment_requested' => $repayment['base_instalment'],
+            ];
+
+            $documentPaths = [
+                'credit_score_report' => $request->hasFile('credit_score_report')
+                    ? $request->file('credit_score_report')->store('credit_reports', 'public')
+                    : null,
+                'bank_statement' => $request->hasFile('bank_statement')
+                    ? $request->file('bank_statement')->store('bank_statements', 'public')
+                    : $bankStatementPath,
+                'payslips' => $request->hasFile('payslips')
+                    ? $request->file('payslips')->store('payslips', 'public')
+                    : $payslipPath,
+            ];
+
             // Verify the requested instalment is affordable
             if (! $this->affordability->passes($user, $repayment['base_instalment'])) {
-                DB::rollBack();
+                // Doesn't qualify at this amount/term/product — but rather than
+                // discarding the attempt (the old behaviour), save it so a
+                // human reviewer can see it and propose a counter-offer within
+                // what the client actually affords (LoanCounterOfferController).
+                // No LoanFee/RepaymentSchedule yet — those represent real
+                // obligations and shouldn't exist for an amount nobody has
+                // agreed to; they're created once terms are actually settled,
+                // in finalizeApplicationTerms().
+                $application = LoanApplication::create(array_merge([
+                    'user_id' => $user->id,
+                    'loan_product_id' => $product->id,
+                    'loan_type' => $validated['loan_type'],
+                    'loan_term_months' => $months,
+                    'loan_amount' => $loanAmount,
+                    'purpose' => $validated['purpose'] ?? $validated['other_purpose'] ?? 'Personal',
+                    'collateral' => $validated['collateral'] ?? null,
+                    'terms_conditions' => true,
+                    'status' => 'affordability_review',
+                    'reviewer_id' => null,
+                    'nca_credit_type' => $this->classifyNcaAgreementType($loanAmount),
+                ], $affordabilitySnapshot, $documentPaths));
 
-                return back()->withInput()
-                    ->with('error',
-                        'The monthly instalment of R'.number_format($repayment['base_instalment'], 2).
-                        ' exceeds your maximum affordable instalment of R'.
-                        number_format($affordResult['max_instalment'], 2).'.');
+                $this->ensureCustomerRecord($user);
+
+                $this->sendLoanNotification(
+                    $application,
+                    'Application Received',
+                    [
+                        'Your loan application has been submitted.',
+                        'Application reference: #'.str_pad($application->id, 6, '0', STR_PAD_LEFT),
+                        'The amount requested (R'.number_format($loanAmount, 2).') exceeds what our affordability check '.
+                            'currently supports — one of our team will review your application and may propose an '.
+                            'alternative amount for you to accept.',
+                    ],
+                    'received'
+                );
+
+                DB::commit();
+
+                return redirect()->route('loan.index')
+                    ->with('success', 'Application submitted. Reference #'.str_pad($application->id, 6, '0', STR_PAD_LEFT).
+                        ' — the requested amount needs a closer look from our team; we\'ll be in touch.');
             }
 
             // ── 5. Create application ─────────────────────────────────────────
-            $application = LoanApplication::create([
+            $application = LoanApplication::create(array_merge([
                 'user_id' => $user->id,
                 'loan_product_id' => $product->id,
                 'loan_type' => $validated['loan_type'],
@@ -227,35 +283,10 @@ class LoanApplicationController extends Controller
                 'terms_conditions' => true,
                 'status' => 'pending',
                 'reviewer_id' => null, // assigned when admin reviews
-                // Affordability snapshot — immutable audit record
-                'affordability_checked' => true,
-                'affordability_disposable_income' => $affordResult['disposable_income'],
-                'affordability_max_instalment' => $affordResult['max_instalment'],
-                'affordability_instalment_requested' => $repayment['base_instalment'],
-                'credit_score_report' => $request->hasFile('credit_score_report')
-                    ? $request->file('credit_score_report')->store('credit_reports', 'public')
-                    : null,
-                'bank_statement' => $request->hasFile('bank_statement')
-                    ? $request->file('bank_statement')->store('bank_statements', 'public')
-                    : $bankStatementPath,
-                'payslips' => $request->hasFile('payslips')
-                    ? $request->file('payslips')->store('payslips', 'public')
-                    : $payslipPath,
                 'nca_credit_type' => $this->classifyNcaAgreementType($loanAmount),
-            ]);
+            ], $affordabilitySnapshot, $documentPaths));
 
-            // ── 6. Save fee snapshot ──────────────────────────────────────────
-            LoanFee::create([
-                'loan_application_id' => $application->id,
-                'interest_rate' => $product->monthly_interest_rate,
-                'interest_amount' => $repayment['total_interest'],
-                'initiation_fee' => $repayment['initiation_fee'],
-                'service_fee' => $repayment['service_fee_total'],
-                'total_due' => $repayment['total_due'],
-            ]);
-
-            // ── 7. Generate repayment schedule with correct splits ────────────
-            $this->generateSchedule($application, $product, $loanAmount, $months, $repayment);
+            $this->finalizeApplicationTerms($application, $product, $loanAmount, $months, $repayment);
 
             // ── 8. Auto-create customer record if first application ───────────
             $this->ensureCustomerRecord($user);
@@ -296,12 +327,21 @@ class LoanApplicationController extends Controller
 
     public function show($id)
     {
-        $loanApplication = LoanApplication::with('user', 'product', 'loanfee', 'repaymentSchedules')
+        $loanApplication = LoanApplication::with('user', 'product', 'loanfee', 'repaymentSchedules.latestManualClaim')
             ->findOrFail($id);
 
         abort_unless($loanApplication->user_id === Auth::id(), 403);
 
-        return view('loans.show', compact('loanApplication'));
+        // Counter-offers aren't limited to affordability_review anymore —
+        // staff can propose one on any pending/under_review application too
+        // (see LoanCounterOfferController) — so the client needs to see a
+        // pending offer regardless of which of those three the application
+        // is currently sitting in.
+        $pendingCounterOffer = in_array($loanApplication->status, ['pending', 'under_review', 'affordability_review'], true)
+            ? $loanApplication->counterOffers()->pending()->with('product')->latest()->first()
+            : null;
+
+        return view('loans.show', compact('loanApplication', 'pendingCounterOffer'));
     }
 
     public function edit($id)
@@ -394,6 +434,33 @@ class LoanApplicationController extends Controller
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
+
+    /**
+     * Save the fee snapshot and generate the repayment schedule for terms
+     * that are actually settled — called at submission for applications that
+     * passed affordability outright, and again from
+     * LoanCounterOfferController::accept() once a client accepts a staff
+     * counter-offer (different amount/term/product than originally applied
+     * for, so a fresh fee snapshot and schedule are required).
+     */
+    public function finalizeApplicationTerms(
+        LoanApplication $application,
+        LoanProduct $product,
+        float $loanAmount,
+        int $months,
+        array $repayment
+    ): void {
+        LoanFee::create([
+            'loan_application_id' => $application->id,
+            'interest_rate' => $product->monthly_interest_rate,
+            'interest_amount' => $repayment['total_interest'],
+            'initiation_fee' => $repayment['initiation_fee'],
+            'service_fee' => $repayment['service_fee_total'],
+            'total_due' => $repayment['total_due'],
+        ]);
+
+        $this->generateSchedule($application, $product, $loanAmount, $months, $repayment);
+    }
 
     /**
      * Generate repayment schedule rows with correct principal / interest / fee splits.

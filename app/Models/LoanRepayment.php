@@ -28,7 +28,13 @@ class LoanRepayment extends Model
         'notes',
         'payment_received_by',
         'gl_batch_reference',
-        'transaction_type',         // success | failed | canceled | reversed
+        'transaction_type',         // success | failed | canceled | reversed | manual
+        'proof_of_payment_path',
+        'submitted_by',
+        'verified_by',
+        'verified_at',
+        'rejection_reason',
+        'reverses_repayment_id',
     ];
 
     protected $casts = [
@@ -40,6 +46,7 @@ class LoanRepayment extends Model
         'total_paid' => 'decimal:2',
         'payment_date' => 'date',
         'due_date' => 'date',
+        'verified_at' => 'datetime',
     ];
 
     // ── Relationships ──
@@ -62,5 +69,25 @@ class LoanRepayment extends Model
     public function receivedBy()
     {
         return $this->belongsTo(User::class, 'payment_received_by');
+    }
+
+    public function submittedBy()
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function verifiedBy()
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function reverses()
+    {
+        return $this->belongsTo(self::class, 'reverses_repayment_id');
+    }
+
+    public function reversal()
+    {
+        return $this->hasOne(self::class, 'reverses_repayment_id');
     }
 }

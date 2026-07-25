@@ -99,9 +99,10 @@ class CustomerLimitationService
             );
         }
 
-        // 4. Pending/under-review application
+        // 4. Pending/under-review application (including one awaiting a
+        // staff counter-offer, or the client's response to one already sent)
         $pendingApp = LoanApplication::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'under_review'])
+            ->whereIn('status', ['pending', 'under_review', 'affordability_review'])
             ->when($excludeApplicationId, fn ($q) => $q->where('id', '<>', $excludeApplicationId))
             ->first();
 

@@ -20,7 +20,7 @@
     <div class="kc-stat-card">
       <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Gross Income</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">R {{ number_format($totalGrossIncome, 2) }}</p>
-      <p class="text-xs text-kc-charcoal/40 mt-1">Interest + Fees (excl. VAT)</p>
+      <p class="text-xs text-kc-charcoal/40 mt-1">Interest + Fees recognised (GL), excl. VAT</p>
     </div>
     <div class="kc-stat-card">
       <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Collected</span>
@@ -39,13 +39,13 @@
     {{-- Income breakdown --}}
     <div class="kc-card">
       <h4 class="font-display font-semibold text-kc-navy mb-4">Income Breakdown</h4>
+      <p class="text-xs text-kc-charcoal/40 mb-3">Recognised (GL), matches the Income Statement for this period.</p>
       <table class="kc-table">
         <tbody>
           <tr><td>Interest Income <span class="kc-badge kc-badge-silver text-[10px] ml-1">VAT exempt</span></td><td class="text-right font-semibold">R {{ number_format($interestIncome, 2) }}</td></tr>
-          <tr><td>Initiation Fee Income (excl. VAT)</td><td class="text-right font-semibold">R {{ number_format($initiationFeeIncome, 2) }}</td></tr>
-          <tr><td>Service Fee Income (excl. VAT)</td><td class="text-right font-semibold">R {{ number_format($serviceFeeIncome, 2) }}</td></tr>
+          <tr><td>Fee Income (excl. VAT)</td><td class="text-right font-semibold">R {{ number_format($feeIncome, 2) }}</td></tr>
           <tr><td>VAT on Fees</td><td class="text-right text-kc-charcoal/50">R {{ number_format($vatOnFees, 2) }}</td></tr>
-          <tr class="border-t-2 border-kc-gold/30 font-semibold"><td>Total Fee Income (excl. VAT)</td><td class="text-right text-kc-gold">R {{ number_format($totalFeeIncome, 2) }}</td></tr>
+          <tr class="border-t-2 border-kc-gold/30 font-semibold"><td>Total Gross Income</td><td class="text-right text-kc-gold">R {{ number_format($totalGrossIncome, 2) }}</td></tr>
         </tbody>
       </table>
     </div>

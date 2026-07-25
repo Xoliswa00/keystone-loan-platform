@@ -12,6 +12,7 @@ class nupay_transaction extends Model
     protected $fillable = [
         'import_ref',
         'mandate_id',
+        'mandate_request_tran_id',
         'debtor_id',
         'loan_repayment_id',
         'amount',

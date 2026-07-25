@@ -5,7 +5,7 @@
   </x-slot>
 
   @php
-    $statusMap = ['pending'=>'kc-badge-gold','approved'=>'kc-badge-green','rejected'=>'kc-badge-red','under_review'=>'kc-badge-navy'];
+    $statusMap = ['pending'=>'kc-badge-gold','approved'=>'kc-badge-green','rejected'=>'kc-badge-red','under_review'=>'kc-badge-navy','reversed'=>'kc-badge-red'];
     $sc = $statusMap[strtolower($application->status)] ?? 'kc-badge-silver';
   @endphp
   <div class="flex flex-wrap items-center gap-2 mb-6">
@@ -13,7 +13,30 @@
     @if($application->product)<span class="kc-badge kc-badge-navy">{{ $application->product->name }}</span>@endif
   </div>
 
-  <div class="flex justify-end mb-3">
+  <div class="flex justify-end items-center gap-2 mb-3">
+    @if($application->status === 'approved' && Auth::user()->hasRole('loan_officer', 'it_admin'))
+    <div x-data="{open:false}">
+      <button type="button" @click="open=!open" class="kc-btn-ghost text-xs text-red-600 border-red-200">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l-4-4m0 0l4-4m-4 4h11a4 4 0 010 8h-1"/>
+        </svg>
+        Reverse Approval
+      </button>
+      <div x-show="open" x-transition class="absolute mt-2 z-10 bg-white border border-kc-silver-light rounded-lg p-3 shadow-lg w-80">
+        <p class="text-xs text-kc-charcoal/60 mb-2">
+          Undoes this approval — if the loan hasn't been disbursed yet this is a clean undo; if it has, this posts a full GL reversal.
+          Blocked once any repayment has been made.
+        </p>
+        <form method="POST" action="{{ route('loans.reverse', $application->id) }}"
+          onsubmit="return confirm('Reverse this approval? This cannot be undone.')">
+          @csrf
+          <textarea name="reversal_reason" rows="2" required maxlength="1000"
+            class="kc-input w-full text-xs" placeholder="Reason (required)"></textarea>
+          <button type="submit" class="kc-btn-danger w-full justify-center text-xs mt-2">Confirm Reversal</button>
+        </form>
+      </div>
+    </div>
+    @endif
     <form method="POST" action="{{ route('admin.applications.reassess', $application) }}">
       @csrf
       <button type="submit" class="kc-btn-ghost text-xs">
@@ -262,7 +285,7 @@
     <div class="space-y-5">
 
       {{-- Decision --}}
-      @if(in_array(strtolower($application->status), ['pending','under_review']))
+      @if(in_array(strtolower($application->status), ['pending','under_review']) && Auth::user()->hasRole('loan_officer', 'it_admin'))
       <div class="kc-card">
         <h5 class="font-semibold text-kc-navy mb-3">Decision</h5>
 
@@ -293,6 +316,85 @@
             </form>
           </div>
         </div>
+      </div>
+      @endif
+
+      {{-- Counter-offer: available on any pending/under-review application, not
+           just ones auto-flagged by the affordability check — a reviewer may
+           want to offer a smaller amount for other reasons (risk, policy) --}}
+      @if(in_array($application->status, ['pending', 'under_review', 'affordability_review'], true))
+      <div class="kc-card" x-data="{
+        offers: {{ json_encode($counterOfferSuggestions) }},
+        selected: {{ json_encode($counterOfferSuggestions[0] ?? null) }},
+        amount: {{ $counterOfferSuggestions[0]['amount'] ?? 0 }},
+        months: {{ $counterOfferSuggestions[0]['months'] ?? 1 }},
+        pick(id) { this.selected = this.offers.find(o => o.product_id == id); this.amount = this.selected.amount; this.months = this.selected.months; }
+      }">
+        <h5 class="font-semibold text-kc-navy mb-1">Counter-Offer</h5>
+        @if($application->status === 'affordability_review')
+        <p class="text-xs text-kc-charcoal/50 mb-3">
+          Requested R{{ number_format($application->loan_amount, 2) }} exceeds this client's affordability
+          (max instalment R{{ number_format($application->affordability_max_instalment ?? 0, 2) }}).
+        </p>
+        @else
+        <p class="text-xs text-kc-charcoal/50 mb-3">
+          Offer a different amount/term/product than requested. If the client declines,
+          their original application (R{{ number_format($application->loan_amount, 2) }}) is unaffected —
+          you can still Approve or Reject it normally.
+        </p>
+        @endif
+
+        @if($counterOffers->isNotEmpty())
+        <div class="mb-3 space-y-1.5">
+          @foreach($counterOffers as $offer)
+          @php $ocls = ['pending'=>'kc-badge-gold','accepted'=>'kc-badge-green','declined'=>'kc-badge-red','superseded'=>'kc-badge-silver'][$offer->status] ?? 'kc-badge-silver'; @endphp
+          <div class="flex items-center justify-between text-xs p-2 rounded border border-kc-silver-light/60">
+            <span>{{ $offer->product->name }} · R{{ number_format($offer->amount,2) }} / {{ $offer->months }}mo · {{ $offer->proposedBy?->name }}</span>
+            <span class="kc-badge {{ $ocls }} text-[10px]">{{ ucfirst($offer->status) }}</span>
+          </div>
+          @endforeach
+        </div>
+        @endif
+
+        @if(empty($counterOfferSuggestions))
+        <p class="text-xs text-kc-charcoal/50 mb-3">This client doesn't currently qualify for any amount on any available product — a counter-offer isn't possible.</p>
+        @else
+        <form method="POST" action="{{ route('admin.counter-offers.store', $application) }}" class="space-y-2 mb-3">
+          @csrf
+          <select name="loan_product_id" class="kc-select text-sm" @change="pick($event.target.value)">
+            @foreach($counterOfferSuggestions as $o)
+              <option value="{{ $o['product_id'] }}">{{ $o['product_name'] }} — up to R{{ number_format($o['amount'],0) }} / {{ $o['months'] }}mo</option>
+            @endforeach
+          </select>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="kc-label text-[10px]">Amount (max R<span x-text="selected?.amount?.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span>)</label>
+              <input type="number" name="amount" step="0.01" min="1" :max="selected?.amount" x-model.number="amount" class="kc-input text-sm">
+            </div>
+            <div>
+              <label class="kc-label text-[10px]">Term (months)</label>
+              <input type="number" name="months" min="1" x-model.number="months" class="kc-input text-sm">
+            </div>
+          </div>
+          <button type="submit" class="kc-btn-primary w-full justify-center text-sm">Send Counter-Offer</button>
+        </form>
+        @endif
+
+        {{-- affordability_review has no other reject action on this page (the
+             Decision panel above is hidden for that status) — pending/
+             under_review already have Reject there, so this isn't duplicated. --}}
+        @if($application->status === 'affordability_review' && Auth::user()->hasRole('loan_officer', 'it_admin'))
+        <div x-data="{open:false}">
+          <button @click="open=!open" class="kc-btn-danger w-full justify-center text-sm">✗ Reject Outright</button>
+          <div x-show="open" x-transition class="mt-2 space-y-2">
+            <form method="POST" action="{{ route('loans.reject', $application->id) }}">
+              @csrf
+              <textarea name="rejection_reason" rows="2" class="kc-input w-full text-sm" placeholder="Reason (required)" required></textarea>
+              <button type="submit" class="kc-btn-danger w-full justify-center text-sm mt-2">Confirm Reject</button>
+            </form>
+          </div>
+        </div>
+        @endif
       </div>
       @endif
 
@@ -348,7 +450,7 @@
           </div>
           <div class="flex items-center gap-1.5">
             <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($kd->file_path) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>
-            @if(!$kd->verified)
+            @if(!$kd->verified && Auth::user()->hasRole('loan_officer', 'it_admin'))
             <form method="POST" action="{{ route('admin.documents.verify', $kd) }}" class="inline">
               @csrf <input type="hidden" name="verified" value="1">
               <button type="submit" class="text-[10px] text-emerald-600 hover:underline">Verify</button>

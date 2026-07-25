@@ -154,20 +154,17 @@
         </div>
     </a>
 
-    <div class="kc-card flex items-center gap-4 opacity-60 cursor-not-allowed">
-        <div class="w-10 h-10 rounded-xl bg-kc-gold/10 flex items-center justify-center">
-            <svg class="w-5 h-5 text-kc-gold-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <a href="{{ route('client.my-statement') }}" class="kc-card hover:shadow-md transition group flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-kc-gold/10 flex items-center justify-center group-hover:bg-kc-gold transition">
+            <svg class="w-5 h-5 text-kc-gold-muted group-hover:text-white transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
         </div>
         <div>
-            <p class="text-sm font-semibold text-kc-navy flex items-center gap-1.5">
-                Statements
-                <span class="kc-badge kc-badge-gold text-[10px]">Soon</span>
-            </p>
+            <p class="text-sm font-semibold text-kc-navy">Statements</p>
             <p class="text-xs text-kc-charcoal/40">Account statements</p>
         </div>
-    </div>
+    </a>
 
     @php $msgSup = urlencode("Hi, I am {$user->name} (Client ID: {$userId}). I need assistance."); @endphp
     <a href="https://wa.me/{{ $supWA }}?text={{ $msgSup }}" target="_blank"

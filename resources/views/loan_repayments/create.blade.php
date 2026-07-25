@@ -31,7 +31,7 @@
       <div>
         <label class="kc-label">Payment Method</label>
         <select name="payment_method" class="kc-select" required>
-          <option value="eft">EFT / Bank Transfer</option>
+          <option value="bank_transfer">EFT / Bank Transfer</option>
           <option value="cash">Cash</option>
           <option value="card">Card</option>
           <option value="mobile_payment">Mobile Payment</option>

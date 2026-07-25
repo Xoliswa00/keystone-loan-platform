@@ -1,11 +1,30 @@
 <nav class="kc-sidebar-nav">
     @auth
-        @php $isAdmin = Auth::user()->hasRole('loan_officer', 'finance', 'it_admin', 'viewer'); @endphp
+        @php
+            $isAdmin = Auth::user()->hasRole('loan_officer', 'finance', 'it_admin', 'viewer');
+            // hasRole('admin') short-circuits true for every check below, so
+            // 'admin' (and 'viewer', a cross-cutting read role) sees all three
+            // groups. loan_officer/finance/it_admin each see only their own —
+            // this is presentation only, every route behind these links is
+            // already enforced server-side by the role: middleware.
+            $seesLoanOps = Auth::user()->hasRole('loan_officer', 'viewer');
+            $seesFinance = Auth::user()->hasRole('finance', 'viewer');
+            $seesIT = Auth::user()->hasRole('it_admin', 'viewer');
+
+            $loanOpsActive = request()->routeIs('admin.loans*', 'admin.applications*', 'loan.*', 'disbursements.*',
+                'repaymentSchedules.*', 'customers.*', 'admin.collections*', 'admin.recovery.*', 'agreements.*',
+                'admin.manual-payments.*', 'loanrepayments.*',
+                'reports.portfolio', 'reports.arrears', 'reports.collections', 'reports.disbursements',
+                'reports.scorecard', 'reports.alerts');
+            $financeActive = request()->routeIs('nu-pay.*', 'admin.finance.*', 'admin.funding.*', 'admin.periods.*',
+                'bank-statement.*', 'loan-products.*', 'reports.*', 'admin.reports*');
+            $itActive = request()->routeIs('admin.system.*', 'admin.staff.*', 'admin.settings.*');
+        @endphp
 
         @if($isAdmin)
-            {{-- ── ADMIN NAVIGATION ── --}}
+            {{-- ── STAFF NAVIGATION — grouped by role, each group collapsible ── --}}
 
-            <p class="kc-nav-section">Operations</p>
+            <p class="kc-nav-section">Overview</p>
 
             <a href="{{ route('dashboard') }}"
                 class="kc-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -15,183 +34,170 @@
                 Dashboard
             </a>
 
-            <a href="{{ route('admin.loans') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.loans*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-                Loan Approvals
-            </a>
-
-            <a href="{{ route('loan.index') }}"
-                class="kc-nav-item {{ request()->routeIs('loan.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Personal Loans
-            </a>
-
-            <a href="{{ route('customers.index') }}"
-                class="kc-nav-item {{ request()->routeIs('customers.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                Clients
-            </a>
-
-            <a href="{{ route('repaymentSchedules.index') }}"
-                class="kc-nav-item {{ request()->routeIs('repaymentSchedules.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                Repayments
-            </a>
-
-            <p class="kc-nav-section">Finance</p>
-
-            <a href="{{ route('nu-pay.import.index') }}"
-                class="kc-nav-item {{ request()->routeIs('nu-pay.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-                </svg>
-                Nu-Pay Imports
-            </a>
-
-            <p class="kc-nav-section">Capital & Finance</p>
-
-            <a href="{{ route('admin.funding.index') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.funding.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
-                </svg>
-                Funding Facilities
-            </a>
-
-            <a href="{{ route('loan-products.index') }}"
-                class="kc-nav-item {{ request()->routeIs('loan-products.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4m16 0l-4-4m4 4l-4 4M4 12l4-4m-4 4l4 4"/>
-                </svg>
-                Loan Products
-            </a>
-
-            <a href="{{ route('admin.finance.business-bank.upload') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.finance.business-bank.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
-                Business Bank
-            </a>
-
-            <a href="{{ route('admin.periods.index') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.periods.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                Financial Periods
-            </a>
-
-            {{-- Reports with sub-menu --}}
-            <div x-data="{ reportsOpen: {{ request()->routeIs('reports.*') || request()->routeIs('admin.reports*') ? 'true' : 'false' }} }">
-                <button @click="reportsOpen = !reportsOpen"
-                    class="kc-nav-item w-full justify-between {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+            @if($seesLoanOps)
+            {{-- ── LOAN OFFICER: loan movement, verification, collections/escalation follow-ups ── --}}
+            <div x-data="{ open: {{ $loanOpsActive ? 'true' : 'false' }} }" class="mt-1">
+                <button @click="open = !open" class="kc-nav-item w-full justify-between {{ $loanOpsActive ? 'active' : '' }}">
                     <span class="flex items-center gap-3">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                         </svg>
-                        Reports
+                        Loan Operations
                     </span>
-                    <svg :class="reportsOpen ? 'rotate-90' : ''" class="w-3.5 h-3.5 text-white/40 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <svg :class="open ? 'rotate-90' : ''" class="w-3.5 h-3.5 text-white/40 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                     </svg>
                 </button>
-
-                <div x-show="reportsOpen" x-transition class="ml-4 mt-1 space-y-0.5 border-l border-white/10 pl-3">
-                    <a href="{{ route('reports.portfolio') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.portfolio') ? 'active' : '' }}">
-                        Portfolio
+                <div x-show="open" x-transition class="ml-4 mt-1 space-y-0.5 border-l border-white/10 pl-3">
+                    <a href="{{ route('admin.loans') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.loans*') ? 'active' : '' }}">
+                        Loan Approvals
                     </a>
-                    <a href="{{ route('reports.profitability') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.profitability') ? 'active' : '' }}">
-                        Profitability
+                    <a href="{{ route('loan.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('loan.*') ? 'active' : '' }}">
+                        Personal Loans
                     </a>
-                    <a href="{{ route('reports.arrears') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.arrears') ? 'active' : '' }}">
-                        Arrears
-                    </a>
-                    <a href="{{ route('reports.collections') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.collections') ? 'active' : '' }}">
-                        Collections
-                    </a>
-                    <a href="{{ route('reports.disbursements') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.disbursements') ? 'active' : '' }}">
+                    <a href="{{ route('disbursements.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('disbursements.*') ? 'active' : '' }}">
                         Disbursements
                     </a>
-                    <a href="{{ route('reports.gl_summary') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.gl_summary') ? 'active' : '' }}">
-                        GL Summary
+                    <a href="{{ route('repaymentSchedules.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('repaymentSchedules.*') ? 'active' : '' }}">
+                        Repayments
                     </a>
-                    <a href="{{ route('reports.income-statement') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.income-statement') ? 'active' : '' }}">
-                        Income Statement
+                    <a href="{{ route('customers.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                        Clients
                     </a>
-                    <a href="{{ route('reports.balance-sheet') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.balance-sheet') ? 'active' : '' }}">
-                        Balance Sheet
+                    <a href="{{ route('admin.collections') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.collections*') ? 'active' : '' }}">
+                        Collections Follow-ups
                     </a>
-                    <a href="{{ route('reports.vat201') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.vat201') ? 'active' : '' }}">
-                        VAT 201
+                    <a href="{{ route('admin.manual-payments.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.manual-payments.*') ? 'active' : '' }}">
+                        Payment Verification
                     </a>
-                    <a href="{{ route('reports.npl') }}"
-                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.npl') ? 'active' : '' }}">
-                        NPL / Arrears
+                    <a href="{{ route('loanrepayments.create') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('loanrepayments.create') ? 'active' : '' }}">
+                        Record Manual Payment
                     </a>
-                    <a href="{{ route('reports.ncr-export') . '?quarter=' . now()->format('Y') . '-Q' . ceil(now()->month/3) }}"
-                        class="kc-nav-item text-xs py-2">
-                        NCR Quarterly Export
+                    <a href="{{ route('admin.recovery.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.recovery.*') && request('status') !== 'recovered' ? 'active' : '' }}">
+                        Debt Recovery / Escalations
+                    </a>
+                    <a href="{{ route('admin.recovery.index', ['status' => 'recovered']) }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.recovery.index') && request('status') === 'recovered' ? 'active' : '' }}">
+                        Recovered — Follow-ups
+                    </a>
+                    <a href="{{ route('loan-products.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('loan-products.*') ? 'active' : '' }}">
+                        Loan Products
+                    </a>
+
+                    <p class="kc-nav-section text-[10px] mt-2">Reports</p>
+                    <a href="{{ route('reports.portfolio') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.portfolio') ? 'active' : '' }}">Portfolio</a>
+                    <a href="{{ route('reports.arrears') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.arrears') ? 'active' : '' }}">Arrears</a>
+                    <a href="{{ route('reports.collections') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.collections') ? 'active' : '' }}">Collections</a>
+                    <a href="{{ route('reports.disbursements') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.disbursements') ? 'active' : '' }}">Disbursements</a>
+                    <a href="{{ route('reports.scorecard') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.scorecard') ? 'active' : '' }}">Scorecard</a>
+                    <a href="{{ route('reports.alerts') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.alerts') ? 'active' : '' }}">Alerts</a>
+                </div>
+            </div>
+            @endif
+
+            @if($seesFinance)
+            {{-- ── FINANCE: recons + financial data imports ── --}}
+            <div x-data="{ open: {{ $financeActive ? 'true' : 'false' }} }" class="mt-1">
+                <button @click="open = !open" class="kc-nav-item w-full justify-between {{ $financeActive ? 'active' : '' }}">
+                    <span class="flex items-center gap-3">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
+                        </svg>
+                        Finance
+                    </span>
+                    <svg :class="open ? 'rotate-90' : ''" class="w-3.5 h-3.5 text-white/40 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <div x-show="open" x-transition class="ml-4 mt-1 space-y-0.5 border-l border-white/10 pl-3">
+                    <a href="{{ route('nu-pay.import.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('nu-pay.*') ? 'active' : '' }}">
+                        Nu-Pay Imports
+                    </a>
+                    <a href="{{ route('admin.finance.business-bank.upload') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.finance.business-bank.*') ? 'active' : '' }}">
+                        Business Bank Recon
+                    </a>
+                    <a href="{{ route('bank-statement.upload') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('bank-statement.*') ? 'active' : '' }}">
+                        Bank Statement Recon
+                    </a>
+                    <a href="{{ route('admin.funding.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.funding.*') ? 'active' : '' }}">
+                        Funding Facilities
+                    </a>
+                    <a href="{{ route('admin.periods.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.periods.*') ? 'active' : '' }}">
+                        Financial Periods
+                    </a>
+                    <a href="{{ route('loan-products.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('loan-products.*') ? 'active' : '' }}">
+                        Loan Products
+                    </a>
+
+                    <p class="kc-nav-section text-[10px] mt-2">Reports</p>
+                    <a href="{{ route('reports.portfolio') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.portfolio') ? 'active' : '' }}">Portfolio</a>
+                    <a href="{{ route('reports.profitability') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.profitability') ? 'active' : '' }}">Profitability</a>
+                    <a href="{{ route('reports.gl_summary') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.gl_summary') ? 'active' : '' }}">GL Summary</a>
+                    <a href="{{ route('reports.income-statement') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.income-statement') ? 'active' : '' }}">Income Statement</a>
+                    <a href="{{ route('reports.balance-sheet') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.balance-sheet') ? 'active' : '' }}">Balance Sheet</a>
+                    <a href="{{ route('reports.vat201') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.vat201') ? 'active' : '' }}">VAT 201</a>
+                    <a href="{{ route('reports.write-off-register') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.write-off-register') ? 'active' : '' }}">Write-off Register</a>
+                    <a href="{{ route('reports.npl') }}" class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.npl') ? 'active' : '' }}">NPL / Arrears</a>
+                    <a href="{{ route('reports.ncr-export') . '?quarter=' . now()->format('Y') . '-Q' . ceil(now()->month/3) }}" class="kc-nav-item text-xs py-2">NCR Quarterly Export</a>
+                </div>
+            </div>
+            @endif
+
+            @if($seesIT)
+            {{-- ── IT: system health, logs, fixes, audit monitoring ── --}}
+            <div x-data="{ open: {{ $itActive ? 'true' : 'false' }} }" class="mt-1">
+                <button @click="open = !open" class="kc-nav-item w-full justify-between {{ $itActive ? 'active' : '' }}">
+                    <span class="flex items-center gap-3">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        IT & System
+                    </span>
+                    <svg :class="open ? 'rotate-90' : ''" class="w-3.5 h-3.5 text-white/40 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <div x-show="open" x-transition class="ml-4 mt-1 space-y-0.5 border-l border-white/10 pl-3">
+                    <a href="{{ route('admin.system.logs') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.system.*') ? 'active' : '' }}">
+                        System Health & Logs
+                    </a>
+                    <a href="{{ route('admin.staff.index') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.staff.*') ? 'active' : '' }}">
+                        Staff Management
+                    </a>
+                    <a href="{{ route('reports.audit-log') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('reports.audit-log') ? 'active' : '' }}">
+                        Audit Report
+                    </a>
+                    <a href="{{ route('admin.settings.company') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.settings.company*') ? 'active' : '' }}">
+                        Company Settings
+                    </a>
+                    <a href="{{ route('admin.settings.lending') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.settings.lending*') ? 'active' : '' }}">
+                        Lending & Risk Settings
                     </a>
                 </div>
             </div>
-
-            <p class="kc-nav-section">IT & System</p>
-
-            <a href="{{ route('admin.settings.company') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.settings.company*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                Company Settings
-            </a>
-
-            @if(Auth::user()->hasRole('admin', 'finance', 'it_admin'))
-            <a href="{{ route('admin.settings.lending') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.settings.lending*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-                Lending & Risk Settings
-            </a>
             @endif
-
-            @if(Auth::user()->hasRole('it_admin'))
-            <a href="{{ route('admin.staff.index') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.staff.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-8a4 4 0 11-8 0 4 4 0 018 0zm6 3a4 4 0 11-8 0 4 4 0 018 0z"/>
-                </svg>
-                Staff Management
-            </a>
-            @endif
-
-            <a href="{{ route('admin.system.logs') }}"
-                class="kc-nav-item {{ request()->routeIs('admin.system.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                System Logs
-            </a>
 
         @else
             {{-- ── CLIENT NAVIGATION ── --}}

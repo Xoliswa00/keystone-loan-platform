@@ -56,7 +56,16 @@
 
     /* ── Cards ── */
     .kc-card {
-        @apply bg-white rounded-xl shadow-kc-card border border-kc-silver-light p-6;
+        @apply relative bg-white rounded-xl shadow-kc-card border border-kc-silver-light p-6;
+    }
+    /* Branded top accent strip — kept to a thin border rather than a full
+       navy fill so none of a card's existing (dark-on-white) inner text
+       needs auditing for contrast. .kc-stat-card composes @apply kc-card,
+       which doesn't carry pseudo-elements, so it's listed explicitly. */
+    .kc-card::before,
+    .kc-stat-card::before {
+        content: '';
+        @apply absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-kc-navy;
     }
     .kc-card-navy {
         @apply bg-kc-navy rounded-xl shadow-kc-navy p-6 text-white;
@@ -109,10 +118,13 @@
         @apply w-full text-sm text-left;
     }
     .kc-table thead tr {
-        @apply border-b border-kc-silver-light;
+        @apply bg-kc-navy;
     }
     .kc-table th {
-        @apply py-3 px-4 text-[11px] font-semibold uppercase tracking-wider text-kc-charcoal/50;
+        /* kc-gold (not kc-gold-muted, which is tuned for text on light
+           backgrounds) — matches the sidebar's own navy-bg/gold-text nav
+           item pairing (.kc-nav-item.active). */
+        @apply py-3 px-4 text-[11px] font-semibold uppercase tracking-wider text-kc-gold first:rounded-l-lg last:rounded-r-lg;
     }
     .kc-table tbody tr {
         @apply border-b border-kc-silver-light/60 hover:bg-kc-white transition-colors;

@@ -74,32 +74,42 @@ class AffordabilityService
     }
 
     /**
-     * Maximum loan principal the user qualifies for on a given product and term.
-     * Uses back-calculation from max instalment.
+     * Maximum loan principal the user qualifies for on a given product and
+     * term, i.e. the largest amount whose calculateRepayment() instalment
+     * doesn't exceed $maxInstalment. Binary search rather than a closed-form
+     * back-calculation — the initiation fee scales with principal, so there's
+     * no clean algebraic inverse of calculateRepayment(); searching against
+     * the real formula guarantees the amount returned actually passes
+     * passes() if the client accepts it, instead of a formula that
+     * approximates and can overshoot.
+     *
+     * Returns 0 if even the product's minimum amount isn't affordable.
      */
     public function maxLoanAmount(LoanProduct $product, float $maxInstalment, int $months): float
     {
-        $r = (float) $product->monthly_interest_rate;
-        $serviceFee = $product->serviceFeWithVat();
-        $instalmentForPrincipal = $maxInstalment - $serviceFee;
+        $low = (float) $product->min_amount;
+        $high = (float) $product->max_amount;
 
-        if ($instalmentForPrincipal <= 0) {
+        if ($product->calculateRepayment($low, $months)['base_instalment'] > $maxInstalment) {
             return 0;
         }
 
-        // Back-solve: instalment = (principal × (1 + r×months) + initiation_fee) / months
-        // Approximate: ignore initiation fee in back-calc, then verify
-        if ($r === 0.0 || $months === 1) {
-            $principal = ($instalmentForPrincipal * $months) / (1 + $r * $months);
-        } else {
-            // Amortization PV formula: PV = PMT × [1 - (1+r)^-n] / r
-            $principal = $instalmentForPrincipal * (1 - pow(1 + $r, -$months)) / $r;
+        if ($product->calculateRepayment($high, $months)['base_instalment'] <= $maxInstalment) {
+            return $high;
         }
 
-        // Clamp to product limits
-        $principal = max($product->min_amount, min($product->max_amount, round($principal, 2)));
+        // Narrow to the nearest rand — fees/interest don't vary meaningfully below that.
+        while ($high - $low > 1) {
+            $mid = round(($low + $high) / 2);
 
-        return $principal;
+            if ($product->calculateRepayment($mid, $months)['base_instalment'] <= $maxInstalment) {
+                $low = $mid;
+            } else {
+                $high = $mid;
+            }
+        }
+
+        return $low;
     }
 
     // ──────────────────────────────────────────────
@@ -152,16 +162,29 @@ class AffordabilityService
     {
         $status = $this->profileStatus($user);
 
-        // Income and expense details are the minimum for affordability calc;
-        // the three KYC documents must be staff-verified, not just uploaded
-        // (see profileStatus() — an unreviewed upload counts as missing).
-        $minRequired = [
-            'personal_details', 'income_details', 'expense_details', 'bank_account',
-            'id_document', 'payslip', 'bank_statement',
-        ];
+        // Only what makes an affordability calculation possible is a hard
+        // pre-submission requirement.
+        $minRequired = ['personal_details', 'income_details', 'expense_details', 'bank_account'];
         foreach ($minRequired as $key) {
             if (! $status['checks'][$key]) {
                 return ['allowed' => false, 'reason' => "Profile incomplete: {$key}"];
+            }
+        }
+
+        // KYC documents only need to be UPLOADED to submit, not yet staff-
+        // verified — requiring verified=true here created a deadlock: a
+        // first-time applicant has no LoanApplication yet (submission is
+        // what creates one) and no Customer row yet (created only on a
+        // successful submission — see ensureCustomerRecord()), so staff had
+        // no page to find them on and nothing to click "Verify" against.
+        // Verification is properly enforced afterward instead:
+        // CloDecisionEngine::evaluate() already treats an unverified document
+        // as "missing" and forces the application to REVIEW — that's where
+        // staff verify it (Documents panel on admin.loan_applications.show)
+        // before approving.
+        foreach (['id_document', 'payslip', 'bank_statement'] as $docType) {
+            if (! $user->customerDocuments()->where('document_type', $docType)->exists()) {
+                return ['allowed' => false, 'reason' => "Profile incomplete: {$docType} not uploaded"];
             }
         }
 

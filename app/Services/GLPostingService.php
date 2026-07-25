@@ -20,7 +20,7 @@ class GLPostingService
      */
     const NORMAL_DEBIT_TYPES = ['asset', 'expense'];
 
-    const NORMAL_CREDIT_TYPES = ['liability', 'income', 'equity', 'deferred_income'];
+    const NORMAL_CREDIT_TYPES = ['liability', 'income', 'equity'];
 
     /**
      * Post an approved AR batch fully into the General Ledger.
@@ -103,12 +103,16 @@ class GLPostingService
                     'module' => $glBatch->source_type,
                 ]);
 
-                // Account balance — direction depends on account type
+                // Account balance — direction depends on account category.
+                // gl_accounts has no account_type column of its own (it's
+                // always null), so this always resolved via
+                // resolveAccountCategory() anyway — the `??` implied a fallback
+                // that never existed.
                 $account->current_balance = $this->updatedBalance(
                     (float) $account->current_balance,
                     $debit,
                     $credit,
-                    $account->account_type ?? $this->resolveAccountType($account)
+                    $this->resolveBalanceDirection($account)
                 );
 
                 $account->save();
@@ -163,14 +167,42 @@ class GLPostingService
     }
 
     /**
-     * Resolve account type from the chart_of_accounts if not stored on gl_accounts.
+     * Resolve the account's category (asset/liability/equity/income/expense)
+     * from chart_of_accounts — this drives debit/credit balance direction
+     * and must be account_category, not account_type. account_type holds
+     * granular sub-types ('bank', 'receivable', 'contra_asset', 'vat',
+     * 'deferred_income', 'payable', 'retained_earnings', ...) — none of
+     * which is ever the literal string 'asset', so reading it here meant
+     * NORMAL_DEBIT_TYPES (['asset', 'expense']) never matched a single real
+     * asset account. Every asset account's balance was being updated with
+     * the credit-normal formula instead of the debit-normal one — credits
+     * were increasing Cash instead of decreasing it, and debits were
+     * decreasing Loans Receivable instead of increasing it.
      */
-    protected function resolveAccountType(gl_accounts $account): string
+    protected function resolveAccountCategory(gl_accounts $account): string
     {
         if ($account->chartOfAccount) {
-            return strtolower($account->chartOfAccount->account_type ?? 'asset');
+            return strtolower($account->chartOfAccount->account_category ?? 'asset');
         }
 
         return 'asset'; // safe default — will debit-increase
+    }
+
+    /**
+     * Balance direction is normally driven by account_category, but a
+     * contra-asset (e.g. 1240 "Allowance for Credit Losses") sits under the
+     * 'asset' category for balance-sheet grouping while carrying the
+     * opposite (credit-normal) balance of a real asset — provisioning
+     * credits it as the book grows, and that credit must increase, not
+     * decrease, its balance. account_type is the only place that
+     * distinction is recorded, so it must override category here.
+     */
+    public function resolveBalanceDirection(gl_accounts $account): string
+    {
+        if ($account->chartOfAccount && strtolower($account->chartOfAccount->account_type ?? '') === 'contra_asset') {
+            return 'liability'; // credit-normal, same branch as liability/income/equity
+        }
+
+        return $this->resolveAccountCategory($account);
     }
 }

@@ -10,6 +10,7 @@ use App\Models\LoanDisbursement;
 use App\Models\LoanFee;
 use App\Models\PopiaConsent;
 use App\Models\User;
+use App\Services\LoanReversalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,13 @@ use Illuminate\Support\Facades\Mail;
 
 class LoanController extends Controller
 {
+    protected LoanReversalService $reversal;
+
+    public function __construct(LoanReversalService $reversal)
+    {
+        $this->reversal = $reversal;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -101,6 +109,28 @@ class LoanController extends Controller
     }
 
     /**
+     * Undo an approval that turns out to have been a mistake — see
+     * LoanReversalService for the branching (cheap undo pre-disbursement,
+     * full GL reversal post-disbursement, blocked once repayments exist).
+     */
+    public function reverseApproval(Request $request, $id)
+    {
+        $request->validate([
+            'reversal_reason' => 'required|string|max:1000',
+        ]);
+
+        $loanApplication = LoanApplication::findOrFail($id);
+
+        try {
+            $this->reversal->reverseApproval($loanApplication, $request->user(), $request->reversal_reason);
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Approval reversed — application is back under review.');
+    }
+
+    /**
      * Bulk-approve several pending applications in one request. Reuses
      * approveApplication() so bulk and single approval share one code path.
      * Each row is isolated — one failure doesn't block the rest.
@@ -144,76 +174,96 @@ class LoanController extends Controller
 
     protected function approveApplication(LoanApplication $loanApplication, ?string $comments): void
     {
-        // CloDecisionEngine's own consent check is advisory-only (forces
-        // REVIEW, doesn't block) — this is the actual hard gate. Credit
-        // assessment and reporting cannot lawfully proceed without both
-        // consents currently in force, so a withdrawn consent must stop
-        // approval outright, not just flag it for a human to notice.
-        if (! PopiaConsent::isGranted($loanApplication->user_id, 'data_processing')
-            || ! PopiaConsent::isGranted($loanApplication->user_id, 'credit_bureau_check')) {
-            throw new \RuntimeException('Cannot approve — applicant does not currently have POPIA data-processing and credit-bureau consent in force.');
-        }
+        // Re-fetch under a row lock rather than trusting the caller's
+        // instance — a double-click or two near-simultaneous requests (this
+        // method has no idempotency guard otherwise) would each pass every
+        // check below and each create their own Loan + LoanDisbursement row
+        // for the same application. The lock serialises the second request
+        // behind the first; by the time it acquires the lock, status is
+        // already 'approved' and the check below stops it.
+        $loanApplication = DB::transaction(function () use ($loanApplication, $comments) {
+            $loanApplication = LoanApplication::lockForUpdate()->findOrFail($loanApplication->id);
 
-        // ── 1. Mark application approved ──────────────────────────────────────
-        $loanApplication->update([
-            'status' => 'approved',
-            'approval_date' => now(),
-            'reason' => $comments,
-            'reviewer_id' => Auth::id(),          // admin who reviewed it
-        ]);
+            if (! in_array($loanApplication->status, ['pending', 'under_review'], true)) {
+                throw new \RuntimeException("Application #{$loanApplication->id} is already {$loanApplication->status} — nothing to approve.");
+            }
 
-        $this->logCloOverrideIfAny($loanApplication, 'APPROVE', $comments);
+            // CloDecisionEngine's own consent check is advisory-only (forces
+            // REVIEW, doesn't block) — this is the actual hard gate. Credit
+            // assessment and reporting cannot lawfully proceed without both
+            // consents currently in force, so a withdrawn consent must stop
+            // approval outright, not just flag it for a human to notice.
+            if (! PopiaConsent::isGranted($loanApplication->user_id, 'data_processing')
+                || ! PopiaConsent::isGranted($loanApplication->user_id, 'credit_bureau_check')) {
+                throw new \RuntimeException('Cannot approve — applicant does not currently have POPIA data-processing and credit-bureau consent in force.');
+            }
 
-        // ── 2. Load fee snapshot ──────────────────────────────────────────────
-        $fee = LoanFee::where('loan_application_id', $loanApplication->id)->first();
+            // ── 1. Mark application approved ──────────────────────────────────
+            $loanApplication->update([
+                'status' => 'approved',
+                'approval_date' => now(),
+                'reason' => $comments,
+                'reviewer_id' => Auth::id(),          // admin who reviewed it
+            ]);
 
-        $interestRate = $fee ? (float) $fee->interest_rate : 0;
-        $loanTermMonths = $loanApplication->loan_term_months ?? 1;
+            $this->logCloOverrideIfAny($loanApplication, 'APPROVE', $comments);
 
-        // ── 3. Get first schedule due date ────────────────────────────────────
-        $firstSchedule = DB::table('repayment_schedules')
-            ->where('loan_id', $loanApplication->id)
-            ->where('status', 'pending')
-            ->orderBy('due_date', 'asc')
-            ->first();
+            // ── 2. Load fee snapshot ────────────────────────────────────────────
+            $fee = LoanFee::where('loan_application_id', $loanApplication->id)->first();
 
-        // ── 4. Create Loan record ─────────────────────────────────────────────
-        $loan = Loan::create([
-            'loan_application_id' => $loanApplication->id,
-            'loan_product_id' => $loanApplication->loan_product_id,
-            'user_id' => $loanApplication->user_id,
-            'loan_type' => $loanApplication->loan_type,
-            'loan_amount' => $loanApplication->loan_amount,
-            'principal_amount' => $loanApplication->loan_amount,
-            'interest_rate' => $interestRate,
-            'loan_term' => $loanTermMonths,
-            'loan_term_months' => $loanTermMonths,
-            'collateral' => $loanApplication->collateral,
-            'approved_amount' => $loanApplication->loan_amount,
-            'status' => 'approved',
-            'approver_id' => Auth::id(),
-            'processed_at' => now(),
-            'approved_at' => now(),
-            'approval_comments' => $comments,
-            'next_payment_date' => $firstSchedule?->due_date,
-            'installment_frequency' => 1,
-            // Balances are set properly at disbursement — not here
-            'remaining_balance' => 0,
-        ]);
+            $interestRate = $fee ? (float) $fee->interest_rate : 0;
+            $loanTermMonths = $loanApplication->loan_term_months ?? 1;
 
-        // ── 5. Create disbursement record (awaiting release) ──────────────────
-        $customer = $loanApplication->user->customer;
+            // ── 3. Get first schedule due date ──────────────────────────────────
+            $firstSchedule = DB::table('repayment_schedules')
+                ->where('loan_id', $loanApplication->id)
+                ->where('status', 'pending')
+                ->orderBy('due_date', 'asc')
+                ->first();
 
-        LoanDisbursement::create([
-            'loan_id' => $loan->id,
-            'disbursed_amount' => $loanApplication->loan_amount,
-            'status' => 'waiting_for_approval',
-            'payment_reference' => $customer?->customer_code ?? "LOAN-{$loan->id}",
-            'approver_id' => Auth::id(),
-            'created_at' => now(),
-        ]);
+            // ── 4. Create Loan record ───────────────────────────────────────────
+            $loan = Loan::create([
+                'loan_application_id' => $loanApplication->id,
+                'loan_product_id' => $loanApplication->loan_product_id,
+                'user_id' => $loanApplication->user_id,
+                'loan_type' => $loanApplication->loan_type,
+                'loan_amount' => $loanApplication->loan_amount,
+                'principal_amount' => $loanApplication->loan_amount,
+                'interest_rate' => $interestRate,
+                'loan_term' => $loanTermMonths,
+                'loan_term_months' => $loanTermMonths,
+                'collateral' => $loanApplication->collateral,
+                'approved_amount' => $loanApplication->loan_amount,
+                'status' => 'approved',
+                'approver_id' => Auth::id(),
+                'processed_at' => now(),
+                'approved_at' => now(),
+                'approval_comments' => $comments,
+                'next_payment_date' => $firstSchedule?->due_date,
+                'installment_frequency' => 1,
+                // Balances are set properly at disbursement — not here
+                'remaining_balance' => 0,
+            ]);
 
-        // ── 6. Notify client ──────────────────────────────────────────────────
+            // ── 5. Create disbursement record (awaiting release) ────────────────
+            $customer = $loanApplication->user->customer;
+
+            LoanDisbursement::create([
+                'loan_id' => $loan->id,
+                'disbursed_amount' => $loanApplication->loan_amount,
+                'status' => 'waiting_for_approval',
+                'payment_reference' => $customer?->customer_code ?? "LOAN-{$loan->id}",
+                'approver_id' => Auth::id(),
+                'created_at' => now(),
+            ]);
+
+            return $loanApplication;
+        });
+
+        // ── 6. Notify client ────────────────────────────────────────────────────
+        // Outside the transaction — a notification failure must never roll
+        // back an approval that already recorded successfully. (Also already
+        // exception-safe internally — see sendLoanNotification().)
         $this->sendLoanNotification(
             $loanApplication,
             'Loan Application Approved',
@@ -236,7 +286,12 @@ class LoanController extends Controller
         ]);
 
         $loanApplication = LoanApplication::findOrFail($id);
-        $this->rejectApplication($loanApplication, $request->rejection_reason);
+
+        try {
+            $this->rejectApplication($loanApplication, $request->rejection_reason);
+        } catch (\RuntimeException $e) {
+            return redirect()->route('admin.loans')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('admin.loans')
             ->with('success', 'Application rejected.');
@@ -286,16 +341,26 @@ class LoanController extends Controller
 
     protected function rejectApplication(LoanApplication $loanApplication, string $reason): void
     {
-        $loanApplication->update([
-            'status' => 'rejected',
-            'approval_date' => now(),
-            'reason' => $reason,
-            'reviewer_id' => Auth::id(),
-        ]);
+        $loanApplication = DB::transaction(function () use ($loanApplication, $reason) {
+            $loanApplication = LoanApplication::lockForUpdate()->findOrFail($loanApplication->id);
 
-        $this->logCloOverrideIfAny($loanApplication, 'REJECT', $reason);
+            if (! in_array($loanApplication->status, ['pending', 'under_review'], true)) {
+                throw new \RuntimeException("Application #{$loanApplication->id} is already {$loanApplication->status} — nothing to reject.");
+            }
 
-        $loanApplication->repaymentSchedules()->update(['status' => 'rejected']);
+            $loanApplication->update([
+                'status' => 'rejected',
+                'approval_date' => now(),
+                'reason' => $reason,
+                'reviewer_id' => Auth::id(),
+            ]);
+
+            $this->logCloOverrideIfAny($loanApplication, 'REJECT', $reason);
+
+            $loanApplication->repaymentSchedules()->update(['status' => 'rejected']);
+
+            return $loanApplication;
+        });
 
         $this->sendLoanNotification(
             $loanApplication,

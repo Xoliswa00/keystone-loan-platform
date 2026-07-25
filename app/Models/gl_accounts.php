@@ -12,8 +12,10 @@ class gl_accounts extends Model
     protected $fillable = [
         'gl_code',
         'chart_of_account_id',
-
         'branch_id',
+        'location_code',
+        'description',
+        'full_account_no',
         'opening_balance',
         'current_balance',
     ];

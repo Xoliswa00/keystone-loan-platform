@@ -71,38 +71,48 @@ class DebtRecoveryController extends Controller
             'assigned_to' => 'nullable|exists:users,id',
         ]);
 
-        $loan = Loan::findOrFail($request->loan_id);
+        try {
+            $recovery = DB::transaction(function () use ($request) {
+                // lockForUpdate() the loan row — without it, two
+                // near-simultaneous submits for the same loan both pass the
+                // "already open?" check before either INSERT commits,
+                // opening two recovery cases for one loan.
+                $loan = Loan::lockForUpdate()->findOrFail($request->loan_id);
 
-        if (DebtRecovery::where('loan_id', $loan->id)->where('status', 'open')->exists()) {
-            return back()->with('error', 'A recovery case is already open for this loan.');
+                if (DebtRecovery::where('loan_id', $loan->id)->where('status', 'open')->exists()) {
+                    throw new \RuntimeException('A recovery case is already open for this loan.');
+                }
+
+                $writeOffAmount = $loan->remaining_balance;
+
+                return DebtRecovery::create([
+                    'loan_id' => $loan->id,
+                    'user_id' => $loan->user_id,
+                    'status' => 'open',
+                    'original_write_off_amount' => $writeOffAmount,
+                    'total_recovered' => 0,
+                    'outstanding_recovery' => $writeOffAmount,
+                    'assigned_to' => $request->assigned_to,
+                    'notes' => $request->notes,
+                    'opened_at' => now()->toDateString(),
+                    'next_action_date' => now()->addDays(7)->toDateString(),
+                ]);
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $writeOffAmount = $loan->remaining_balance;
-
-        $recovery = DebtRecovery::create([
-            'loan_id' => $loan->id,
-            'user_id' => $loan->user_id,
-            'status' => 'open',
-            'original_write_off_amount' => $writeOffAmount,
-            'total_recovered' => 0,
-            'outstanding_recovery' => $writeOffAmount,
-            'assigned_to' => $request->assigned_to,
-            'notes' => $request->notes,
-            'opened_at' => now()->toDateString(),
-            'next_action_date' => now()->addDays(7)->toDateString(),
-        ]);
 
         $this->sendRecoveryNotification(
             $recovery,
             'Your Account Has Been Moved to Recovery',
             [
-                'Your loan account has an outstanding balance of R'.number_format($writeOffAmount, 2).' that requires immediate attention.',
+                'Your loan account has an outstanding balance of R'.number_format($recovery->original_write_off_amount, 2).' that requires immediate attention.',
                 'Please contact us as soon as possible to arrange payment or discuss a settlement plan.',
             ]
         );
 
         return redirect()->route('admin.recovery.index')
-            ->with('success', 'Recovery case opened for loan #'.$loan->id);
+            ->with('success', 'Recovery case opened for loan #'.$recovery->loan_id);
     }
 
     // ── Record a recovery payment ──────────────────────────────────────────
@@ -114,6 +124,10 @@ class DebtRecoveryController extends Controller
     public function recordPayment(Request $request, DebtRecovery $recovery)
     {
         $request->validate([
+            // This bound is a first-pass, UI-level check only — it reads
+            // $recovery as loaded before the transaction/lock below, so it
+            // can't catch a race on its own; the real guard is the re-check
+            // against the locked, fresh row inside the transaction.
             'amount' => 'required|numeric|min:0.01|max:'.$recovery->outstanding_recovery,
             'payment_date' => 'required|date',
             'payment_method' => 'required|in:nupay,eft,cash,legal_settlement',
@@ -121,86 +135,102 @@ class DebtRecoveryController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        DB::transaction(function () use ($request, $recovery) {
-            $amount = (float) $request->amount;
+        try {
+            DB::transaction(function () use ($request, $recovery) {
+                $amount = (float) $request->amount;
 
-            // ── GL Posting ─────────────────────────────────────────────────
-            $branchId = $recovery->loan->branch_id ?? 1;
-            $locationCode = $recovery->loan->location_code ?? '000';
+                // lockForUpdate(): two near-simultaneous payment submissions
+                // against the same case would otherwise both read the same
+                // stale outstanding_recovery/total_recovered, both post their
+                // own GL batch (double GL posting), and the second update()
+                // would silently overwrite the first's balance change (lost
+                // update) — cash posted twice, balance only reflects once.
+                $recovery = DebtRecovery::lockForUpdate()->findOrFail($recovery->id);
 
-            $bankGl = DB::table('glmappings')->where('key', 'loan_repayment_dr')->value('account_code');
-            $recovIncGl = DB::table('glmappings')->where('key', 'recovery_income_cr')->value('account_code');
-
-            $ref = 'ARB-REC-'.now()->format('YmdHis').'-'.$recovery->id;
-
-            // Create AR batch and GL entries for recovery payment
-            $customer = $recovery->loan->user->customer;
-            $arBatch = \App\Models\arbatch::create([
-                'reference' => $ref,
-                'customer_id' => $customer->id,
-                'source_type' => DebtRecovery::class,
-                'source_id' => $recovery->id,
-                'total_amount' => $amount,
-                'status' => 'approved',
-                'created_by' => Auth::id(),
-                'approved_by' => Auth::id(),
-                'approved_at' => now(),
-            ]);
-
-            if ($bankGl && $recovIncGl) {
-                $bankAccount = DB::table('gl_accounts as ga')
-                    ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
-                    ->where('coa.account_code', $bankGl)
-                    ->where('ga.branch_id', $branchId)
-                    ->value('ga.id');
-
-                $recovAccount = DB::table('gl_accounts as ga')
-                    ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
-                    ->where('coa.account_code', $recovIncGl)
-                    ->value('ga.id');
-
-                if ($bankAccount && $recovAccount) {
-                    \App\Models\arbatch_entries::insert([
-                        ['arbatch_id' => $arBatch->id, 'gl_account_id' => $bankAccount,   'entry_type' => 'debit',  'amount' => $amount, 'description' => "Recovery payment #{$recovery->id}", 'created_at' => now(), 'updated_at' => now()],
-                        ['arbatch_id' => $arBatch->id, 'gl_account_id' => $recovAccount,  'entry_type' => 'credit', 'amount' => $amount, 'description' => "Recovery income — loan #{$recovery->loan_id}", 'created_at' => now(), 'updated_at' => now()],
-                    ]);
-
-                    app(\App\Services\GLPostingService::class)->postArBatch($arBatch, Auth::id());
-                    $arBatch->update(['posted_to_gl' => true, 'status' => 'posted']);
+                if ($amount > (float) $recovery->outstanding_recovery) {
+                    throw new \RuntimeException('This amount exceeds the outstanding recovery balance — it may have just been updated by another payment.');
                 }
-            }
 
-            // ── Record payment ─────────────────────────────────────────────
-            DebtRecoveryPayment::create([
-                'debt_recovery_id' => $recovery->id,
-                'loan_id' => $recovery->loan_id,
-                'user_id' => $recovery->user_id,
-                'amount' => $amount,
-                'payment_date' => $request->payment_date,
-                'payment_method' => $request->payment_method,
-                'payment_reference' => $request->payment_reference,
-                'gl_batch_reference' => $ref,
-                'received_by' => Auth::id(),
-                'notes' => $request->notes,
-            ]);
+                // ── GL Posting ─────────────────────────────────────────────────
+                $branchId = $recovery->loan->branch_id ?? 1;
+                $locationCode = $recovery->loan->location_code ?? '000';
 
-            // ── Update recovery case ───────────────────────────────────────
-            $newRecovered = $recovery->total_recovered + $amount;
-            $newOutstanding = max(0, $recovery->original_write_off_amount - $newRecovered);
+                $bankGl = DB::table('glmappings')->where('key', 'loan_repayment_dr')->value('account_code');
+                $recovIncGl = DB::table('glmappings')->where('key', 'recovery_income_cr')->value('account_code');
 
-            $recovery->update([
-                'total_recovered' => $newRecovered,
-                'outstanding_recovery' => $newOutstanding,
-                'status' => $newOutstanding <= 0 ? 'recovered' : 'partial',
-            ]);
+                $ref = 'ARB-REC-'.now()->format('YmdHis').'-'.$recovery->id;
 
-            \App\Models\AuditLog::record('recovery_payment', $recovery, [], [
-                'amount' => $amount,
-                'method' => $request->payment_method,
-            ]);
+                // Create AR batch and GL entries for recovery payment
+                $customer = $recovery->loan->user->customer;
+                $arBatch = \App\Models\arbatch::create([
+                    'reference' => $ref,
+                    'customer_id' => $customer->id,
+                    'source_type' => DebtRecovery::class,
+                    'source_id' => $recovery->id,
+                    'total_amount' => $amount,
+                    'status' => 'approved',
+                    'created_by' => Auth::id(),
+                    'approved_by' => Auth::id(),
+                    'approved_at' => now(),
+                ]);
 
-            Log::info("Recovery payment R{$amount} recorded on case #{$recovery->id}");
-        });
+                if ($bankGl && $recovIncGl) {
+                    $bankAccount = DB::table('gl_accounts as ga')
+                        ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+                        ->where('coa.account_code', $bankGl)
+                        ->where('ga.branch_id', $branchId)
+                        ->value('ga.id');
+
+                    $recovAccount = DB::table('gl_accounts as ga')
+                        ->join('chart_of_accounts as coa', 'ga.chart_of_account_id', '=', 'coa.id')
+                        ->where('coa.account_code', $recovIncGl)
+                        ->value('ga.id');
+
+                    if ($bankAccount && $recovAccount) {
+                        \App\Models\arbatch_entries::insert([
+                            ['arbatch_id' => $arBatch->id, 'gl_account_id' => $bankAccount,   'entry_type' => 'debit',  'amount' => $amount, 'description' => "Recovery payment #{$recovery->id}", 'created_at' => now(), 'updated_at' => now()],
+                            ['arbatch_id' => $arBatch->id, 'gl_account_id' => $recovAccount,  'entry_type' => 'credit', 'amount' => $amount, 'description' => "Recovery income — loan #{$recovery->loan_id}", 'created_at' => now(), 'updated_at' => now()],
+                        ]);
+
+                        app(\App\Services\GLPostingService::class)->postArBatch($arBatch, Auth::id());
+                        $arBatch->update(['posted_to_gl' => true, 'status' => 'posted']);
+                    }
+                }
+
+                // ── Record payment ─────────────────────────────────────────────
+                DebtRecoveryPayment::create([
+                    'debt_recovery_id' => $recovery->id,
+                    'loan_id' => $recovery->loan_id,
+                    'user_id' => $recovery->user_id,
+                    'amount' => $amount,
+                    'payment_date' => $request->payment_date,
+                    'payment_method' => $request->payment_method,
+                    'payment_reference' => $request->payment_reference,
+                    'gl_batch_reference' => $ref,
+                    'received_by' => Auth::id(),
+                    'notes' => $request->notes,
+                ]);
+
+                // ── Update recovery case ───────────────────────────────────────
+                $newRecovered = $recovery->total_recovered + $amount;
+                $newOutstanding = max(0, $recovery->original_write_off_amount - $newRecovered);
+
+                $recovery->update([
+                    'total_recovered' => $newRecovered,
+                    'outstanding_recovery' => $newOutstanding,
+                    'status' => $newOutstanding <= 0 ? 'recovered' : 'partial',
+                ]);
+
+                \App\Models\AuditLog::record('recovery_payment', $recovery, [], [
+                    'amount' => $amount,
+                    'method' => $request->payment_method,
+                ]);
+
+                Log::info("Recovery payment R{$amount} recorded on case #{$recovery->id}");
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', 'Recovery payment of R'.number_format($request->amount, 2).' recorded.');
     }

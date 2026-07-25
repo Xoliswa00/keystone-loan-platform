@@ -62,6 +62,7 @@ class GenerateClientStatement implements ShouldQueue
 
         $totalOutstanding = $loans->whereIn('status', ['disbursed', 'payment_failed'])->sum('remaining_balance');
         $nextDue = RepaymentSchedule::where('user_id', $user->id)->where('status', 'pending')->orderBy('due_date')->first();
+        $ledger = $this->buildLedger($loans, $repayments);
 
         $filename = 'KCP-Statement-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.$this->period.'.pdf';
         $storagePath = "statements/{$user->id}/{$filename}";
@@ -73,6 +74,7 @@ class GenerateClientStatement implements ShouldQueue
             'repayments' => $repayments,
             'totalOutstanding' => $totalOutstanding,
             'nextDue' => $nextDue,
+            'ledger' => $ledger,
             'statementDate' => now()->format('d F Y'),
             'statementRef' => 'STMT-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.now()->format('Ymd'),
             'company' => $company,
@@ -110,6 +112,51 @@ class GenerateClientStatement implements ShouldQueue
                 Log::warning("Statement email failed for user #{$user->id}: ".$e->getMessage());
             }
         }
+    }
+
+    /**
+     * A running debit/credit ledger, like a bank statement — disbursement
+     * ("money out": the client now owes it) and each paid repayment
+     * ("money in") merged chronologically with a cumulative balance. Neither
+     * $loans nor $repayments needed a new query — both were already being
+     * fetched above, this just reshapes them for the statement.
+     */
+    private function buildLedger($loans, $repayments): array
+    {
+        $events = [];
+
+        foreach ($loans as $loan) {
+            if (! $loan->disbursed_date) {
+                continue;
+            }
+
+            $events[] = [
+                'date' => \Carbon\Carbon::parse($loan->disbursed_date),
+                'description' => 'Loan Disbursement — Loan #'.str_pad($loan->loan_application_id, 6, '0', STR_PAD_LEFT),
+                'out' => (float) ($loan->total_amount_due ?: $loan->loan_amount),
+                'in' => 0.0,
+            ];
+        }
+
+        foreach ($repayments as $repayment) {
+            $events[] = [
+                'date' => \Carbon\Carbon::parse($repayment->payment_date),
+                'description' => 'Repayment — '.ucfirst(str_replace('_', ' ', $repayment->payment_method ?? 'payment')).
+                    ($repayment->payment_reference ? ' ('.$repayment->payment_reference.')' : ''),
+                'out' => 0.0,
+                'in' => (float) $repayment->payment_amount,
+            ];
+        }
+
+        usort($events, fn ($a, $b) => $a['date']->timestamp <=> $b['date']->timestamp);
+
+        $balance = 0.0;
+        foreach ($events as &$event) {
+            $balance += $event['out'] - $event['in'];
+            $event['balance'] = round($balance, 2);
+        }
+
+        return $events;
     }
 
     public function failed(\Throwable $exception): void

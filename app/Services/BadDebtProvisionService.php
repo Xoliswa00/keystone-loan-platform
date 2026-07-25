@@ -52,6 +52,11 @@ class BadDebtProvisionService
     public function provisionLoan(Loan $loan, int $adminId): ?\App\Models\BadDebtProvision
     {
         return DB::transaction(function () use ($loan, $adminId) {
+            // lockForUpdate(): without it, two concurrent provisioning runs
+            // for the same loan both read the same stale prior provision and
+            // both post the same movement to GL, doubling the expense/
+            // allowance for one loan.
+            $loan = Loan::lockForUpdate()->findOrFail($loan->id);
 
             $settings = LendingSetting::current();
             $dpd = $this->daysOverdue($loan);

@@ -192,17 +192,27 @@
           </svg>
         </button>
 
-        <div x-show="open" x-transition class="border-t border-kc-silver-light p-3 bg-white">
+        <div x-show="open" x-transition class="border-t border-kc-silver-light p-3 bg-white max-w-full overflow-hidden">
+          <div class="mb-2">
+            <p class="text-xs font-semibold text-kc-charcoal/50 mb-1">Full message:</p>
+            <p class="text-xs text-kc-charcoal break-words whitespace-pre-wrap">{{ $entry['message'] }}</p>
+          </div>
+          @if($entry['sql'] ?? null)
+          <div class="mb-2">
+            <p class="text-xs font-semibold text-kc-charcoal/50 mb-1">SQL query:</p>
+            <pre class="text-xs bg-kc-charcoal text-kc-gold p-2 rounded max-w-full whitespace-pre-wrap break-words">{{ $entry['sql'] }}</pre>
+          </div>
+          @endif
           @if($entry['context'])
           <div class="mb-2">
             <p class="text-xs font-semibold text-kc-charcoal/50 mb-1">Context:</p>
-            <pre class="text-xs bg-kc-charcoal text-emerald-400 p-2 rounded overflow-x-auto">{{ json_encode($entry['context'], JSON_PRETTY_PRINT) }}</pre>
+            <pre class="text-xs bg-kc-charcoal text-emerald-400 p-2 rounded max-w-full whitespace-pre-wrap break-words">{{ json_encode($entry['context'], JSON_PRETTY_PRINT) }}</pre>
           </div>
           @endif
           @if(!empty($entry['extra']))
           <div>
             <p class="text-xs font-semibold text-kc-charcoal/50 mb-1">Stack trace:</p>
-            <pre class="text-xs bg-kc-charcoal text-white/60 p-2 rounded overflow-x-auto max-h-48">{{ implode("\n", array_slice($entry['extra'], 0, 20)) }}</pre>
+            <pre class="text-xs bg-kc-charcoal text-white/60 p-2 rounded max-w-full max-h-48 overflow-y-auto whitespace-pre-wrap break-words">{{ implode("\n", array_slice($entry['extra'], 0, 20)) }}</pre>
           </div>
           @endif
         </div>

@@ -103,6 +103,7 @@ class ChartOfAccountsAndGlMappingsSeeder extends Seeder
             ['key' => 'allowance_credit_losses', 'account_code' => '1240', 'entry_type' => 'credit', 'description' => 'Allowance for Credit Losses (contra-asset)'],
             ['key' => 'bank_charges', 'account_code' => '5200', 'entry_type' => 'debit', 'description' => 'Bank Charges (Nu-Pay collection fees)'],
             ['key' => 'recovery_income_cr', 'account_code' => '4400', 'entry_type' => 'credit', 'description' => 'Recovery Income (cash received on written-off accounts)'],
+            ['key' => 'share_capital_cr', 'account_code' => '3100', 'entry_type' => 'credit', 'description' => 'Share Capital'],
             ['key' => 'retained_earnings_cr', 'account_code' => '3200', 'entry_type' => 'credit', 'description' => 'Retained Earnings — net profit/loss transferred at year-end'],
 
             // Funding facility transactions

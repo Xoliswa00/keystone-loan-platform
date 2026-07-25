@@ -11,14 +11,15 @@
       @php
         $sc = match(strtolower($loanApplication->status ?? 'pending')) {
           'approved','disbursed','settled' => 'kc-badge-green',
-          'rejected','written_off'         => 'kc-badge-red',
+          'rejected','written_off','reversed' => 'kc-badge-red',
           'pending','under_review'         => 'kc-badge-gold',
+          'affordability_review'           => 'kc-badge-navy',
           default                          => 'kc-badge-silver',
         };
       @endphp
       <div class="kc-card">
         <div class="flex items-center justify-between mb-4">
-          <span class="kc-badge {{ $sc }} text-sm">{{ ucfirst($loanApplication->status) }}</span>
+          <span class="kc-badge {{ $sc }} text-sm">{{ ucfirst(str_replace('_',' ',$loanApplication->status)) }}</span>
           @if($loanApplication->loanfee)
           <span class="text-xs text-kc-charcoal/50">Total due: <strong>R {{ number_format($loanApplication->loanfee->total_due, 2) }}</strong></span>
           @endif
@@ -31,22 +32,94 @@
         </div>
       </div>
 
+      {{-- Counter-offer: staff proposed a different amount/term than originally requested --}}
+      @if($pendingCounterOffer)
+      <div class="kc-card border-2 border-kc-gold/40">
+        <h5 class="font-display font-semibold text-kc-navy mb-2">A Revised Offer Is Ready</h5>
+        <p class="text-sm text-kc-charcoal/70 mb-3">
+          Your requested amount of R{{ number_format($loanApplication->loan_amount, 2) }} didn't pass our
+          affordability check. Based on your income and expenses, we can offer you:
+        </p>
+        <div class="grid grid-cols-3 gap-3 text-center mb-4">
+          <div><p class="text-xs text-kc-charcoal/50">Amount</p><p class="font-display text-lg font-bold text-kc-gold">R {{ number_format($pendingCounterOffer->amount, 2) }}</p></div>
+          <div><p class="text-xs text-kc-charcoal/50">Term</p><p class="font-semibold">{{ $pendingCounterOffer->months }} month{{ $pendingCounterOffer->months > 1 ? 's' : '' }}</p></div>
+          <div><p class="text-xs text-kc-charcoal/50">Instalment</p><p class="font-semibold">R {{ number_format($pendingCounterOffer->instalment, 2) }}/mo</p></div>
+        </div>
+        <p class="text-xs text-kc-charcoal/50 mb-3">Product: {{ $pendingCounterOffer->product->name }}</p>
+        <div class="flex gap-2">
+          <form method="POST" action="{{ route('counter-offers.accept', $loanApplication->id) }}" class="flex-1">
+            @csrf
+            <button type="submit" class="kc-btn-primary w-full justify-center">Accept Offer</button>
+          </form>
+          <form method="POST" action="{{ route('counter-offers.decline', $loanApplication->id) }}" class="flex-1"
+            onsubmit="return confirm('Decline this offer? Your application will be marked unsuccessful.')">
+            @csrf
+            <button type="submit" class="kc-btn-ghost w-full justify-center">Decline</button>
+          </form>
+        </div>
+      </div>
+      @elseif($loanApplication->status === 'affordability_review')
+      <div class="kc-card">
+        <p class="text-sm text-kc-charcoal/70">
+          The amount you requested exceeds what our affordability check currently supports.
+          Our team is reviewing your application and may offer you an alternative amount — we'll notify you.
+        </p>
+      </div>
+      @endif
+
       {{-- Repayment schedule --}}
       @if($loanApplication->repaymentSchedules->isNotEmpty())
       <div class="kc-card">
         <h5 class="font-display font-semibold text-kc-navy mb-3">Repayment Schedule</h5>
+        <p class="text-xs text-kc-charcoal/50 mb-3">
+          Paid by debit order automatically. If you paid another way (EFT/cash) and it hasn't reflected,
+          upload proof of payment below — our team will verify it before it's marked paid.
+        </p>
         <div class="kc-table-scroll">
           <table class="kc-table">
-            <thead><tr><th>#</th><th>Due Date</th><th>Instalment</th><th>Status</th><th>Paid</th></tr></thead>
+            <thead><tr><th>#</th><th>Due Date</th><th>Instalment</th><th>Status</th><th>Paid</th><th>Proof of Payment</th></tr></thead>
             <tbody>
               @foreach($loanApplication->repaymentSchedules->sortBy('installment_number') as $s)
-              @php $ssc = match($s->status??''){'paid'=>'kc-badge-green','payment_failed'=>'kc-badge-red','rejected'=>'kc-badge-silver',default=>'kc-badge-gold'}; @endphp
+              @php
+                $ssc = match($s->status??''){'paid'=>'kc-badge-green','payment_failed'=>'kc-badge-red','rejected'=>'kc-badge-silver',default=>'kc-badge-gold'};
+                $claim = $s->latestManualClaim;
+              @endphp
               <tr class="{{ $s->status==='payment_failed'?'bg-red-50':'' }}">
                 <td data-label="#">{{ $s->installment_number ?? '—' }}</td>
                 <td data-label="Due">{{ \Carbon\Carbon::parse($s->due_date)->format('d M Y') }}</td>
                 <td data-label="Amount" class="font-semibold">R {{ number_format($s->emi_amount, 2) }}</td>
                 <td data-label="Status"><span class="kc-badge {{ $ssc }}">{{ ucfirst(str_replace('_',' ',$s->status)) }}</span></td>
                 <td data-label="Paid" class="text-xs text-kc-charcoal/50">{{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}</td>
+                <td data-label="Proof of Payment">
+                  @if(in_array($s->status, ['pending', 'payment_failed'], true))
+                    @if($claim && $claim->status === 'pending_review')
+                      <span class="kc-badge kc-badge-gold text-[10px]">Under review</span>
+                    @else
+                      @if($claim && $claim->status === 'rejected')
+                        <p class="text-[10px] text-red-600 mb-1">Declined: {{ $claim->rejection_reason }}</p>
+                      @endif
+                      <div x-data="{open:false}">
+                        <button type="button" @click="open=!open" class="text-xs text-kc-gold hover:underline">
+                          {{ $claim && $claim->status === 'rejected' ? 'Resubmit Proof' : 'Upload Proof' }}
+                        </button>
+                        <form x-show="open" x-transition method="POST"
+                          action="{{ route('repaymentSchedules.submit-proof', $s->id) }}"
+                          enctype="multipart/form-data" class="mt-2 space-y-1.5 text-left">
+                          @csrf
+                          <input type="number" name="payment_amount" step="0.01" min="0.01" required
+                            value="{{ $s->emi_amount }}" placeholder="Amount paid" class="kc-input text-xs w-full">
+                          <input type="date" name="payment_date" required max="{{ now()->toDateString() }}"
+                            class="kc-input text-xs w-full">
+                          <input type="text" name="payment_reference" maxlength="100" placeholder="Reference (optional)"
+                            class="kc-input text-xs w-full">
+                          <input type="file" name="proof_of_payment" required accept=".pdf,.jpg,.jpeg,.png"
+                            class="kc-input text-xs w-full">
+                          <button type="submit" class="kc-btn-primary text-xs py-1 px-3 w-full justify-center">Submit</button>
+                        </form>
+                      </div>
+                    @endif
+                  @endif
+                </td>
               </tr>
               @endforeach
             </tbody>

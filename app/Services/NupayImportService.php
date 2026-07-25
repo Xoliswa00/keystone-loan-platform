@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class NupayImportService
 {
@@ -26,13 +27,23 @@ class NupayImportService
     /**
      * Parse, stage and persist a NuPay file (CSV or Excel).
      * Creates an import_batch record and inserts rows into nupay_transactions_stagings.
-     * Replaces the manual Python → SQL INSERT workflow.
+     * Replaces the manual Python → SQL INSERT workflow — including the manual
+     * step that workflow never automated: NuPay's export is a 4-tab workbook
+     * (Success / Failed / Tracking / Reversed) with no type column in any tab
+     * — the tab itself IS the type. The old process required a human to
+     * merge all 4 tabs into one sheet and hand-type a transaction_type column
+     * before the Python script would touch it. This reads every tab directly
+     * and tags each row from its own tab name instead.
      *
      * @param  string  $filePath  Absolute path to uploaded file
      * @param  string  $originalName  Original filename
      * @param  int  $uploadedBy  User ID
+     * @param  string|null  $manualTransactionType  Required for CSV/TXT uploads
+     *                                              only — a flat file has no tab to infer the type from, so the
+     *                                              uploader must state it (success|failed|tracking|reversed).
+     *                                              Ignored for Excel uploads, which self-identify per tab.
      */
-    public function importAndStage(string $filePath, string $originalName, int $uploadedBy): import_batch
+    public function importAndStage(string $filePath, string $originalName, int $uploadedBy, ?string $manualTransactionType = null): import_batch
     {
         // ── 1. Duplicate file detection (checksum) ─────────────────────────────
         $checksum = md5_file($filePath);
@@ -62,7 +73,7 @@ class NupayImportService
 
         // ── 5. Parse rows ──────────────────────────────────────────────────────
         try {
-            $rows = $this->parseFile($filePath, $originalName);
+            $rows = $this->parseFile($filePath, $originalName, $manualTransactionType);
         } catch (Exception $e) {
             $batch->update(['status' => 'FAILED_CAPTURE', 'error_message' => $e->getMessage()]);
             throw $e;
@@ -73,9 +84,11 @@ class NupayImportService
 
         DB::beginTransaction();
         try {
-            foreach ($rows as $index => $row) {
+            foreach ($rows as $index => $item) {
+                $cleanedRow = null;
+
                 try {
-                    $cleanedRow = $this->cleanRow((array) $row);
+                    $cleanedRow = $this->cleanRow($item['data'], $item['transaction_type']);
                     $key = $this->rowKey($cleanedRow);
 
                     if ($this->existsInDatabase($cleanedRow)) {
@@ -88,15 +101,30 @@ class NupayImportService
                     nupay_transactions_staging::create(array_merge($cleanedRow, [
                         'import_ref' => $importRef,
                         'import_id' => $batch->id,
-                        'raw_row_json' => json_encode($row),
+                        'raw_row_json' => json_encode($item['data']),
                     ]));
 
                     $staged++;
 
                 } catch (Exception $e) {
-                    $this->errors[] = "Row {$index}: ".$e->getMessage();
-                    Log::warning("NuPay staging row {$index} failed: ".$e->getMessage(), [
+                    // mandate_id identifies the actual failing record for
+                    // whoever's reading the log — the row index alone means
+                    // nothing once you're looking at the source file. Falls
+                    // back to the raw (uncleaned) data if cleanRow() itself
+                    // is what threw, so this context survives either failure
+                    // point.
+                    $mandateId = $cleanedRow['mandate_id'] ?? $item['data']['Mandate ID'] ?? $item['data']['mandate_id'] ?? 'unknown';
+                    $type = $item['transaction_type'] ?? 'unknown';
+
+                    $this->errors[] = "Row {$index} (mandate_id={$mandateId}, type={$type}): ".$e->getMessage();
+
+                    Log::warning("NuPay staging row {$index} failed", [
                         'import_ref' => $importRef,
+                        'mandate_id' => $mandateId,
+                        'transaction_type' => $type,
+                        'exception_class' => get_class($e),
+                        'message' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
                     ]);
                 }
             }
@@ -147,24 +175,94 @@ class NupayImportService
     // Parsing — CSV (native PHP) or Excel (Maatwebsite)
     // ──────────────────────────────────────────────────────────────────────────
 
-    protected function parseFile(string $filePath, string $originalName): Collection
+    /**
+     * @return Collection<int, array{data: array, transaction_type: string}>
+     */
+    protected function parseFile(string $filePath, string $originalName, ?string $manualTransactionType): Collection
     {
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
-        if ($ext === 'csv') {
-            return $this->parseCsv($filePath);
+        if ($ext === 'csv' || $ext === 'txt') {
+            if (! $manualTransactionType) {
+                throw new Exception('Transaction type must be selected for CSV/TXT uploads — a flat file has no tab to infer it from.');
+            }
+
+            $type = $this->normalizeTransactionType($manualTransactionType) ?? strtolower(trim($manualTransactionType));
+
+            return $this->parseCsv($filePath)
+                ->map(fn ($row) => ['data' => $row, 'transaction_type' => $type]);
         }
 
-        // Excel (xlsx / xls)
-        $rows = Excel::toCollection(new GenericArrayImport, $filePath)->first();
+        return $this->parseExcelSheets($filePath);
+    }
 
-        if (! $rows || $rows->isEmpty()) {
-            throw new Exception('Excel file contains no data rows.');
+    /**
+     * NuPay's Excel export is a 4-tab workbook (Success / Failed / Tracking /
+     * Reversed) — no tab has a column identifying its own type, because the
+     * tab itself IS the type. Reads every tab and tags each row from its
+     * sheet name rather than trusting only the first tab (which silently
+     * dropped the other 3 previously).
+     */
+    protected function parseExcelSheets(string $filePath): Collection
+    {
+        $sheetNames = IOFactory::createReaderForFile($filePath)->listWorksheetNames($filePath);
+        $sheets = Excel::toCollection(new GenericArrayImport, $filePath);
+
+        $rows = collect();
+
+        foreach ($sheets as $index => $sheetRows) {
+            $sheetName = $sheetNames[$index] ?? "sheet {$index}";
+
+            if ($sheetRows->isEmpty()) {
+                continue;
+            }
+
+            $type = $this->normalizeTransactionType($sheetName);
+
+            if (! $type) {
+                $this->warnings[] = "Sheet '{$sheetName}' doesn't match a known transaction type ".
+                    '(success/failed/tracking/reversed) — its rows were skipped.';
+
+                continue;
+            }
+
+            // Each row from ToCollection/WithHeadingRow is itself a Collection,
+            // not a plain array — (array) on an object just exposes its
+            // internal properties, it doesn't call toArray(). Silently
+            // produced garbage keys for every Excel upload before this fix.
+            $this->validateHeaders(array_keys($sheetRows->first()->toArray()));
+
+            foreach ($sheetRows as $row) {
+                $rows->push(['data' => $row->toArray(), 'transaction_type' => $type]);
+            }
         }
 
-        $this->validateHeaders(array_keys((array) $rows->first()));
+        if ($rows->isEmpty()) {
+            throw new Exception('No recognisable transaction-type sheets found — expected tabs named '.
+                'success/failed/tracking/reversed (or close variants).');
+        }
 
         return $rows;
+    }
+
+    /**
+     * Maps a sheet/tab name (or a manually-selected CSV type) to the
+     * canonical transaction_type value NuPayService::postTransaction()
+     * dispatches on. Tolerates the common "succes" (missing 's') tab-name
+     * typo seen in real NuPay exports.
+     */
+    protected function normalizeTransactionType(string $label): ?string
+    {
+        $key = strtolower(trim($label));
+
+        return match (true) {
+            str_starts_with($key, 'succes') => 'success',
+            str_starts_with($key, 'fail') => 'failed',
+            str_starts_with($key, 'cancel') => 'canceled',
+            str_starts_with($key, 'revers') => 'reversed',
+            str_starts_with($key, 'track') => 'tracking',
+            default => null,
+        };
     }
 
     /**
@@ -209,38 +307,65 @@ class NupayImportService
         return $rows;
     }
 
+    /**
+     * Header/column names are compared with all non-alphanumeric characters
+     * stripped and case folded — Laravel Excel's WithHeadingRow auto-slugifies
+     * headers for .xlsx/.xls uploads ("Mandate ID" -> "mandate_id"), while the
+     * hand-rolled CSV parser below keeps them verbatim ("Mandate ID"). Both
+     * forms must match the same NupayColumnMap entries, so comparisons are
+     * normalised on both sides rather than assuming one particular format.
+     */
+    private function normalizeHeader(string $s): string
+    {
+        return strtolower(preg_replace('/[^a-z0-9]/i', '', trim($s)));
+    }
+
     protected function validateHeaders(array $uploadedHeaders): void
     {
         // Nu-Pay sometimes exports with slightly different header capitalisation
-        // Do a case-insensitive check for the critical fields
         $critical = ['Mandate ID', 'Debtor ID', 'Instalment Amount', 'Action Date', 'Status'];
-        $upperUploaded = array_map('strtolower', $uploadedHeaders);
+        $normalizedUploaded = array_map(fn ($h) => $this->normalizeHeader((string) $h), $uploadedHeaders);
 
         foreach ($critical as $required) {
-            if (! in_array(strtolower($required), $upperUploaded)) {
+            if (! in_array($this->normalizeHeader($required), $normalizedUploaded, true)) {
                 throw new Exception("Required column '{$required}' not found in file.");
             }
         }
     }
 
-    protected function cleanRow(array $row): array
+    protected function cleanRow(array $row, string $transactionType): array
     {
-        $data = [];
+        // Normalise every row key once, rather than re-normalising it for
+        // each of the ~47 mapped columns.
+        $normalizedRow = [];
+        foreach ($row as $k => $v) {
+            $normalizedRow[$this->normalizeHeader((string) $k)] = $v;
+        }
+
+        // Not sourced from NupayColumnMap: no NuPay export tab has a column
+        // identifying its own type (the tab name IS the type) — see
+        // parseExcelSheets()/parseFile().
+        $data = ['transaction_type' => $transactionType];
+
+        // ID-like fields must never round-trip through a float — PhpSpreadsheet
+        // returns numeric-looking Excel cells as floats, and a long SA ID/
+        // account/branch number can come out in scientific notation otherwise.
+        $idFields = ['debtor_id', 'debtor_account_number', 'debtor_branch_number', 'merchant_number'];
 
         foreach (NupayColumnMap::map() as $excel => $db) {
-            // Case-insensitive column matching
-            $value = null;
-            foreach ($row as $k => $v) {
-                if (strtolower(trim($k)) === strtolower($excel)) {
-                    $value = $v;
-                    break;
-                }
-            }
+            $value = $normalizedRow[$this->normalizeHeader($excel)] ?? null;
 
             $data[$db] = match (true) {
-                str_contains($db, 'date_time') => NupayCleaner::dateTime($value),
-                str_contains($db, 'date') => NupayCleaner::date($value),
+                // Anchored to underscore-delimited segments, not a bare
+                // substring — "mandate_id" contains the letters "date" (from
+                // "man-DATE-_id"), which a plain str_contains($db, 'date')
+                // wrongly caught, routing mandate_id/mandate_request_tran_id/
+                // mandate_reference_number through the date cleaner instead
+                // of leaving them as plain values.
+                preg_match('/(?:^|_)date_time(?:$|_)/', $db) === 1 => NupayCleaner::dateTime($value),
+                preg_match('/(?:^|_)date(?:$|_)/', $db) === 1 => NupayCleaner::date($value),
                 str_contains($db, 'amount') => NupayCleaner::amount($value),
+                in_array($db, $idFields, true) => NupayCleaner::idString($value),
                 default => NupayCleaner::string($value),
             };
         }

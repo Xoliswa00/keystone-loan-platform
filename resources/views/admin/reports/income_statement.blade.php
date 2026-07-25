@@ -23,56 +23,107 @@
     <p class="text-xs text-kc-charcoal/50 mb-6">Income Statement — {{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
 
     <table class="w-full text-sm">
+      {{-- Net Interest Income — industry-standard presentation (per Capitec/
+           FirstRand audited financials): interest expense is netted directly
+           against interest income, not shown as "cost of sales" or lumped
+           into operating expenses. --}}
+      <tbody>
+        @foreach($interestIncomeLines->flatten() as $line)
+        <tr class="border-b border-kc-silver-light">
+          <td class="py-2 pl-2">{{ $line->label }}</td>
+          <td class="text-right py-2">{{ number_format($line->amount, 2) }}</td>
+        </tr>
+        @endforeach
+        @foreach($interestExpenseLines->flatten() as $line)
+        <tr class="border-b border-kc-silver-light">
+          <td class="py-2 pl-2">{{ $line->label }}</td>
+          <td class="text-right py-2 text-red-600">({{ number_format($line->amount, 2) }})</td>
+        </tr>
+        @endforeach
+        <tr class="border-b border-kc-navy/20 font-semibold bg-kc-silver-light/40">
+          <td class="py-2 px-2">NET INTEREST INCOME</td>
+          <td class="text-right py-2 px-2">{{ number_format($netInterestIncome, 2) }}</td>
+        </tr>
+
+        @foreach($creditLossLines->flatten() as $line)
+        <tr class="border-b border-kc-silver-light">
+          <td class="py-2 pl-2">{{ $line->label }}</td>
+          <td class="text-right py-2 text-red-600">({{ number_format($line->amount, 2) }})</td>
+        </tr>
+        @endforeach
+        <tr class="border-b border-kc-navy/20 font-semibold">
+          <td class="py-2 px-2">Net Interest Income After Credit Losses</td>
+          <td class="text-right py-2 px-2">{{ number_format($netInterestIncomeAfterCreditLosses, 2) }}</td>
+        </tr>
+      </tbody>
+
+      {{-- Non-interest income --}}
       <thead>
-        <tr class="border-b border-kc-gold/30">
-          <th class="text-left py-2 font-semibold text-kc-charcoal/60">Income</th>
-          <th class="text-right py-2 font-semibold text-kc-charcoal/60">R</th>
+        <tr>
+          <th class="text-left pt-4 pb-2 font-semibold text-kc-charcoal/60">Non-Interest Income</th>
+          <th class="text-right"></th>
         </tr>
       </thead>
       <tbody>
-        <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Interest Income <span class="text-xs text-kc-charcoal/40">(VAT exempt — NCA)</span></td>
-          <td class="text-right py-2">{{ number_format($interest_income, 2) }}</td>
-        </tr>
-        <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Fee Income (excl. VAT)</td>
-          <td class="text-right py-2">{{ number_format($fee_income_excl_vat, 2) }}</td>
-        </tr>
-        <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Penalty Income</td>
-          <td class="text-right py-2">{{ number_format($penalty_income, 2) }}</td>
-        </tr>
-        <tr class="border-b border-kc-navy/20 font-semibold">
-          <td class="py-2">Gross Income</td>
-          <td class="text-right py-2">{{ number_format($gross_income, 2) }}</td>
-        </tr>
-
+        @forelse($nonInterestIncomeGroups as $groupName => $lines)
         <tr>
-          <td class="py-2 pt-4 font-semibold text-kc-charcoal/60" colspan="2">Expenses</td>
+          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50" colspan="2">{{ $groupName }}</td>
         </tr>
+        @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Credit Loss Expense — IFRS 9 ECL</td>
-          <td class="text-right py-2 text-red-600">({{ number_format($credit_loss_expense, 2) }})</td>
+          <td class="py-2 pl-6">{{ $line->label }}</td>
+          <td class="text-right py-2">{{ number_format($line->amount, 2) }}</td>
         </tr>
+        @endforeach
+        @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Bank Charges (Nu-Pay collection fees)</td>
-          <td class="text-right py-2 text-red-600">({{ number_format($bank_charges, 2) }})</td>
+          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No non-interest income posted for this period.</td>
         </tr>
+        @endforelse
         <tr class="border-b border-kc-navy/20 font-semibold">
-          <td class="py-2">Total Expenses</td>
-          <td class="text-right py-2 text-red-600">({{ number_format($total_expenses, 2) }})</td>
+          <td class="py-2">Total Income</td>
+          <td class="text-right py-2">{{ number_format($totalIncome, 2) }}</td>
+        </tr>
+      </tbody>
+
+      {{-- Operating expenses --}}
+      <thead>
+        <tr>
+          <th class="text-left pt-4 pb-2 font-semibold text-kc-charcoal/60">Operating Expenses</th>
+          <th class="text-right"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @forelse($operatingExpenseGroups as $groupName => $lines)
+        <tr>
+          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50" colspan="2">{{ $groupName }}</td>
+        </tr>
+        @foreach($lines as $line)
+        <tr class="border-b border-kc-silver-light">
+          <td class="py-2 pl-6">{{ $line->label }}</td>
+          <td class="text-right py-2 text-red-600">({{ number_format($line->amount, 2) }})</td>
+        </tr>
+        @endforeach
+        @empty
+        <tr class="border-b border-kc-silver-light">
+          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No operating expenses posted for this period.</td>
+        </tr>
+        @endforelse
+        <tr class="border-b border-kc-navy/20 font-semibold">
+          <td class="py-2">Total Operating Expenses</td>
+          <td class="text-right py-2 text-red-600">({{ number_format($operatingExpenses, 2) }})</td>
         </tr>
 
         <tr class="bg-kc-navy text-white">
           <td class="py-3 px-4 font-display font-semibold">NET PROFIT / (LOSS)</td>
-          <td class="text-right py-3 px-4 font-display font-semibold text-kc-gold">{{ number_format($net_profit, 2) }}</td>
+          <td class="text-right py-3 px-4 font-display font-semibold text-kc-gold">{{ number_format($netProfit, 2) }}</td>
         </tr>
       </tbody>
     </table>
 
-    @if($deferred_interest > 0 || $deferred_fees > 0)
+    @if($deferredInterest > 0 || $deferredFees > 0)
     <div class="mt-4 p-3 rounded border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/60">
-      <strong>Note:</strong> Deferred interest of R{{ number_format($deferred_interest, 2) }} and deferred fees of R{{ number_format($deferred_fees, 2) }} relating to multi-month loans are carried as liabilities on the balance sheet and will be recognised when instalments are received.
+      <strong>Note:</strong> Deferred interest of R{{ number_format($deferredInterest, 2) }} and deferred fees of R{{ number_format($deferredFees, 2) }} relating to multi-month loans are carried as liabilities on the balance sheet and will be recognised when instalments are received.
     </div>
     @endif
   </div>

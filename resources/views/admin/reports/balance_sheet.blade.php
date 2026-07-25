@@ -45,11 +45,45 @@
         </tr>
         <tr class="bg-kc-silver-light font-semibold">
           <td class="py-2 px-2">TOTAL ASSETS</td>
-          <td class="text-right py-2 px-2">{{ number_format($cashAtBank + $loansReceivableGross - $allowanceForCreditLoss, 2) }}</td>
+          <td class="text-right py-2 px-2">{{ number_format($totalAssets, 2) }}</td>
         </tr>
       </tbody>
 
-      {{-- LIABILITIES --}}
+      {{-- EQUITY --}}
+      <thead>
+        <tr class="border-b border-kc-gold/30 mt-4">
+          <th class="text-left py-3 font-semibold text-kc-charcoal/60">EQUITY</th>
+          <th class="text-right py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @forelse($equityGroups as $groupName => $lines)
+          @foreach($lines as $line)
+          <tr class="border-b border-kc-silver-light">
+            <td class="py-2 pl-4">{{ $line->label }}</td>
+            <td class="text-right py-2">{{ number_format($line->balance, 2) }}</td>
+          </tr>
+          @endforeach
+        @empty
+        <tr class="border-b border-kc-silver-light">
+          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No equity accounts configured.</td>
+        </tr>
+        @endforelse
+        {{-- Unclosed net income sitting in Income/Expense accounts — only
+             swept into Retained Earnings at a formal year-end close, so an
+             interim statement needs this to actually balance. --}}
+        <tr class="border-b border-kc-silver-light">
+          <td class="py-2 pl-4">Current Period Earnings <span class="text-xs text-kc-charcoal/40">(unaudited, pre-close)</span></td>
+          <td class="text-right py-2">{{ number_format($currentPeriodEarnings, 2) }}</td>
+        </tr>
+        <tr class="bg-kc-silver-light font-semibold">
+          <td class="py-2 px-2">TOTAL EQUITY</td>
+          <td class="text-right py-2 px-2">{{ number_format($totalEquity, 2) }}</td>
+        </tr>
+      </tbody>
+
+      {{-- LIABILITIES — sub-grouped by account_group (Current Liability,
+           Long-term Liability, Shareholder Loans, ...) per IFRS presentation --}}
       <thead>
         <tr class="border-b border-kc-gold/30 mt-4">
           <th class="text-left py-3 font-semibold text-kc-charcoal/60">LIABILITIES</th>
@@ -57,23 +91,47 @@
         </tr>
       </thead>
       <tbody>
-        <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Deferred Interest Income</td>
-          <td class="text-right py-2">{{ number_format($deferredInterest, 2) }}</td>
+        @forelse($liabilityGroups as $groupName => $lines)
+        <tr>
+          <td class="pt-3 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50" colspan="2">{{ $groupName }}</td>
         </tr>
+        @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Deferred Fee Income</td>
-          <td class="text-right py-2">{{ number_format($deferredFees, 2) }}</td>
+          <td class="py-2 pl-6">{{ $line->label }}</td>
+          <td class="text-right py-2">{{ number_format($line->balance, 2) }}</td>
         </tr>
+        @endforeach
+        <tr class="text-xs text-kc-charcoal/50">
+          <td class="py-1 pl-6">Subtotal</td>
+          <td class="text-right py-1">{{ number_format($lines->sum('balance'), 2) }}</td>
+        </tr>
+        @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">VAT Output Payable</td>
-          <td class="text-right py-2">{{ number_format($vatOutput, 2) }}</td>
+          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No liability accounts configured.</td>
         </tr>
+        @endforelse
         <tr class="bg-kc-silver-light font-semibold">
           <td class="py-2 px-2">TOTAL LIABILITIES</td>
-          <td class="text-right py-2 px-2">{{ number_format($deferredInterest + $deferredFees + $vatOutput, 2) }}</td>
+          <td class="text-right py-2 px-2">{{ number_format($totalLiabilities, 2) }}</td>
         </tr>
       </tbody>
+
+      {{-- BALANCE CHECK — Assets must equal Equity + Liabilities. A mismatch
+           here means a real GL posting problem, not a report bug — every
+           figure above is a live sum, so this is the same check an
+           accountant would run on a trial balance. --}}
+      @php $equityPlusLiab = $totalEquity + $totalLiabilities; $balanced = round($totalAssets - $equityPlusLiab, 2) === 0.0; @endphp
+      <tfoot>
+        <tr class="border-t-2 {{ $balanced ? 'border-emerald-400' : 'border-red-400' }} font-bold">
+          <td class="py-3 px-2">TOTAL EQUITY + LIABILITIES</td>
+          <td class="text-right py-3 px-2 {{ $balanced ? 'text-emerald-600' : 'text-red-600' }}">
+            {{ number_format($equityPlusLiab, 2) }}
+            @unless($balanced)
+              <span class="block text-xs font-normal">⚠ Does not match Total Assets (R{{ number_format($totalAssets, 2) }}) — variance R{{ number_format($totalAssets - $equityPlusLiab, 2) }}</span>
+            @endunless
+          </td>
+        </tr>
+      </tfoot>
     </table>
 
     <div class="mt-4 text-xs text-kc-charcoal/40">

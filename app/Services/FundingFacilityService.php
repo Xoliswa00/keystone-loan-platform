@@ -42,6 +42,11 @@ class FundingFacilityService
     ): FundingFacilityTransaction {
 
         return DB::transaction(function () use ($facility, $amount, $date, $reference, $userId, $notes) {
+            // lockForUpdate(): without it, two near-simultaneous drawdowns
+            // both read the same stale availableLimit(), so together they
+            // can push the facility over its limit undetected, and both
+            // post their own GL batch.
+            $facility = FundingFacility::lockForUpdate()->findOrFail($facility->id);
 
             if ($amount > $facility->availableLimit()) {
                 throw new Exception("Drawdown of R{$amount} exceeds available limit of R{$facility->availableLimit()}.");
@@ -94,6 +99,11 @@ class FundingFacilityService
     ): FundingFacilityTransaction {
 
         return DB::transaction(function () use ($facility, $amount, $date, $reference, $userId, $notes) {
+            // lockForUpdate(): without it, two near-simultaneous repayments
+            // both read the same stale current_balance, both pass the "not
+            // more than balance" check, and combined can drive the balance
+            // negative while double-posting GL entries.
+            $facility = FundingFacility::lockForUpdate()->findOrFail($facility->id);
 
             if ($amount > $facility->current_balance) {
                 throw new Exception("Repayment of R{$amount} exceeds current balance of R{$facility->current_balance}.");
@@ -136,6 +146,10 @@ class FundingFacilityService
     public function accrueInterest(FundingFacility $facility, int $userId): FundingFacilityTransaction
     {
         return DB::transaction(function () use ($facility, $userId) {
+            // lockForUpdate(): serialises a double-click/near-simultaneous
+            // re-fire so the second waits behind the first's GL post rather
+            // than both computing and posting the same accrual.
+            $facility = FundingFacility::lockForUpdate()->findOrFail($facility->id);
 
             $amount = $facility->monthlyInterestDue();
 
@@ -178,6 +192,9 @@ class FundingFacilityService
     ): FundingFacilityTransaction {
 
         return DB::transaction(function () use ($facility, $amount, $date, $reference, $userId, $notes) {
+            // Same class of risk as recordDrawdown/recordRepayment above —
+            // lock before reading/decrementing accrued_interest.
+            $facility = FundingFacility::lockForUpdate()->findOrFail($facility->id);
 
             $ref = "FF-INT-{$facility->facility_code}-".now()->format('Ymd');
 
