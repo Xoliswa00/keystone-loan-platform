@@ -26,7 +26,7 @@ export default {
             },
             fontFamily: {
                 sans:    ['Source Sans 3', ...defaultTheme.fontFamily.sans],
-                display: ['Playfair Display', 'Georgia', 'serif'],
+                display: ['Bespoke Sans', 'Source Sans 3', ...defaultTheme.fontFamily.sans],
             },
             animation: {
                 fadeIn:    'fadeIn 0.5s ease-out forwards',

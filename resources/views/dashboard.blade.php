@@ -13,6 +13,9 @@
     $userId  = $user->customer->customer_code ?? $user->id;
     $bizWA   = '27721853349';
     $supWA   = '27674017419';
+
+    $hour     = now()->hour;
+    $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
 @endphp
 
 {{-- ── Welcome banner ── --}}
@@ -22,7 +25,7 @@
 
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
         <div>
-            <p class="text-white/50 text-xs font-medium uppercase tracking-widest mb-1">Welcome back</p>
+            <p class="text-white/50 text-xs font-medium uppercase tracking-widest mb-1">{{ $greeting }}</p>
             <h2 class="font-display text-2xl font-semibold text-white">{{ $user->name }}</h2>
             <p class="text-white/40 text-sm mt-1">
                 {{ now()->format('l, d F Y') }} &nbsp;·&nbsp; Client #{{ $userId }}

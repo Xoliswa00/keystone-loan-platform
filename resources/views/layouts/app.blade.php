@@ -56,7 +56,7 @@
                 <div class="w-9 h-9 flex-shrink-0">
                     <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="36" height="36" rx="6" fill="#C89B3C" fill-opacity="0.15"/>
-                        <text x="4" y="26" font-family="Playfair Display, Georgia, serif" font-size="20" font-weight="700" fill="#C89B3C">KC</text>
+                        <text x="4" y="26" font-family="Bespoke Sans, Source Sans 3, sans-serif" font-size="20" font-weight="700" fill="#C89B3C">KC</text>
                     </svg>
                 </div>
                 <div>
