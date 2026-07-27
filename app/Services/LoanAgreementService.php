@@ -29,11 +29,11 @@ class LoanAgreementService
             ->first();
 
         if ($existing) {
-            if (! Storage::disk('public')->exists($existing->file_path)) {
+            if (! Storage::disk('local')->exists($existing->file_path)) {
                 $pdf = Pdf::loadView('agreements.pre_agreement', $this->buildAgreementData($application))
                     ->setPaper('A4', 'portrait')
                     ->setOptions(['dpi' => 150, 'isHtml5ParserEnabled' => true]);
-                Storage::disk('public')->put($existing->file_path, $pdf->output());
+                Storage::disk('local')->put($existing->file_path, $pdf->output());
             }
 
             return $existing;
@@ -47,7 +47,7 @@ class LoanAgreementService
             ->setOptions(['dpi' => 150, 'isHtml5ParserEnabled' => true]);
 
         $path = "agreements/{$application->user_id}/{$ref}.pdf";
-        Storage::disk('public')->put($path, $pdf->output());
+        Storage::disk('local')->put($path, $pdf->output());
 
         $agreement = NcaAgreement::create([
             'loan_application_id' => $application->id,
@@ -90,11 +90,11 @@ class LoanAgreementService
             ->first();
 
         if ($existing) {
-            if (! Storage::disk('public')->exists($existing->file_path)) {
+            if (! Storage::disk('local')->exists($existing->file_path)) {
                 $pdf = Pdf::loadView('agreements.loan_agreement', $this->buildAgreementData($application))
                     ->setPaper('A4', 'portrait')
                     ->setOptions(['dpi' => 150, 'isHtml5ParserEnabled' => true]);
-                Storage::disk('public')->put($existing->file_path, $pdf->output());
+                Storage::disk('local')->put($existing->file_path, $pdf->output());
             }
 
             return $existing;
@@ -108,7 +108,7 @@ class LoanAgreementService
             ->setOptions(['dpi' => 150, 'isHtml5ParserEnabled' => true]);
 
         $path = "agreements/{$application->user_id}/{$ref}.pdf";
-        Storage::disk('public')->put($path, $pdf->output());
+        Storage::disk('local')->put($path, $pdf->output());
 
         $agreement = NcaAgreement::create([
             'loan_application_id' => $application->id,
@@ -193,7 +193,7 @@ class LoanAgreementService
             ->setOptions(['dpi' => 150, 'isHtml5ParserEnabled' => true]);
 
         $path = "agreements/{$loan->user_id}/{$ref}.pdf";
-        Storage::disk('public')->put($path, $pdf->output());
+        Storage::disk('local')->put($path, $pdf->output());
 
         // Store in early_settlements as well
         \App\Models\EarlySettlement::create([
@@ -331,6 +331,12 @@ class LoanAgreementService
             'instalmentAmount' => $instalmentAmount,
             'totalCostOfCredit' => round($totalCostOfCredit, 2),
             'totalAmountPayable' => round($totalCostOfCredit, 2),
+
+            // Carried-forward shortfall from a prior loan — deliberately
+            // NOT folded into principal/totalCostOfCredit above (disclosed
+            // approach, confirmed): this loan's own terms/affordability are
+            // unaffected, this is a separate disclosed note only.
+            'carriedForwardShortfall' => round((float) ($application->loan?->carried_forward_shortfall ?? 0), 2),
 
             // Schedule
             'schedule' => $schedule,

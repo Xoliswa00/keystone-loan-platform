@@ -49,7 +49,15 @@
     <tr><td>First Instalment Date</td><td>{{ $firstPaymentDate }}</td></tr>
     <tr><td>Final Instalment Date</td><td>{{ $lastPaymentDate }}</td></tr>
     <tr><td>Monthly Instalment</td><td class="amount highlight">R {{ number_format($instalmentAmount, 2) }}</td></tr>
+    @if(($carriedForwardShortfall ?? 0) > 0)
+    <tr><td>Amount Carried Forward from Previous Facility</td><td class="amount">R {{ number_format($carriedForwardShortfall, 2) }}</td></tr>
+    @endif
   </table>
+  @if(($carriedForwardShortfall ?? 0) > 0)
+  <p style="font-size:9px;margin-top:4px;">
+    Note: R{{ number_format($carriedForwardShortfall, 2) }} remains outstanding from a previous facility, disclosed here for your information and settled separately — not included in this facility's principal debt, instalments, or total cost of credit.
+  </p>
+  @endif
 
   {{-- ── Cost of credit (NCA s.102 prescribed disclosure) ── --}}
   <div class="section-title">3. TOTAL COST OF CREDIT (as prescribed by NCA s.102)</div>

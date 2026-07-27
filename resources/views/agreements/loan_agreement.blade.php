@@ -57,7 +57,15 @@
     <tr><td>First Instalment Due</td><td>{{ $firstPaymentDate }}</td></tr>
     <tr><td>Final Instalment Due</td><td>{{ $lastPaymentDate }}</td></tr>
     <tr><td><strong>Total Amount Repayable</strong></td><td class="amount highlight">R {{ number_format($totalAmountPayable, 2) }}</td></tr>
+    @if(($carriedForwardShortfall ?? 0) > 0)
+    <tr><td>Amount Carried Forward from Previous Facility</td><td class="amount">R {{ number_format($carriedForwardShortfall, 2) }}</td></tr>
+    @endif
   </table>
+  @if(($carriedForwardShortfall ?? 0) > 0)
+  <p style="font-size:9px;margin-top:4px;">
+    Note: R{{ number_format($carriedForwardShortfall, 2) }} remains outstanding from a previous facility. This amount is disclosed here for your information and is settled separately — it is not included in this facility's principal debt, instalments, or total amount repayable above.
+  </p>
+  @endif
 
   {{-- ── Cost of credit ── --}}
   <div class="section-title">3. TOTAL COST OF CREDIT (NCA s.102)</div>

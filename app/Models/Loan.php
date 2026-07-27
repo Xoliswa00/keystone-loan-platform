@@ -46,6 +46,7 @@ class Loan extends Model
         'total_amount_due',
         'deferred_interest',
         'deferred_fees',
+        'carried_forward_shortfall',
     ];
 
     protected $casts = [
@@ -60,6 +61,7 @@ class Loan extends Model
         'total_amount_due' => 'decimal:2',
         'deferred_interest' => 'decimal:2',
         'deferred_fees' => 'decimal:2',
+        'carried_forward_shortfall' => 'decimal:2',
         'disbursed_date' => 'date',
         'approved_at' => 'datetime',
         'processed_at' => 'datetime',

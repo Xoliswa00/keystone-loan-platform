@@ -83,7 +83,7 @@ class LoanAgreementController extends Controller
             abort(403);
         }
 
-        if (! Storage::disk('public')->exists($agreement->file_path)) {
+        if (! Storage::disk('local')->exists($agreement->file_path)) {
             // Regenerate on the fly if file missing
             $application = $agreement->loanApplication;
             if ($agreement->document_type === 'loan_agreement') {
@@ -97,7 +97,7 @@ class LoanAgreementController extends Controller
         $filename = $agreement->reference.'.pdf';
 
         return response()->file(
-            Storage::disk('public')->path($agreement->file_path),
+            Storage::disk('local')->path($agreement->file_path),
             ['Content-Disposition' => "inline; filename=\"{$filename}\""]
         );
     }

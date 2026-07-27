@@ -27,6 +27,12 @@
         <tr><td>Next Instalment</td><td class="bold">R {{ number_format($nextDue->emi_amount, 2) }}</td></tr>
         <tr><td>Next Due Date</td><td class="bold">{{ \Carbon\Carbon::parse($nextDue->due_date)->format('d F Y') }}</td></tr>
         @endif
+        @if(($outstandingShortfall ?? 0) > 0)
+        <tr><td>Outstanding Shortfall</td><td class="amount">R {{ number_format($outstandingShortfall, 2) }}</td></tr>
+        @endif
+        @if(($outstandingCredit ?? 0) > 0)
+        <tr><td>Credit Balance</td><td class="amount">R {{ number_format($outstandingCredit, 2) }}</td></tr>
+        @endif
       </table>
     </div>
   </div>

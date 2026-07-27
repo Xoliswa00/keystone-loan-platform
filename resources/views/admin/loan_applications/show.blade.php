@@ -251,6 +251,37 @@
       </div>
       @endif
 
+      {{-- Outstanding shortfall/credit — staff need the detail (source
+           loan, age) since they're deciding whether/how this rolls into
+           an approval, not just a client-facing total. --}}
+      @if($outstandingAdjustments->isNotEmpty())
+      <div class="kc-card border-amber-300/50">
+        <h5 class="font-semibold text-kc-navy mb-3">Outstanding Shortfall / Credit ({{ $outstandingAdjustments->count() }})</h5>
+        <div class="kc-table-scroll">
+          <table class="kc-table">
+            <thead><tr><th>Type</th><th>Amount</th><th>Source Loan</th><th>Age</th></tr></thead>
+            <tbody>
+              @foreach($outstandingAdjustments as $adj)
+              <tr>
+                <td data-label="Type">
+                  <span class="kc-badge {{ $adj->type === 'shortfall' ? 'kc-badge-gold' : 'kc-badge-green' }}">{{ ucfirst($adj->type) }}</span>
+                </td>
+                <td data-label="Amount" class="font-semibold">R {{ number_format($adj->outstanding_amount, 2) }}</td>
+                <td data-label="Source Loan" class="font-mono text-xs">#{{ str_pad($adj->source_loan_id, 6, '0', STR_PAD_LEFT) }}</td>
+                <td data-label="Age" class="text-xs text-kc-charcoal/50">{{ $adj->created_at->diffForHumans(null, true) }}</td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+        @if($outstandingAdjustments->where('type', 'shortfall')->sum('outstanding_amount') > 0)
+        <p class="text-xs text-kc-charcoal/50 mt-3">
+          Approving a new application for this client will disclose R{{ number_format($outstandingAdjustments->where('type', 'shortfall')->sum('outstanding_amount'), 2) }} of outstanding shortfall on the new agreement — it will not be added to the new loan's principal or instalments.
+        </p>
+        @endif
+      </div>
+      @endif
+
       {{-- Notes --}}
       <div class="kc-card">
         <h5 class="font-semibold text-kc-navy mb-3">Notes</h5>
@@ -421,7 +452,7 @@
         <div class="flex items-center justify-between py-1.5 border-b border-kc-silver-light/60 last:border-0">
           <span class="text-xs text-kc-charcoal/70">{{ $label }}</span>
           @if($fp)
-            <a href="{{ asset('storage/'.$fp) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
+            <a href="{{ route('secure-documents.application-file', [$application, $field]) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
           @else
             <span class="text-[10px] text-kc-charcoal/30">Missing</span>
           @endif
@@ -449,7 +480,7 @@
             @endif
           </div>
           <div class="flex items-center gap-1.5">
-            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($kd->file_path) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>
+            <a href="{{ route('secure-documents.customer-document', $kd) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>
             @if(!$kd->verified && Auth::user()->hasRole('loan_officer', 'it_admin'))
             <form method="POST" action="{{ route('admin.documents.verify', $kd) }}" class="inline">
               @csrf <input type="hidden" name="verified" value="1">

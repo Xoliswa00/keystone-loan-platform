@@ -11,6 +11,7 @@ use App\Models\LoanFee;
 use App\Models\PopiaConsent;
 use App\Models\User;
 use App\Services\LoanReversalService;
+use App\Services\PaymentAdjustmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -20,9 +21,12 @@ class LoanController extends Controller
 {
     protected LoanReversalService $reversal;
 
-    public function __construct(LoanReversalService $reversal)
+    protected PaymentAdjustmentService $paymentAdjustments;
+
+    public function __construct(LoanReversalService $reversal, PaymentAdjustmentService $paymentAdjustments)
     {
         $this->reversal = $reversal;
+        $this->paymentAdjustments = $paymentAdjustments;
     }
 
     public function index()
@@ -43,14 +47,6 @@ class LoanController extends Controller
         return view('loans.show', compact('loanApplication'));
     }
 
-    public function edit(Loan $loan)
-    {
-        $loanApplications = LoanApplication::where('status', 'approved')->get();
-        $users = User::all();
-
-        return view('loans.edit', compact('loan', 'loanApplications', 'users'));
-    }
-
     public function update(Request $request, Loan $loan)
     {
         $request->validate([
@@ -69,21 +65,6 @@ class LoanController extends Controller
         ]);
 
         return redirect()->route('loans.index')->with('success', 'Loan updated successfully.');
-    }
-
-    public function destroy(Loan $loan)
-    {
-        $loan->status = 'archived';
-        $loan->save();
-
-        $this->sendLoanNotification(
-            $loan,
-            'Loan Archived',
-            ['Your loan has been archived. Contact support if this is an error.'],
-            $loan->status
-        );
-
-        return redirect()->route('loans.index')->with('success', 'Loan archived successfully.');
     }
 
     // ──────────────────────────────────────────────────────────
@@ -257,6 +238,15 @@ class LoanController extends Controller
                 'created_at' => now(),
             ]);
 
+            // Disclosed-note approach (confirmed): rolling a shortfall in
+            // does NOT touch this new loan's own schedule/principal/
+            // affordability — it only marks the shortfall(s) linked here
+            // and stamps carried_forward_shortfall so agreement documents/
+            // dashboard/statement can disclose it as its own line item.
+            if ($customer) {
+                $this->paymentAdjustments->rollShortfallIntoLoan($customer, $loan, Auth::id());
+            }
+
             return $loanApplication;
         });
 
@@ -373,31 +363,6 @@ class LoanController extends Controller
             ],
             'rejected'
         );
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // Disburse (manual trigger — separate from DisbursementService)
-    // ──────────────────────────────────────────────────────────
-
-    public function disburse(Loan $loan)
-    {
-        $loan->update([
-            'status' => 'disbursed',
-            'disbursed_date' => now(),
-        ]);
-
-        $this->sendLoanNotification(
-            $loan,
-            'Funds Disbursed',
-            [
-                'Your loan funds have been disbursed to your registered bank account.',
-                'Please ensure sufficient funds are available on your repayment date.',
-            ],
-            'disbursed'
-        );
-
-        return redirect()->route('loans.index')
-            ->with('success', 'Loan marked as disbursed.');
     }
 
     public function updatePayment(Loan $loan, Request $request)

@@ -17,6 +17,8 @@ class RepaymentSchedule extends Model
         'user_id',
         'installment_number',
         'emi_amount',
+        'amount_paid_to_date',
+        'partial_payment_flag',
         'principal_amount',
         'interest_amount',
         'fee_amount',
@@ -28,6 +30,8 @@ class RepaymentSchedule extends Model
 
     protected $casts = [
         'emi_amount' => 'decimal:2',
+        'amount_paid_to_date' => 'decimal:2',
+        'partial_payment_flag' => 'boolean',
         'principal_amount' => 'decimal:2',
         'interest_amount' => 'decimal:2',
         'fee_amount' => 'decimal:2',
@@ -62,13 +66,15 @@ class RepaymentSchedule extends Model
         return $this->hasOne(LoanRepayment::class, 'repayment_schedule_id')->latestOfMany();
     }
 
-    // The posted LoanRepayment that actually paid this schedule — staff
-    // navigate here to find the "Reverse Payment" action (loan_repayments.
-    // show.blade.php), which otherwise has no list to be reached from.
+    // The posted LoanRepayment that actually paid (or partially paid) this
+    // schedule — staff navigate here to find the "Reverse Payment" action
+    // (loan_repayments.show.blade.php), which otherwise has no list to be
+    // reached from. 'partial' included, or an in-tolerance shortfall/
+    // overpayment posting would have no reversal path at all.
     public function paidRepayment()
     {
         return $this->hasOne(LoanRepayment::class, 'repayment_schedule_id')
-            ->where('status', 'paid')->latestOfMany();
+            ->whereIn('status', ['paid', 'partial'])->latestOfMany();
     }
 
     public function customer()

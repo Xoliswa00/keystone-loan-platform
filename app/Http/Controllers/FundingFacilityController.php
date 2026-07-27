@@ -92,7 +92,7 @@ class FundingFacilityController extends Controller
 
         if ($request->hasFile('agreement_document')) {
             $validated['agreement_document_path'] = $request->file('agreement_document')
-                ->store('facility_agreements', 'public');
+                ->store('facility_agreements', 'local');
             unset($validated['agreement_document']);
         }
 
@@ -189,7 +189,7 @@ class FundingFacilityController extends Controller
     {
         $request->validate(['agreement' => 'required|file|mimes:pdf|max:10240']);
 
-        $path = $request->file('agreement')->store('facility_agreements', 'public');
+        $path = $request->file('agreement')->store('facility_agreements', 'local');
         $fundingFacility->update(['agreement_document_path' => $path]);
 
         return back()->with('success', 'Facility agreement uploaded.');

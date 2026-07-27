@@ -161,7 +161,7 @@
         </table>
 
         @if($fundingFacility->agreement_document_path)
-        <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($fundingFacility->agreement_document_path) }}"
+        <a href="{{ route('secure-documents.funding-agreement', $fundingFacility) }}"
            target="_blank" class="text-xs text-kc-gold hover:underline mt-3 block">
           View Facility Agreement (PDF)
         </a>

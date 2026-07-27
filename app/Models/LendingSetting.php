@@ -21,6 +21,7 @@ class LendingSetting extends Model
         'max_active_loans',
         'rejection_cooldown_days',
         'affordability_ratio',
+        'payment_tolerance_pct',
         'clo_risk_review_threshold',
         'clo_risk_escalate_threshold',
         'ifrs9_stage2_dpd',
@@ -35,6 +36,7 @@ class LendingSetting extends Model
 
     protected $casts = [
         'affordability_ratio' => 'decimal:2',
+        'payment_tolerance_pct' => 'decimal:2',
         'ifrs9_stage1_rate' => 'decimal:2',
         'ifrs9_stage2_rate' => 'decimal:2',
         'ifrs9_stage3_rate' => 'decimal:2',
@@ -54,6 +56,7 @@ class LendingSetting extends Model
             'max_active_loans' => 1,
             'rejection_cooldown_days' => 30,
             'affordability_ratio' => 0.30,
+            'payment_tolerance_pct' => 0.05,
             'clo_risk_review_threshold' => 40,
             'clo_risk_escalate_threshold' => 75,
             'ifrs9_stage2_dpd' => 30,

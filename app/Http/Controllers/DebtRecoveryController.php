@@ -83,20 +83,28 @@ class DebtRecoveryController extends Controller
                     throw new \RuntimeException('A recovery case is already open for this loan.');
                 }
 
-                $writeOffAmount = $loan->remaining_balance;
+                // Delegate to the real write-off flow — this is the only
+                // path that posts the write-off GL batch (Dr Allowance/
+                // Credit-Loss Expense, Cr Loans Receivable), zeroes the
+                // loan's remaining_balance, and decrements the customer's
+                // balance. Building the DebtRecovery row here directly
+                // (the old behaviour) opened a recovery case while leaving
+                // the loan's full balance sitting live on the books — any
+                // later recovery payment then posted recovery income
+                // against a receivable that was never written off.
+                $this->provision->writeOff(
+                    $loan,
+                    Auth::id(),
+                    $request->notes ?? 'Manually opened recovery case (90+ DPD, not yet auto-written-off).'
+                );
 
-                return DebtRecovery::create([
-                    'loan_id' => $loan->id,
-                    'user_id' => $loan->user_id,
-                    'status' => 'open',
-                    'original_write_off_amount' => $writeOffAmount,
-                    'total_recovered' => 0,
-                    'outstanding_recovery' => $writeOffAmount,
+                $recovery = DebtRecovery::where('loan_id', $loan->id)->latest()->firstOrFail();
+                $recovery->update([
                     'assigned_to' => $request->assigned_to,
                     'notes' => $request->notes,
-                    'opened_at' => now()->toDateString(),
-                    'next_action_date' => now()->addDays(7)->toDateString(),
                 ]);
+
+                return $recovery;
             });
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());

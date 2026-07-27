@@ -54,7 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
         $period = now()->format('Y-m');
         $cached = \Illuminate\Support\Facades\Cache::get("statement_{$user->id}_{$period}");
 
-        if ($cached && \Illuminate\Support\Facades\Storage::disk('public')->exists($cached)) {
+        if ($cached && \Illuminate\Support\Facades\Storage::disk('local')->exists($cached)) {
             return response()->json(['ready' => true, 'download_url' => url('/api/statement/download')]);
         }
 
@@ -71,7 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
         $user = $request->user();
         $period = now()->format('Y-m');
         $path = \Illuminate\Support\Facades\Cache::get("statement_{$user->id}_{$period}");
-        $ready = $path && \Illuminate\Support\Facades\Storage::disk('public')->exists($path);
+        $ready = $path && \Illuminate\Support\Facades\Storage::disk('local')->exists($path);
 
         return response()->json([
             'ready' => $ready,
@@ -85,13 +85,13 @@ Route::middleware('auth:sanctum')->group(function () {
         $period = now()->format('Y-m');
         $path = \Illuminate\Support\Facades\Cache::get("statement_{$user->id}_{$period}");
 
-        if (! $path || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+        if (! $path || ! \Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
             return response()->json(['message' => 'Statement not ready.'], 404);
         }
 
         $filename = 'KCP-Statement-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.$period.'.pdf';
 
-        return response()->download(\Illuminate\Support\Facades\Storage::disk('public')->path($path), $filename, ['Content-Type' => 'application/pdf']);
+        return response()->download(\Illuminate\Support\Facades\Storage::disk('local')->path($path), $filename, ['Content-Type' => 'application/pdf']);
     });
 
     // NCA Agreements
@@ -116,12 +116,12 @@ Route::middleware('auth:sanctum')->group(function () {
         if ($agreement->user_id !== $request->user()->id) {
             abort(403);
         }
-        if (! \Illuminate\Support\Facades\Storage::disk('public')->exists($agreement->file_path)) {
+        if (! \Illuminate\Support\Facades\Storage::disk('local')->exists($agreement->file_path)) {
             return response()->json(['message' => 'Document not found.'], 404);
         }
 
         return response()->download(
-            \Illuminate\Support\Facades\Storage::disk('public')->path($agreement->file_path),
+            \Illuminate\Support\Facades\Storage::disk('local')->path($agreement->file_path),
             $agreement->reference.'.pdf',
             ['Content-Type' => 'application/pdf']
         );
@@ -144,13 +144,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->middleware('role:admin,finance,it_admin,loan_officer')->group(function () {
         Route::get('/dashboard', [AdminApiController::class, 'dashboard']);
         Route::get('/disbursements', [AdminApiController::class, 'disbursements']);
-        Route::post('/disbursements/{id}/approve', [AdminApiController::class, 'approveDisbursement']);
-        Route::post('/disbursements/{id}/reject', [AdminApiController::class, 'rejectDisbursement']);
         Route::get('/overdue', [AdminApiController::class, 'overdue']);
         Route::get('/collections', [AdminApiController::class, 'collections']);
         Route::get('/alerts', [AdminApiController::class, 'alerts']);
         Route::get('/portfolio', [AdminApiController::class, 'portfolio']);
         Route::get('/loan-applications/{id}/clo-decision', [AdminApiController::class, 'cloDecision']);
+    });
+
+    // Disbursement approval is "loan movement" — same finance-excluded remit
+    // as its web equivalent (routes/web.php), which this API route was
+    // silently bypassing by sitting in the broader monitoring group above.
+    Route::prefix('admin')->middleware('role:admin,loan_officer,it_admin')->group(function () {
+        Route::post('/disbursements/{id}/approve', [AdminApiController::class, 'approveDisbursement']);
+        Route::post('/disbursements/{id}/reject', [AdminApiController::class, 'rejectDisbursement']);
     });
 
     // ── System logs — sensitive operational data, admin/it_admin only ────────

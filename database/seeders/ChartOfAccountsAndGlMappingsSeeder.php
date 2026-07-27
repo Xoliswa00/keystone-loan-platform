@@ -92,6 +92,7 @@ class ChartOfAccountsAndGlMappingsSeeder extends Seeder
             ['key' => 'loan_disbursement_cr', 'account_code' => '1100', 'entry_type' => 'credit', 'description' => 'Bank — cash out on disbursement'],
             ['key' => 'deferred_interest_cr', 'account_code' => '2100', 'entry_type' => 'credit', 'description' => 'Deferred Interest Income'],
             ['key' => 'deferred_fee_cr', 'account_code' => '2110', 'entry_type' => 'credit', 'description' => 'Deferred Fee Income'],
+            ['key' => 'client_credit_balance_cr', 'account_code' => '2300', 'entry_type' => 'credit', 'description' => 'Client Credit Balance — overpayments owed back to customer'],
             ['key' => 'interest_income_cr', 'account_code' => '4100', 'entry_type' => 'credit', 'description' => 'Interest Income'],
             ['key' => 'fee_income_cr', 'account_code' => '4200', 'entry_type' => 'credit', 'description' => 'Fee Income (initiation + service, excl. VAT)'],
             ['key' => 'penalty_income', 'account_code' => '4300', 'entry_type' => 'credit', 'description' => 'Penalty Income'],

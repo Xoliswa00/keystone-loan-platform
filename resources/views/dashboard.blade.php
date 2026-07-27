@@ -16,6 +16,14 @@
 
     $hour     = now()->hour;
     $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+
+    $outstandingShortfall = 0.0;
+    $outstandingCredit    = 0.0;
+    if ($user->customer) {
+        $paymentAdjustments   = app(\App\Services\PaymentAdjustmentService::class);
+        $outstandingShortfall = $paymentAdjustments->outstandingShortfall($user->customer);
+        $outstandingCredit    = $paymentAdjustments->outstandingCredit($user->customer);
+    }
 @endphp
 
 {{-- ── Welcome banner ── --}}
@@ -125,6 +133,32 @@
         <p class="text-xs text-kc-charcoal/40 mt-2">Account standing</p>
     </div>
 </div>
+
+{{-- ── Outstanding shortfall / credit — same disclosure shown on the
+     application form and agreement documents ── --}}
+@if($outstandingShortfall > 0)
+<div class="mb-6 flex items-start gap-3 px-5 py-4 rounded-xl border border-amber-300/40 bg-amber-50">
+    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+    </svg>
+    <div>
+        <p class="text-sm font-semibold text-amber-800">Outstanding balance from a previous loan: R{{ number_format($outstandingShortfall, 2) }}</p>
+        <p class="text-xs text-amber-700/80 mt-0.5">This is disclosed on your loan agreement and does not affect your current instalments.</p>
+    </div>
+</div>
+@endif
+
+@if($outstandingCredit > 0)
+<div class="mb-6 flex items-start gap-3 px-5 py-4 rounded-xl border border-emerald-300/40 bg-emerald-50">
+    <svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    </svg>
+    <div>
+        <p class="text-sm font-semibold text-emerald-800">Credit balance: R{{ number_format($outstandingCredit, 2) }}</p>
+        <p class="text-xs text-emerald-700/80 mt-0.5">From a previous overpayment — this will be applied to your next instalment.</p>
+    </div>
+</div>
+@endif
 
 {{-- ── Quick actions ── --}}
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

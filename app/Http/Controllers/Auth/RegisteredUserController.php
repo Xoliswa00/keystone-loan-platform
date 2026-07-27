@@ -54,7 +54,7 @@ class RegisteredUserController extends Controller
         try {
             // Handle file upload for ID_copy
             $filePath = $request->hasFile('ID_copy')
-                ? $request->file('ID_copy')->store('id_copies', 'public')
+                ? $request->file('ID_copy')->store('id_copies', 'local')
                 : null;
 
         } catch (\Exception $e) {

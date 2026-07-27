@@ -92,6 +92,14 @@ class ManualPaymentServiceTest extends TestCase
         );
     }
 
+    /** Deferred interest/fee + income accounts — only the isMulti branch needs these. */
+    private function provisionMultiMonthGlAccounts(): void
+    {
+        foreach (['2100', '2110', '2300', '4100', '4200'] as $code) {
+            $this->provisionGlAccount($code, 1);
+        }
+    }
+
     private function makeStaff(): User
     {
         $user = User::create([
@@ -171,6 +179,272 @@ class ManualPaymentServiceTest extends TestCase
         ]);
 
         return compact('user', 'customer', 'loan', 'schedule');
+    }
+
+    /**
+     * A 3-month loan, mid-term: one schedule row due now carrying its own
+     * principal/interest/fee split, with the loan's deferred_interest/
+     * deferred_fees still holding the not-yet-recognised income for every
+     * remaining instalment (this one included) — the isMulti branch this
+     * class had zero coverage for before.
+     */
+    private function makeClientWithMultiMonthLoan(): array
+    {
+        $user = User::create([
+            'name' => 'Test Multi-Month Client',
+            'email' => 'manual-pay-multi-client-'.uniqid('', true).'@example.com',
+            'password' => bcrypt('password'),
+            'address' => '1 Test Street',
+            'phone' => (string) random_int(1000000000, 9999999999),
+            'salary_payment_day' => 25,
+            'ID_copy' => 'id_copies/test.pdf',
+            'ID_Number' => (string) random_int(1000000000000, 9999999999999),
+        ]);
+
+        $customer = Customer::create([
+            'user_id' => $user->id,
+            'customer_code' => 'CUST-'.uniqid('', true),
+            'customer_type' => 'individual',
+            'payment_terms' => 'debit_order',
+            'credit_limit' => 5000,
+            'current_balance' => 3150,
+        ]);
+
+        $application = LoanApplication::create([
+            'user_id' => $user->id,
+            'loan_product_id' => $this->product->id,
+            'loan_type' => 'personal',
+            'loan_term_months' => 3,
+            'loan_amount' => 3000,
+            'purpose' => 'Personal',
+            'terms_conditions' => true,
+            'status' => 'disbursed',
+        ]);
+
+        $loan = Loan::create([
+            'loan_application_id' => $application->id,
+            'user_id' => $user->id,
+            'loan_type' => 'personal',
+            'loan_amount' => 3000,
+            'interest_rate' => 5,
+            'loan_term' => 3,
+            'loan_term_months' => 3,
+            'approved_amount' => 3000,
+            'status' => 'disbursed',
+            'remaining_balance' => 3150,
+            'deferred_interest' => 150,
+            'deferred_fees' => 60,
+        ]);
+
+        $schedule = RepaymentSchedule::create([
+            'loan_id' => $application->id,
+            'user_id' => $user->id,
+            'installment_number' => 1,
+            'emi_amount' => 1070,
+            'principal_amount' => 1000,
+            'interest_amount' => 50,
+            'fee_amount' => 20,
+            'due_date' => now()->toDateString(),
+            'status' => 'pending',
+        ]);
+
+        return compact('user', 'customer', 'loan', 'schedule');
+    }
+
+    public function test_multi_month_instalment_posts_balanced_gl_batch(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['loan' => $loan, 'customer' => $customer, 'schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        $repayment = app(ManualPaymentService::class)->recordAndPost($schedule, [
+            'payment_amount' => 1070, // principal 1000 + interest 50 + fee 20
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+            'payment_reference' => 'CASH-MULTI-1',
+        ], $staff);
+
+        $this->assertSame('paid', $repayment->status);
+        $this->assertNotNull($repayment->gl_batch_reference);
+        $this->assertSame('paid', $schedule->fresh()->status);
+        $this->assertEquals(2080, (float) $loan->fresh()->remaining_balance); // 3150 - 1070
+        $this->assertEquals(2080, (float) $customer->fresh()->current_balance);
+        $this->assertEquals(100, (float) $loan->fresh()->deferred_interest); // 150 - 50
+        $this->assertEquals(40, (float) $loan->fresh()->deferred_fees); // 60 - 20
+        $this->assertDatabaseHas('arbatches', [
+            'reference' => $repayment->gl_batch_reference,
+            'status' => 'posted',
+            'posted_to_gl' => true,
+        ]);
+    }
+
+    public function test_multi_month_payment_amount_mismatch_throws(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        // Shorting the payment to just the principal portion (1000, omitting
+        // the 50 interest + 20 fee) must be rejected outright, not silently
+        // accepted and marked paid — this was the exploitable half of the bug.
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('does not match the instalment amount still due');
+        app(ManualPaymentService::class)->recordAndPost($schedule, [
+            'payment_amount' => 1000,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ], $staff);
+    }
+
+    public function test_reversing_multi_month_payment_restores_balances(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['loan' => $loan, 'customer' => $customer, 'schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        $original = app(ManualPaymentService::class)->recordAndPost($schedule, [
+            'payment_amount' => 1070,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ], $staff);
+
+        app(ManualPaymentService::class)->reversePayment($original, $staff, 'Posted against the wrong client.');
+
+        $this->assertSame('pending', $schedule->fresh()->status);
+        $this->assertEquals(3150, (float) $loan->fresh()->remaining_balance);
+        $this->assertEquals(3150, (float) $customer->fresh()->current_balance);
+        $this->assertEquals(150, (float) $loan->fresh()->deferred_interest);
+        $this->assertEquals(60, (float) $loan->fresh()->deferred_fees);
+    }
+
+    public function test_within_tolerance_shortfall_is_accepted_and_tracked(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['loan' => $loan, 'customer' => $customer, 'schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        // R40 short of R1070 (3.7%) — within the default 5% tolerance.
+        $repayment = app(ManualPaymentService::class)->recordAndPost($schedule, [
+            'payment_amount' => 1030,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ], $staff);
+
+        $this->assertSame('partial', $repayment->status);
+        $schedule->refresh();
+        $this->assertSame('pending', $schedule->status, 'A within-tolerance shortfall must not be marked paid.');
+        $this->assertTrue((bool) $schedule->partial_payment_flag);
+        $this->assertEquals(1030, (float) $schedule->amount_paid_to_date);
+
+        $this->assertDatabaseHas('payment_adjustments', [
+            'source_loan_repayment_id' => $repayment->id,
+            'type' => 'shortfall',
+            'original_amount' => 40,
+            'outstanding_amount' => 40,
+            'status' => 'outstanding',
+        ]);
+
+        // Only R1030 of real cash moved — balances reflect that, not R1070.
+        $this->assertEquals(2120, (float) $loan->fresh()->remaining_balance); // 3150 - 1030
+        $this->assertEquals(2120, (float) $customer->fresh()->current_balance);
+    }
+
+    public function test_within_tolerance_overpayment_is_accepted_and_becomes_credit(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['loan' => $loan, 'customer' => $customer, 'schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        // R40 over R1070 (3.7%) — within tolerance, becomes a credit.
+        $repayment = app(ManualPaymentService::class)->recordAndPost($schedule, [
+            'payment_amount' => 1110,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ], $staff);
+
+        $this->assertSame('paid', $repayment->status);
+        $this->assertSame('paid', $schedule->fresh()->status);
+
+        $this->assertDatabaseHas('payment_adjustments', [
+            'source_loan_repayment_id' => $repayment->id,
+            'type' => 'credit',
+            'original_amount' => 40,
+            'outstanding_amount' => 40,
+            'status' => 'outstanding',
+        ]);
+
+        $this->assertEquals(2040, (float) $loan->fresh()->remaining_balance); // 3150 - 1110
+        $this->assertEquals(2040, (float) $customer->fresh()->current_balance);
+    }
+
+    public function test_outstanding_credit_is_consumed_against_next_schedule(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['user' => $user, 'loan' => $loan, 'customer' => $customer, 'schedule' => $schedule1] = $this->makeClientWithMultiMonthLoan();
+
+        // Second instalment, same loan.
+        $schedule2 = RepaymentSchedule::create([
+            'loan_id' => $schedule1->loan_id,
+            'user_id' => $user->id,
+            'installment_number' => 2,
+            'emi_amount' => 1070,
+            'principal_amount' => 1000,
+            'interest_amount' => 50,
+            'fee_amount' => 20,
+            'due_date' => now()->addMonth()->toDateString(),
+            'status' => 'pending',
+        ]);
+
+        // Overpay instalment #1 by R40 — creates a credit.
+        app(ManualPaymentService::class)->recordAndPost($schedule1, [
+            'payment_amount' => 1110,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ], $staff);
+
+        $this->assertEquals(40, app(\App\Services\PaymentAdjustmentService::class)->outstandingCredit($customer->fresh()));
+
+        // Pay instalment #2 for exactly R1030 — R40 short of the nominal
+        // R1070, but the R40 credit should cover the gap exactly.
+        $repayment2 = app(ManualPaymentService::class)->recordAndPost($schedule2, [
+            'payment_amount' => 1030,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ], $staff);
+
+        $this->assertSame('paid', $repayment2->status, 'The outstanding credit should have covered the R40 gap.');
+        $this->assertEquals(40, (float) $repayment2->credit_applied);
+        $this->assertSame('paid', $schedule2->fresh()->status);
+        $this->assertEquals(0, app(\App\Services\PaymentAdjustmentService::class)->outstandingCredit($customer->fresh()));
+    }
+
+    public function test_reversing_a_partial_payment_restores_shortfall_state(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['loan' => $loan, 'customer' => $customer, 'schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        $original = app(ManualPaymentService::class)->recordAndPost($schedule, [
+            'payment_amount' => 1030,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+        ], $staff);
+
+        app(ManualPaymentService::class)->reversePayment($original, $staff, 'Duplicate entry.');
+
+        $schedule->refresh();
+        $this->assertSame('pending', $schedule->status);
+        $this->assertEquals(0, (float) $schedule->amount_paid_to_date);
+        $this->assertFalse((bool) $schedule->partial_payment_flag);
+        $this->assertEquals(3150, (float) $loan->fresh()->remaining_balance);
+        $this->assertEquals(3150, (float) $customer->fresh()->current_balance);
+
+        $this->assertDatabaseHas('payment_adjustments', [
+            'source_loan_repayment_id' => $original->id,
+            'status' => 'settled',
+            'outstanding_amount' => 0,
+        ]);
     }
 
     public function test_client_submission_creates_no_balance_or_gl_change(): void

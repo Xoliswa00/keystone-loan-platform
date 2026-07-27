@@ -183,7 +183,7 @@
           </div>
           @if($doc)
           <div class="flex items-center gap-1.5">
-            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($doc->file_path) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>
+            <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>
             @if(!$doc->verified && Auth::user()->hasRole('loan_officer', 'it_admin'))
             <form method="POST" action="{{ route('admin.documents.verify', $doc) }}" class="inline">
               @csrf <input type="hidden" name="verified" value="1">

@@ -9,6 +9,7 @@ use App\Models\LoanProduct;
 use App\Models\RepaymentSchedule;
 use App\Services\AffordabilityService;
 use App\Services\CustomerLimitationService;
+use App\Services\PaymentAdjustmentService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,12 +24,16 @@ class LoanApplicationController extends Controller
 
     protected CustomerLimitationService $limitations;
 
+    protected PaymentAdjustmentService $paymentAdjustments;
+
     public function __construct(
         AffordabilityService $affordability,
-        CustomerLimitationService $limitations
+        CustomerLimitationService $limitations,
+        PaymentAdjustmentService $paymentAdjustments
     ) {
         $this->affordability = $affordability;
         $this->limitations = $limitations;
+        $this->paymentAdjustments = $paymentAdjustments;
     }
 
     // ── List ──────────────────────────────────────────────────────────────────
@@ -94,6 +99,17 @@ class LoanApplicationController extends Controller
         $existingBankStatement = $user->customerDocuments()->where('document_type', 'bank_statement')->latest()->first();
         $existingPayslip = $user->customerDocuments()->where('document_type', 'payslip')->latest()->first();
 
+        // Informational only — never blocks submission. A small
+        // in-tolerance shortfall/credit from a prior loan shouldn't stop
+        // someone applying (canApply() above doesn't gate on it either),
+        // but it must be disclosed before they commit to a new agreement.
+        $outstandingShortfall = 0.0;
+        $outstandingCredit = 0.0;
+        if ($user->customer) {
+            $outstandingShortfall = $this->paymentAdjustments->outstandingShortfall($user->customer);
+            $outstandingCredit = $this->paymentAdjustments->outstandingCredit($user->customer);
+        }
+
         return view('applications.create', [
             'products' => $products,
             'affordabilityResult' => $affordabilityResult,
@@ -102,6 +118,8 @@ class LoanApplicationController extends Controller
             'hasBankAccounts' => $userBankAccounts->isNotEmpty(),
             'existingBankStatement' => $existingBankStatement,
             'existingPayslip' => $existingPayslip,
+            'outstandingShortfall' => $outstandingShortfall,
+            'outstandingCredit' => $outstandingCredit,
         ]);
     }
 
@@ -215,13 +233,13 @@ class LoanApplicationController extends Controller
 
             $documentPaths = [
                 'credit_score_report' => $request->hasFile('credit_score_report')
-                    ? $request->file('credit_score_report')->store('credit_reports', 'public')
+                    ? $request->file('credit_score_report')->store('credit_reports', 'local')
                     : null,
                 'bank_statement' => $request->hasFile('bank_statement')
-                    ? $request->file('bank_statement')->store('bank_statements', 'public')
+                    ? $request->file('bank_statement')->store('bank_statements', 'local')
                     : $bankStatementPath,
                 'payslips' => $request->hasFile('payslips')
-                    ? $request->file('payslips')->store('payslips', 'public')
+                    ? $request->file('payslips')->store('payslips', 'local')
                     : $payslipPath,
             ];
 
@@ -376,10 +394,10 @@ class LoanApplicationController extends Controller
         ]));
 
         if ($request->hasFile('bank_statement')) {
-            $application->bank_statement = $request->file('bank_statement')->store('bank_statements', 'public');
+            $application->bank_statement = $request->file('bank_statement')->store('bank_statements', 'local');
         }
         if ($request->hasFile('payslips')) {
-            $application->payslips = $request->file('payslips')->store('payslips', 'public');
+            $application->payslips = $request->file('payslips')->store('payslips', 'local');
         }
 
         $application->save();

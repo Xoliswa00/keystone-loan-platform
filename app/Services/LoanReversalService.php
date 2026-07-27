@@ -91,7 +91,10 @@ class LoanReversalService
 
     protected function reverseAfterDisbursement(LoanApplication $application, Loan $loan, LoanDisbursement $disbursement, User $staff): void
     {
-        if (LoanRepayment::where('loan_id', $loan->id)->where('status', 'paid')->exists()) {
+        // 'partial' included — an in-tolerance shortfall/overpayment still
+        // moved real money against this loan, so it must be reversed first
+        // too, same as a full payment.
+        if (LoanRepayment::where('loan_id', $loan->id)->whereIn('status', ['paid', 'partial'])->exists()) {
             throw new Exception('This loan has repayment history — reverse those payments first before reversing the disbursement.');
         }
 

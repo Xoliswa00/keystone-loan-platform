@@ -6,6 +6,7 @@ use App\Models\arbatch;
 use App\Models\arbatch_entries;
 use App\Models\gl_accounts;
 use App\Models\glmapping;
+use App\Models\LendingSetting;
 use App\Models\LoanRepayment;
 use App\Models\RepaymentSchedule;
 use App\Models\User;
@@ -38,9 +39,12 @@ class ManualPaymentService
 {
     protected GLPostingService $glPosting;
 
-    public function __construct(GLPostingService $glPosting)
+    protected PaymentAdjustmentService $paymentAdjustments;
+
+    public function __construct(GLPostingService $glPosting, PaymentAdjustmentService $paymentAdjustments)
     {
         $this->glPosting = $glPosting;
+        $this->paymentAdjustments = $paymentAdjustments;
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -109,6 +113,40 @@ class ManualPaymentService
             $interestAmount = round((float) $schedule->interest_amount, 2);
             $feeAmount = round((float) $schedule->fee_amount, 2);
 
+            // A prior partial payment may already have cleared part of this
+            // same schedule (amount_paid_to_date) — re-derive what's still
+            // actually outstanding via the same waterfall used everywhere
+            // else in this feature, rather than assuming a schedule is
+            // always being paid for the first time.
+            $alreadyPaid = round((float) $schedule->amount_paid_to_date, 2);
+            [, , , , $remFee, $remInterest, $remPrincipal] = $this->waterfallAllocate($alreadyPaid, $feeAmount, $interestAmount, $principalAmount);
+            $remainingExpected = round($remFee + $remInterest + $remPrincipal, 2);
+
+            // Draw down any outstanding credit (from a prior overpayment,
+            // possibly on a different loan — cross-loan by design) before
+            // deciding whether this payment is short/exact/over.
+            $creditApplied = $this->paymentAdjustments->consumeCreditForSchedule($customer, $schedule, $remainingExpected);
+            $totalCovered = round($grossAmount + $creditApplied, 2);
+
+            // Tolerance band — a payment can miss what's still outstanding
+            // by up to this much (either direction) and still post, instead
+            // of being rejected. Small shortfalls get tracked (not silently
+            // absorbed); small overpayments become a credit for next time.
+            $tolerancePct = (float) LendingSetting::current()->payment_tolerance_pct;
+            $toleranceAmount = round($remainingExpected * $tolerancePct, 2);
+            $diff = round($totalCovered - $remainingExpected, 2); // negative = short, positive = over
+
+            if (abs($diff) > 0.01 && abs($diff) > $toleranceAmount) {
+                throw new Exception(
+                    "Payment amount R{$grossAmount} does not match the instalment amount still due (R{$remainingExpected}), ".
+                    "and is outside the ".($tolerancePct * 100)."% tolerance (max variance R{$toleranceAmount})."
+                );
+            }
+
+            [$allocFee, $allocInterest, $allocPrincipal, $excess] = $this->waterfallAllocate($totalCovered, $remFee, $remInterest, $remPrincipal);
+            $shortfallThisTxn = max(0, round($remainingExpected - $totalCovered, 2));
+            $isFullyPaid = $shortfallThisTxn <= 0.01;
+
             // ── AR batch + GL ────────────────────────────────────────────────
             $ref = 'ARB-MANUAL-'.now()->format('YmdHis').'-'.$schedule->id;
             $arBatch = arbatch::create([
@@ -129,6 +167,7 @@ class ManualPaymentService
             $feeIncomeGl = $this->resolveGl('fee_income_cr');
             $deferredIntGl = $this->resolveGl('deferred_interest_cr');
             $deferredFeeGl = $this->resolveGl('deferred_fee_cr');
+            $creditGl = $this->resolveGl('client_credit_balance_cr');
 
             if (! $bankGl || ! $loanReceivGl) {
                 throw new Exception('Missing required GL accounts for payment posting.');
@@ -140,33 +179,60 @@ class ManualPaymentService
             $entries[] = $this->entry($arBatch->id, $bankGl->id, 'debit', $grossAmount,
                 "Manual payment received — schedule #{$schedule->id}");
 
-            $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $principalAmount,
-                "Principal repayment — loan #{$loan->id} instalment #{$schedule->installment_number}");
+            if ($creditApplied > 0 && $creditGl) {
+                $entries[] = $this->entry($arBatch->id, $creditGl->id, 'debit', $creditApplied,
+                    "Client credit applied — instalment #{$schedule->installment_number}");
+            }
+
+            if ($allocPrincipal > 0) {
+                $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $allocPrincipal,
+                    "Principal repayment — loan #{$loan->id} instalment #{$schedule->installment_number}");
+            }
 
             if ($isMulti) {
-                if ($interestAmount > 0 && $deferredIntGl && $intIncomeGl) {
-                    $entries[] = $this->entry($arBatch->id, $deferredIntGl->id, 'debit', $interestAmount,
+                // Loans Receivable was only carrying principal (see the
+                // credit above) — clear the interest/fee portion of the
+                // receivable too, or the batch's debit side never matches
+                // its credit side for any loan with interest/fees.
+                if ($allocInterest > 0) {
+                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $allocInterest,
+                        "Interest receivable cleared — instalment #{$schedule->installment_number}");
+                }
+                if ($allocFee > 0) {
+                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $allocFee,
+                        "Fee receivable cleared — instalment #{$schedule->installment_number}");
+                }
+                // Separate, self-balancing pair — recognises previously
+                // deferred interest/fee income now that it's actually been
+                // collected (whether via fresh cash or a credit drawdown).
+                if ($allocInterest > 0 && $deferredIntGl && $intIncomeGl) {
+                    $entries[] = $this->entry($arBatch->id, $deferredIntGl->id, 'debit', $allocInterest,
                         "Deferred interest released — instalment #{$schedule->installment_number}");
-                    $entries[] = $this->entry($arBatch->id, $intIncomeGl->id, 'credit', $interestAmount,
+                    $entries[] = $this->entry($arBatch->id, $intIncomeGl->id, 'credit', $allocInterest,
                         "Interest income recognised — instalment #{$schedule->installment_number}");
                 }
-                if ($feeAmount > 0 && $deferredFeeGl && $feeIncomeGl) {
-                    $entries[] = $this->entry($arBatch->id, $deferredFeeGl->id, 'debit', $feeAmount,
+                if ($allocFee > 0 && $deferredFeeGl && $feeIncomeGl) {
+                    $entries[] = $this->entry($arBatch->id, $deferredFeeGl->id, 'debit', $allocFee,
                         "Deferred fee released — instalment #{$schedule->installment_number}");
-                    $entries[] = $this->entry($arBatch->id, $feeIncomeGl->id, 'credit', $feeAmount,
+                    $entries[] = $this->entry($arBatch->id, $feeIncomeGl->id, 'credit', $allocFee,
                         "Fee income recognised — instalment #{$schedule->installment_number}");
                 }
             } else {
                 // Single-month: income was already recognised at disbursement —
                 // just balance the credits, same as NuPayService::handleSuccess().
-                if ($interestAmount > 0) {
-                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $interestAmount,
+                if ($allocInterest > 0) {
+                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $allocInterest,
                         "Interest receivable cleared — loan #{$loan->id}");
                 }
-                if ($feeAmount > 0) {
-                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $feeAmount,
+                if ($allocFee > 0) {
+                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'credit', $allocFee,
                         "Fee receivable cleared — loan #{$loan->id}");
                 }
+            }
+
+            if ($excess > 0 && $creditGl) {
+                $entries[] = $this->entry($arBatch->id, $creditGl->id, 'credit', $excess,
+                    "Overpayment — instalment #{$schedule->installment_number}");
             }
 
             arbatch_entries::insert($entries);
@@ -175,31 +241,45 @@ class ManualPaymentService
             $arBatch->update(['posted_to_gl' => true, 'status' => 'posted']);
 
             // ── Balances ─────────────────────────────────────────────────────
+            // remaining_balance/current_balance only move for FRESH cash —
+            // the credit-applied portion already reduced these when it was
+            // originally received as an overpayment; decrementing again here
+            // would double-count the same money.
             $loan->decrement('remaining_balance', $grossAmount);
             $customer->decrement('current_balance', $grossAmount);
 
             if ($isMulti) {
-                $loan->decrement('deferred_interest', $interestAmount);
-                $loan->decrement('deferred_fees', $feeAmount);
+                $loan->decrement('deferred_interest', $allocInterest);
+                $loan->decrement('deferred_fees', $allocFee);
             }
 
-            $schedule->update(['status' => 'paid', 'paid_at' => now(), 'gl_posted' => true]);
+            $schedule->update([
+                'amount_paid_to_date' => round($alreadyPaid + $totalCovered, 2),
+                'partial_payment_flag' => ! $isFullyPaid,
+                'status' => $isFullyPaid ? 'paid' : 'pending',
+                'paid_at' => $isFullyPaid ? now() : null,
+                'gl_posted' => true,
+            ]);
 
-            $unpaidCount = RepaymentSchedule::where('loan_id', $loanApplication->id)
-                ->where('status', 'pending')->count();
-            $loan->update(['status' => $unpaidCount === 0 ? 'settled' : 'disbursed']);
+            if ($isFullyPaid) {
+                $unpaidCount = RepaymentSchedule::where('loan_id', $loanApplication->id)
+                    ->where('status', 'pending')->count();
+                $loan->update(['status' => $unpaidCount === 0 ? 'settled' : 'disbursed']);
+            }
 
             // ── Repayment record ─────────────────────────────────────────────
             $attributes = [
                 'loan_id' => $loan->id,
                 'repayment_schedule_id' => $schedule->id,
                 'payment_amount' => $grossAmount,
-                'principal_amount' => $principalAmount,
-                'interest_amount' => $interestAmount,
-                'fee_amount' => $feeAmount,
+                'principal_amount' => $allocPrincipal,
+                'interest_amount' => $allocInterest,
+                'fee_amount' => $allocFee,
+                'credit_applied' => $creditApplied,
+                'credit_created' => $excess,
                 'payment_date' => $data['payment_date'],
                 'due_date' => $schedule->due_date,
-                'status' => 'paid',
+                'status' => $isFullyPaid ? 'paid' : 'partial',
                 'payment_method' => $data['payment_method'] ?? 'cash',
                 'payment_reference' => $data['payment_reference'] ?? null,
                 'notes' => $data['notes'] ?? null,
@@ -219,6 +299,13 @@ class ManualPaymentService
                     $attributes['proof_of_payment_path'] = $data['proof_of_payment_path'];
                 }
                 $repayment = LoanRepayment::create($attributes);
+            }
+
+            if ($shortfallThisTxn > 0) {
+                $this->paymentAdjustments->recordShortfall($customer, $loan, $schedule, $repayment, $shortfallThisTxn, $staff->id);
+            }
+            if ($excess > 0) {
+                $this->paymentAdjustments->recordCredit($customer, $loan, $schedule, $repayment, $excess, $staff->id);
             }
 
             try {
@@ -289,8 +376,8 @@ class ManualPaymentService
         return DB::transaction(function () use ($original, $staff, $reason) {
             $original = LoanRepayment::lockForUpdate()->findOrFail($original->id);
 
-            if ($original->status !== 'paid') {
-                throw new Exception('Only a posted (paid) payment can be reversed.');
+            if (! in_array($original->status, ['paid', 'partial'], true)) {
+                throw new Exception('Only a posted (paid or partial) payment can be reversed.');
             }
 
             if (LoanRepayment::where('reverses_repayment_id', $original->id)->exists()) {
@@ -310,6 +397,8 @@ class ManualPaymentService
             $principalAmount = round((float) $original->principal_amount, 2);
             $interestAmount = round((float) $original->interest_amount, 2);
             $feeAmount = round((float) $original->fee_amount, 2);
+            $creditApplied = round((float) $original->credit_applied, 2);
+            $creditCreated = round((float) $original->credit_created, 2);
 
             $ref = 'ARB-REVERSAL-'.now()->format('YmdHis').'-'.$original->id;
             $arBatch = arbatch::create([
@@ -330,6 +419,7 @@ class ManualPaymentService
             $feeIncomeGl = $this->resolveGl('fee_income_cr');
             $deferredIntGl = $this->resolveGl('deferred_interest_cr');
             $deferredFeeGl = $this->resolveGl('deferred_fee_cr');
+            $creditGl = $this->resolveGl('client_credit_balance_cr');
 
             if (! $bankGl || ! $loanReceivGl) {
                 throw new Exception('Missing required GL accounts for payment reversal.');
@@ -341,10 +431,29 @@ class ManualPaymentService
             // Reversal = swap Dr/Cr from the original posting entries
             $entries[] = $this->entry($arBatch->id, $bankGl->id, 'credit', $grossAmount,
                 "Reversal — bank #{$original->id}");
+
+            if ($creditApplied > 0 && $creditGl) {
+                $entries[] = $this->entry($arBatch->id, $creditGl->id, 'credit', $creditApplied,
+                    "Reversal — client credit restored #{$original->id}");
+            }
+            if ($creditCreated > 0 && $creditGl) {
+                $entries[] = $this->entry($arBatch->id, $creditGl->id, 'debit', $creditCreated,
+                    "Reversal — client credit withdrawn #{$original->id}");
+            }
+
             $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $principalAmount,
                 "Reversal — principal re-opened #{$original->id}");
 
             if ($isMulti) {
+                // Mirror of the receivable-clearing fix in recordAndPost() —
+                // reopen the interest/fee portion of the receivable too, not
+                // just principal, or this batch is unbalanced the same way.
+                if ($interestAmount > 0) {
+                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $interestAmount, 'Reversal — interest receivable restored');
+                }
+                if ($feeAmount > 0) {
+                    $entries[] = $this->entry($arBatch->id, $loanReceivGl->id, 'debit', $feeAmount, 'Reversal — fee receivable restored');
+                }
                 if ($interestAmount > 0 && $deferredIntGl && $intIncomeGl) {
                     $entries[] = $this->entry($arBatch->id, $intIncomeGl->id, 'debit', $interestAmount, 'Reversal — interest income reversed');
                     $entries[] = $this->entry($arBatch->id, $deferredIntGl->id, 'credit', $interestAmount, 'Reversal — deferred interest restored');
@@ -377,7 +486,21 @@ class ManualPaymentService
             }
 
             // ── Re-open the schedule ────────────────────────────────────────
-            $schedule->update(['status' => 'pending', 'paid_at' => null, 'gl_posted' => false]);
+            // This repayment contributed principalAmount+interestAmount+
+            // feeAmount toward the schedule (credit_created never touched
+            // the schedule's own receivable, so it's excluded here) — pull
+            // just that back out of amount_paid_to_date rather than
+            // blindly resetting it, in case other partial payments against
+            // this same schedule still stand.
+            $allocatedToSchedule = round($principalAmount + $interestAmount + $feeAmount, 2);
+            $newAmountPaidToDate = max(0, round((float) $schedule->amount_paid_to_date - $allocatedToSchedule, 2));
+            $schedule->update([
+                'amount_paid_to_date' => $newAmountPaidToDate,
+                'partial_payment_flag' => $newAmountPaidToDate > 0,
+                'status' => 'pending',
+                'paid_at' => null,
+                'gl_posted' => $newAmountPaidToDate > 0,
+            ]);
             $loan->update(['status' => 'disbursed']);
 
             $reversal = LoanRepayment::create([
@@ -388,6 +511,8 @@ class ManualPaymentService
                 'principal_amount' => -$principalAmount,
                 'interest_amount' => -$interestAmount,
                 'fee_amount' => -$feeAmount,
+                'credit_applied' => -$creditApplied,
+                'credit_created' => -$creditCreated,
                 'payment_date' => now(),
                 'due_date' => $schedule->due_date,
                 'status' => 'reversed',
@@ -402,6 +527,8 @@ class ManualPaymentService
                 'notes' => $reason,
             ]);
 
+            $this->paymentAdjustments->reverseAdjustmentFor($original);
+
             try {
                 $loan->user?->notify(new \App\Notifications\PaymentReversedNotification($reversal));
             } catch (Exception $e) {
@@ -415,6 +542,39 @@ class ManualPaymentService
     // ──────────────────────────────────────────────────────────────────────
     // Helpers — same pattern as NuPayService
     // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Allocates $amount across fee/interest/principal in that priority
+     * order (fee and interest are what's genuinely at risk of never being
+     * collected) — used both to figure out what a NEW payment covers, and
+     * to re-derive what a PRIOR partial payment already covered against
+     * the same three buckets. Returns
+     * [allocFee, allocInterest, allocPrincipal, excess, remFee, remInterest, remPrincipal] —
+     * excess is whatever's left over once fee+interest+principal are fully
+     * covered (only non-zero on an overpayment); remFee/remInterest/
+     * remPrincipal are what's left unallocated in each bucket (only
+     * non-zero on a shortfall).
+     */
+    protected function waterfallAllocate(float $amount, float $fee, float $interest, float $principal): array
+    {
+        $remaining = round($amount, 2);
+
+        $allocFee = round(min($remaining, $fee), 2);
+        $remaining = round($remaining - $allocFee, 2);
+
+        $allocInterest = round(min($remaining, $interest), 2);
+        $remaining = round($remaining - $allocInterest, 2);
+
+        $allocPrincipal = round(min($remaining, $principal), 2);
+        $remaining = round($remaining - $allocPrincipal, 2);
+
+        $excess = max(0, $remaining);
+        $remFee = round($fee - $allocFee, 2);
+        $remInterest = round($interest - $allocInterest, 2);
+        $remPrincipal = round($principal - $allocPrincipal, 2);
+
+        return [$allocFee, $allocInterest, $allocPrincipal, $excess, $remFee, $remInterest, $remPrincipal];
+    }
 
     protected function entry(int $batchId, int $accountId, string $type, float $amount, string $desc): array
     {

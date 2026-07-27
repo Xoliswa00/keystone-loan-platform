@@ -105,7 +105,7 @@ class CustomerProfileController extends Controller
 
         $file = $request->file('document');
         $fileHash = hash_file('sha256', $file->getRealPath());
-        $path = $file->store("customer_documents/{$user->id}", 'public');
+        $path = $file->store("customer_documents/{$user->id}", 'local');
 
         $doc = CustomerDocument::create([
             'user_id' => $user->id,

@@ -27,7 +27,7 @@
             <td data-label="Reference" class="text-xs text-kc-charcoal/50">{{ $p->payment_reference ?? '—' }}</td>
             <td data-label="Proof">
               @if($p->proof_of_payment_path)
-              <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($p->proof_of_payment_path) }}"
+              <a href="{{ route('secure-documents.repayment-proof', $p) }}"
                  target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
               @else
               <span class="text-xs text-kc-charcoal/30">—</span>

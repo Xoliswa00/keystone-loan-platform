@@ -94,4 +94,9 @@ class Customer extends Model
     {
         return $this->hasMany(RepaymentSchedule::class, 'loan_id', 'user_id');
     }
+
+    public function paymentAdjustments()
+    {
+        return $this->hasMany(PaymentAdjustment::class);
+    }
 }

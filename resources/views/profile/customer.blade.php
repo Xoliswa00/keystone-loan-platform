@@ -287,7 +287,7 @@
                         Uploaded {{ $doc->created_at->format('d M Y') }} — {{ $doc->original_name }}
                         <span class="{{ $doc->verified ? 'text-emerald-600' : 'text-kc-gold-muted' }} font-medium">{{ $doc->verified ? '· Verified' : '· Pending review' }}</span>
                       </span>
-                      <a href="{{ Storage::disk('public')->url($doc->file_path) }}" target="_blank" class="text-xs text-kc-gold hover:underline flex-shrink-0 ml-2">View</a>
+                      <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-xs text-kc-gold hover:underline flex-shrink-0 ml-2">View</a>
                     </div>
                   @endforeach
                 </div>
@@ -317,7 +317,7 @@
                   @unless($doc->verified)
                     <span class="text-[10px] text-kc-gold-muted uppercase">Pending review</span>
                   @endunless
-                  <a href="{{ Storage::disk('public')->url($doc->file_path) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
+                  <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
                 </div>
               @else
                 <span class="text-[10px] text-kc-charcoal/30 uppercase">Missing</span>

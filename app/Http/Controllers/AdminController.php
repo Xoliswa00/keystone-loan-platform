@@ -94,6 +94,19 @@ class AdminController extends Controller
             ->where('id', '<>', $application->id)->get();
         $cloDecision = CloDecision::latestFor($application->id)->first();
 
+        // Staff need the detail (source loan, age), not just a total —
+        // they're the ones deciding whether/how it gets rolled in at
+        // approval, so a bare sum wouldn't be enough to act on.
+        $outstandingAdjustments = collect();
+        $customer = $application->user->customer ?? null;
+        if ($customer) {
+            $outstandingAdjustments = \App\Models\PaymentAdjustment::where('customer_id', $customer->id)
+                ->outstanding()
+                ->with('sourceLoan')
+                ->orderBy('created_at')
+                ->get();
+        }
+
         $counterOfferSuggestions = [];
         $counterOffers = collect();
 
@@ -135,7 +148,7 @@ class AdminController extends Controller
         }
 
         return view('admin.loan_applications.show', compact(
-            'application', 'previousLoans', 'cloDecision', 'counterOfferSuggestions', 'counterOffers'
+            'application', 'previousLoans', 'cloDecision', 'counterOfferSuggestions', 'counterOffers', 'outstandingAdjustments'
         ));
     }
 

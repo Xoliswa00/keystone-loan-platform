@@ -55,7 +55,10 @@ class GenerateClientStatement implements ShouldQueue
             ->get();
 
         $repayments = LoanRepayment::where('user_id', $user->id)
-            ->where('status', 'paid')
+            // 'partial' included — an in-tolerance shortfall/overpayment
+            // still moved real money and must show on the client's own
+            // statement, not vanish because it isn't a full settlement.
+            ->whereIn('status', ['paid', 'partial'])
             ->orderBy('payment_date', 'desc')
             ->take(50)           // max 50 transactions
             ->get();
@@ -63,6 +66,17 @@ class GenerateClientStatement implements ShouldQueue
         $totalOutstanding = $loans->whereIn('status', ['disbursed', 'payment_failed'])->sum('remaining_balance');
         $nextDue = RepaymentSchedule::where('user_id', $user->id)->where('status', 'pending')->orderBy('due_date')->first();
         $ledger = $this->buildLedger($loans, $repayments);
+
+        // Outstanding shortfall/credit must be visible on the client's own
+        // statement, same disclosure principle as the application form and
+        // agreement documents.
+        $outstandingShortfall = 0.0;
+        $outstandingCredit = 0.0;
+        if ($user->customer) {
+            $adjustments = app(\App\Services\PaymentAdjustmentService::class);
+            $outstandingShortfall = $adjustments->outstandingShortfall($user->customer);
+            $outstandingCredit = $adjustments->outstandingCredit($user->customer);
+        }
 
         $filename = 'KCP-Statement-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.$this->period.'.pdf';
         $storagePath = "statements/{$user->id}/{$filename}";
@@ -75,6 +89,8 @@ class GenerateClientStatement implements ShouldQueue
             'totalOutstanding' => $totalOutstanding,
             'nextDue' => $nextDue,
             'ledger' => $ledger,
+            'outstandingShortfall' => $outstandingShortfall,
+            'outstandingCredit' => $outstandingCredit,
             'statementDate' => now()->format('d F Y'),
             'statementRef' => 'STMT-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.now()->format('Ymd'),
             'company' => $company,
@@ -89,7 +105,7 @@ class GenerateClientStatement implements ShouldQueue
             ]);
 
         // Save to public storage
-        Storage::disk('public')->put($storagePath, $pdf->output());
+        Storage::disk('local')->put($storagePath, $pdf->output());
 
         // Cache the path so the controller can serve it quickly
         Cache::put("statement_{$user->id}_{$this->period}", $storagePath, now()->addHours(24));

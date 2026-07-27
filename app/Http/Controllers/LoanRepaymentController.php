@@ -101,7 +101,7 @@ class LoanRepaymentController extends Controller
         ]);
 
         $validated['proof_of_payment_path'] = $request->file('proof_of_payment')
-            ->store("proof_of_payment/{$request->user()->id}", 'public');
+            ->store("proof_of_payment/{$request->user()->id}", 'local');
 
         $this->manualPayment->submitForReview($repaymentSchedule, $request->user(), $validated);
 

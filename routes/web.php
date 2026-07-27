@@ -9,7 +9,6 @@ use App\Http\Controllers\DisbursementController;
 use App\Http\Controllers\LoanAgreementController;
 use App\Http\Controllers\LoanApplicationController;
 use App\Http\Controllers\LoanController;
-use App\Http\Controllers\LoanInterestController;
 use App\Http\Controllers\LoanProductController;
 use App\Http\Controllers\LoanRepaymentController;
 use App\Http\Controllers\NupayTransactionController;
@@ -77,6 +76,21 @@ Route::middleware('auth')->group(function () {
         Route::post('/financial', [CustomerProfileController::class, 'saveAffordability'])->name('save-affordability');
         Route::post('/documents', [CustomerProfileController::class, 'uploadDocument'])->name('upload-document');
         Route::get('/pre-qual', [CustomerProfileController::class, 'preQualification'])->name('pre-qual');
+    });
+
+    // ── Secure documents (KYC/PII) ───────────────────────────────────────────
+    // Every one of these streams from the private 'local' disk; ownership vs.
+    // staff-role is checked inside SecureDocumentController, same pattern as
+    // the counter-offer route above.
+    Route::prefix('documents')->name('secure-documents.')->group(function () {
+        Route::get('/customer/{document}',
+            [\App\Http\Controllers\SecureDocumentController::class, 'customerDocument'])->name('customer-document');
+        Route::get('/application/{application}/{field}',
+            [\App\Http\Controllers\SecureDocumentController::class, 'applicationFile'])->name('application-file');
+        Route::get('/repayment-proof/{repayment}',
+            [\App\Http\Controllers\SecureDocumentController::class, 'repaymentProof'])->name('repayment-proof');
+        Route::get('/funding-agreement/{fundingFacility}',
+            [\App\Http\Controllers\SecureDocumentController::class, 'fundingAgreement'])->name('funding-agreement');
     });
 
     // ── Account details (bank accounts) ─────────────────────────────────────
@@ -151,7 +165,13 @@ Route::middleware('auth')->group(function () {
         [LoanAgreementController::class, 'generateSettlementQuote'])->name('admin.agreements.settlement-quote');
 
     // ── Transactions ──────────────────────────────────────────────────────────
-    Route::resource('transactions', TransactionController::class);
+    // create/store removed — orphaned scaffold that never matched the real
+    // schema (form posted 'type'=credit/debit; the transactions table's
+    // actual column is the transaction_type enum(disbursement,repayment,
+    // penalty)), unscoped to any loan/user, and its only UI link was
+    // already commented out. index/show/edit/update/destroy stay — those
+    // are correctly ownership-scoped and still linked from the UI.
+    Route::resource('transactions', TransactionController::class)->except(['create', 'store']);
     // loaninterests moved to the staff group below — no legitimate client
     // use case for setting/overriding a loan's interest rate directly, and
     // it wrote records for any loan_id with no ownership check.
@@ -194,8 +214,13 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::post('admin/loans/{id}/reject', [LoanController::class, 'reject'])->name('loans.reject');
         Route::post('admin/loans/bulk-approve', [LoanController::class, 'bulkApprove'])->name('loans.bulkApprove');
         Route::post('admin/loans/bulk-reject', [LoanController::class, 'bulkReject'])->name('loans.bulkReject');
-        Route::post('admin/loans/{loan}/disburse', [LoanController::class, 'disburse'])->name('loans.disburse');
         Route::post('admin/loans/{id}/reverse', [LoanController::class, 'reverseApproval'])->name('loans.reverse');
+        // update()/updatePayment() write approved_amount/remaining_balance
+        // directly with no GL posting — same "loan movement" remit as
+        // approve/reject/reverse above, so finance is excluded here too.
+        Route::put('loan/{loan}', [LoanController::class, 'update'])->name('loans.update');
+        Route::post('loan/{loan}/update-payment', [LoanController::class, 'updatePayment'])
+            ->name('loans.updatePayment');
     });
 
     // Propose a counter-offer on an application stuck in affordability_review
@@ -203,22 +228,27 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         [\App\Http\Controllers\LoanCounterOfferController::class, 'store'])->name('admin.counter-offers.store');
 
     // Staff-only loan record management (see client group above for why
-    // these aren't client-facing)
-    Route::resource('loan', LoanController::class)->except(['index', 'create', 'store']);
-    Route::post('loan/{loan}/update-payment', [LoanController::class, 'updatePayment'])
-        ->name('loans.updatePayment');
-    // ->parameters() here (and on accountdetails/loanrepayments above):
-    // Route::resource derives the wildcard name from the resource string
-    // as given ('loaninterests' -> {loaninterest}, all lowercase), but
-    // these controllers type-hint the camelCase model name the class
-    // itself uses ($loanInterest). Since neither an exact nor a
-    // Str::snake() match exists between {loaninterest} and $loanInterest,
-    // Laravel's implicit binding silently skips resolution and the
-    // container hands the controller a blank, unsaved model instead of
-    // throwing 404 or loading the real record — show/edit render empty,
-    // update() would insert a new row, destroy() would silently no-op.
-    Route::resource('loaninterests', LoanInterestController::class)
-        ->parameters(['loaninterests' => 'loanInterest']);
+    // these aren't client-facing). 'update' is excluded here — it's
+    // registered above under the narrower loan_officer/it_admin/admin
+    // group alongside updatePayment(), matching how approve/reject/reverse
+    // are already scoped away from finance. 'edit'/'destroy' are removed
+    // entirely — both were unlinked from any view (a shadow-endpoint audit
+    // found them reachable by direct request only), 'edit' rendered the
+    // wrong view (undefined-variable error), and 'destroy' archived a loan
+    // with zero GL reversal or balance check.
+    Route::resource('loan', LoanController::class)->except(['index', 'create', 'store', 'update', 'edit', 'destroy']);
+    // The loaninterests resource that used to sit here was removed by a
+    // shadow-endpoint audit: unlinked from any view (not even its own
+    // index/show — nothing outside loan_interests/* itself referenced it),
+    // its own view called it "reference only", and it carried the same
+    // implicit-binding bug described below (Route::resource derives
+    // {loaninterest} — all lowercase — from the resource string, but the
+    // controller type-hints the camelCase $loanInterest; with neither an
+    // exact nor a Str::snake() match, implicit binding silently skipped
+    // resolution and handed the controller a blank, unsaved model instead
+    // of throwing 404 or loading the real record). loanrepayments below
+    // has the same naming mismatch, which is why it still needs
+    // ->parameters() explicitly.
     Route::resource('repaymentSchedules', RepaymentScheduleController::class)->except(['index', 'show']);
     Route::resource('loanrepayments', LoanRepaymentController::class)
         ->except(['index', 'show'])
@@ -328,11 +358,21 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
     // ── System Logs ───────────────────────────────────────────────────────────
     Route::prefix('admin/system')->name('admin.system.')->group(function () {
         Route::get('/logs', [\App\Http\Controllers\SystemLogController::class, 'index'])->name('logs');
-        Route::post('/logs/retry', [\App\Http\Controllers\SystemLogController::class, 'retryJob'])->name('logs.retry');
-        Route::post('/logs/clear-failed', [\App\Http\Controllers\SystemLogController::class, 'clearFailed'])->name('logs.clear-failed');
         Route::get('/logs/download', [\App\Http\Controllers\SystemLogController::class, 'download'])->name('logs.download');
-        Route::post('/logs/clear', [\App\Http\Controllers\SystemLogController::class, 'clearLog'])->name('logs.clear');
-        Route::post('/jobs/run', [\App\Http\Controllers\SystemLogController::class, 'runJob'])->name('jobs.run');
+
+        // Destructive/operational actions — narrowed to match the
+        // read-only audit-log's own role gate (reports.audit-log, below).
+        // These were previously reachable by loan_officer/finance too,
+        // meaning a role explicitly barred from *viewing* the compliance
+        // audit trail could nonetheless truncate failed_jobs or clear the
+        // live application log — destroying evidence gated more loosely
+        // than reading it.
+        Route::middleware('role:admin,it_admin')->group(function () {
+            Route::post('/logs/retry', [\App\Http\Controllers\SystemLogController::class, 'retryJob'])->name('logs.retry');
+            Route::post('/logs/clear-failed', [\App\Http\Controllers\SystemLogController::class, 'clearFailed'])->name('logs.clear-failed');
+            Route::post('/logs/clear', [\App\Http\Controllers\SystemLogController::class, 'clearLog'])->name('logs.clear');
+            Route::post('/jobs/run', [\App\Http\Controllers\SystemLogController::class, 'runJob'])->name('jobs.run');
+        });
     });
 
     // ── Company Settings ──────────────────────────────────────────────────────
@@ -360,6 +400,8 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         // never actually persisted (the flash message always reported the
         // original, unchanged state).
         $user->forceFill(['two_factor_enabled' => $new])->save();
+
+        \App\Models\AuditLog::record($new ? '2fa_enabled' : '2fa_disabled', $user, [], []);
 
         return back()->with('success', '2FA '.($new ? 'enabled' : 'disabled').' for '.$user->name.'.');
     })->middleware('role:admin')->name('admin.settings.2fa.toggle');

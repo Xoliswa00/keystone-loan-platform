@@ -56,7 +56,7 @@ class DocumentContentCheckService
             return;
         }
 
-        $path = Storage::disk('public')->path($document->file_path);
+        $path = Storage::disk('local')->path($document->file_path);
 
         if (! file_exists($path)) {
             $this->markInconclusive($document, 'File not found on disk.');

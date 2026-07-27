@@ -102,6 +102,14 @@ class NuPayServiceTest extends TestCase
         );
     }
 
+    /** Deferred interest/fee + income accounts — only the isMulti branch needs these. */
+    private function provisionMultiMonthGlAccounts(): void
+    {
+        foreach (['2100', '2110', '4100', '4200'] as $code) {
+            $this->provisionGlAccount($code, 1);
+        }
+    }
+
     private function makeStaff(): User
     {
         $user = User::create([
@@ -187,6 +195,155 @@ class NuPayServiceTest extends TestCase
         ]);
 
         return compact('user', 'customer', 'loan', 'schedule');
+    }
+
+    /**
+     * A 3-month loan, mid-term: one schedule row due now carrying its own
+     * principal/interest/fee split, with the loan's deferred_interest/
+     * deferred_fees still holding the not-yet-recognised income for every
+     * remaining instalment (this one included) — the isMulti branch this
+     * class had zero coverage for before.
+     */
+    private function makeClientWithMultiMonthLoan(): array
+    {
+        $debtorId = (string) random_int(1000000000000, 9999999999999);
+
+        $user = User::create([
+            'name' => 'Test Multi-Month Client',
+            'email' => 'nupay-multi-client-'.uniqid('', true).'@example.com',
+            'password' => bcrypt('password'),
+            'address' => '1 Test Street',
+            'phone' => (string) random_int(1000000000, 9999999999),
+            'salary_payment_day' => 25,
+            'ID_copy' => 'id_copies/test.pdf',
+            'ID_Number' => $debtorId,
+        ]);
+
+        $customer = Customer::create([
+            'user_id' => $user->id,
+            'customer_code' => 'CUST-'.uniqid('', true),
+            'customer_type' => 'individual',
+            'payment_terms' => 'debit_order',
+            'credit_limit' => 5000,
+            'current_balance' => 3150,
+        ]);
+
+        $application = LoanApplication::create([
+            'user_id' => $user->id,
+            'loan_product_id' => $this->product->id,
+            'loan_type' => 'personal',
+            'loan_term_months' => 3,
+            'loan_amount' => 3000,
+            'purpose' => 'Personal',
+            'terms_conditions' => true,
+            'status' => 'disbursed',
+        ]);
+
+        $loan = Loan::create([
+            'loan_application_id' => $application->id,
+            'user_id' => $user->id,
+            'loan_type' => 'personal',
+            'loan_amount' => 3000,
+            'interest_rate' => 5,
+            'loan_term' => 3,
+            'loan_term_months' => 3,
+            'approved_amount' => 3000,
+            'status' => 'disbursed',
+            'remaining_balance' => 3150,
+            'deferred_interest' => 150,
+            'deferred_fees' => 60,
+        ]);
+
+        $schedule = RepaymentSchedule::create([
+            'loan_id' => $application->id,
+            'user_id' => $user->id,
+            'installment_number' => 1,
+            'emi_amount' => 1070,
+            'principal_amount' => 1000,
+            'interest_amount' => 50,
+            'fee_amount' => 20,
+            'due_date' => now()->toDateString(),
+            'status' => 'pending',
+        ]);
+
+        return compact('user', 'customer', 'loan', 'schedule');
+    }
+
+    public function test_multi_month_success_posts_balanced_gl_batch(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['user' => $client, 'loan' => $loan, 'customer' => $customer, 'schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        $batch = import_batch::create([
+            'source' => 'nupay',
+            'original_filename' => 'test.csv',
+            'stored_path' => 'imports/test.csv',
+            'checksum' => uniqid('', true),
+            'import_ref' => 'REF-'.uniqid('', true),
+            'status' => 'CAPTURED',
+        ]);
+
+        $txn = nupay_transactions_staging::create([
+            'import_id' => $batch->id,
+            'import_ref' => $batch->import_ref,
+            'transaction_type' => 'success',
+            'status' => 'success',
+            'mandate_id' => 'MANDATE-'.uniqid('', true),
+            'mandate_request_tran_id' => 'MRTI-'.uniqid('', true),
+            'debtor_id' => $client->ID_Number,
+            'instalment_amount' => 1070, // principal 1000 + interest 50 + fee 20
+            'action_date' => now()->toDateString(),
+        ]);
+
+        app(NuPayService::class)->postTransaction($txn->id, $staff->id);
+
+        $this->assertNotNull($txn->fresh()->posted_at);
+        $this->assertSame('paid', $schedule->fresh()->status);
+        $this->assertEquals(2080, (float) $loan->fresh()->remaining_balance); // 3150 - 1070
+        $this->assertEquals(2080, (float) $customer->fresh()->current_balance);
+        $this->assertEquals(100, (float) $loan->fresh()->deferred_interest); // 150 - 50
+        $this->assertEquals(40, (float) $loan->fresh()->deferred_fees); // 60 - 20
+    }
+
+    public function test_multi_month_amount_mismatch_throws_and_does_not_post(): void
+    {
+        $this->provisionMultiMonthGlAccounts();
+        $staff = $this->makeStaff();
+        ['user' => $client, 'schedule' => $schedule] = $this->makeClientWithMultiMonthLoan();
+
+        $batch = import_batch::create([
+            'source' => 'nupay',
+            'original_filename' => 'test.csv',
+            'stored_path' => 'imports/test.csv',
+            'checksum' => uniqid('', true),
+            'import_ref' => 'REF-'.uniqid('', true),
+            'status' => 'CAPTURED',
+        ]);
+
+        // Feed amount short of the true instalment total (1070) — must be
+        // rejected outright rather than silently marking the schedule paid.
+        $txn = nupay_transactions_staging::create([
+            'import_id' => $batch->id,
+            'import_ref' => $batch->import_ref,
+            'transaction_type' => 'success',
+            'status' => 'success',
+            'mandate_id' => 'MANDATE-'.uniqid('', true),
+            'mandate_request_tran_id' => 'MRTI-'.uniqid('', true),
+            'debtor_id' => $client->ID_Number,
+            'instalment_amount' => 1000,
+            'action_date' => now()->toDateString(),
+        ]);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('does not match the amount still due');
+
+        try {
+            app(NuPayService::class)->postTransaction($txn->id, $staff->id);
+        } finally {
+            $this->assertNull($txn->fresh()->posted_at, 'A rejected batch must not be marked posted.');
+            $this->assertSame('pending', $schedule->fresh()->status);
+        }
     }
 
     public function test_success_posting_archives_loan_repayment_id_and_completes_batch_excluding_tracking_rows(): void

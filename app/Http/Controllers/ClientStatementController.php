@@ -42,7 +42,7 @@ class ClientStatementController extends Controller
         $period = now()->format('Y-m');
         $path = Cache::get("statement_{$user->id}_{$period}");
 
-        if ($path && Storage::disk('public')->exists($path)) {
+        if ($path && Storage::disk('local')->exists($path)) {
             return response()->json([
                 'ready' => true,
                 'download' => route('client.statement.file', ['user' => $user->id, 'period' => $period]),
@@ -75,14 +75,14 @@ class ClientStatementController extends Controller
             $path = "statements/{$user->id}/{$filename}";
         }
 
-        if (! Storage::disk('public')->exists($path)) {
+        if (! Storage::disk('local')->exists($path)) {
             return back()->with('error', 'Statement not found. Please request a new one.');
         }
 
         $filename = 'KCP-Statement-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.$period.'.pdf';
 
         return response()->download(
-            Storage::disk('public')->path($path),
+            Storage::disk('local')->path($path),
             $filename,
             ['Content-Type' => 'application/pdf']
         );
@@ -98,11 +98,11 @@ class ClientStatementController extends Controller
 
         // 1. Check if already cached and ready
         $cachedPath = Cache::get($cacheKey);
-        if ($cachedPath && Storage::disk('public')->exists($cachedPath)) {
+        if ($cachedPath && Storage::disk('local')->exists($cachedPath)) {
             $filename = basename($cachedPath);
 
             return response()->download(
-                Storage::disk('public')->path($cachedPath),
+                Storage::disk('local')->path($cachedPath),
                 $filename,
                 ['Content-Type' => 'application/pdf']
             );

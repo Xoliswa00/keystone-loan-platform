@@ -54,7 +54,7 @@ class BankStatementAnalysisService
         $allTransactions = collect();
 
         foreach ($statements as $doc) {
-            $path = Storage::disk('public')->path($doc->file_path);
+            $path = Storage::disk('local')->path($doc->file_path);
             if (! file_exists($path)) {
                 continue;
             }

@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Models\chart_of_accounts;
+use App\Models\companies;
 use App\Models\DebtRecovery;
 use App\Models\FinancialPeriod;
+use App\Models\gl_accounts;
 use App\Models\Loan;
 use App\Models\LoanApplication;
 use App\Models\LoanProduct;
 use App\Models\User;
 use App\Services\FinancialPeriodService;
+use Database\Seeders\ChartOfAccountsAndGlMappingsSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -19,10 +24,13 @@ use Tests\TestCase;
  * earlier this session: DebtRecoveryController::open()/recordPayment(),
  * FundingFacilityService::recordDrawdown/recordRepayment/accrueInterest/
  * payInterest, BadDebtProvisionService::provisionLoan(), and
- * FinancialPeriodService::closePeriod(). This file covers the two cheapest
- * to fixture (no GL account setup needed); the GL-posting ones are covered
- * by manual trace + the lock pattern itself (identical to code already
- * tested elsewhere this session).
+ * FinancialPeriodService::closePeriod(). This file originally needed no GL
+ * account setup at all — DebtRecoveryController::open() just wrote a
+ * DebtRecovery row directly. A later fix (this session) rewired open() to
+ * delegate to BadDebtProvisionService::writeOff() instead (the direct-write
+ * version silently skipped the write-off GL batch entirely), so this test
+ * now needs the same GL fixtures ManualPaymentServiceTest/NuPayServiceTest
+ * use.
  */
 class MoreDuplicateSubmissionGuardTest extends TestCase
 {
@@ -50,6 +58,44 @@ class MoreDuplicateSubmissionGuardTest extends TestCase
                 'requires_enhanced_affordability' => false,
                 'active' => true,
             ]
+        );
+
+        // Needed since DebtRecoveryController::open() now delegates to
+        // BadDebtProvisionService::writeOff() — see class docblock.
+        (new ChartOfAccountsAndGlMappingsSeeder)->run();
+        $this->ensureBranchOne();
+        foreach (['1200', '1240', '5100'] as $code) {
+            $this->provisionGlAccount($code, 1);
+        }
+    }
+
+    private function ensureBranchOne(): void
+    {
+        if (DB::table('branches')->where('id', 1)->exists()) {
+            return;
+        }
+
+        $company = companies::first() ?? companies::create(['name' => 'Test Company']);
+
+        DB::table('branches')->insert([
+            'id' => 1,
+            'branch_code' => 'HQ-TEST',
+            'branch_name' => 'Head Office',
+            'company_id' => $company->id,
+            'branch_type' => 'online',
+            'is_active' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function provisionGlAccount(string $accountCode, int $branchId): void
+    {
+        $coa = chart_of_accounts::where('account_code', $accountCode)->firstOrFail();
+
+        gl_accounts::firstOrCreate(
+            ['chart_of_account_id' => $coa->id, 'branch_id' => $branchId],
+            ['full_account_no' => $accountCode.'-'.$branchId, 'opening_balance' => 0, 'current_balance' => 0]
         );
     }
 
@@ -81,6 +127,18 @@ class MoreDuplicateSubmissionGuardTest extends TestCase
             'salary_payment_day' => 25,
             'ID_copy' => 'id_copies/test.pdf',
             'ID_Number' => (string) random_int(1000000000000, 9999999999999),
+        ]);
+
+        // BadDebtProvisionService::writeOff() reads $loan->user->customer
+        // to decrement current_balance — this fixture never needed a
+        // Customer row before open() delegated to writeOff().
+        \App\Models\Customer::create([
+            'user_id' => $client->id,
+            'customer_code' => 'CUST-'.uniqid('', true),
+            'customer_type' => 'individual',
+            'payment_terms' => 'debit_order',
+            'credit_limit' => 5000,
+            'current_balance' => 1000,
         ]);
 
         $application = LoanApplication::create([
