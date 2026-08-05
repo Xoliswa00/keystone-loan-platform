@@ -6,6 +6,8 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\DisbursementController;
+use App\Http\Controllers\Investor\InvestorAuthController;
+use App\Http\Controllers\Investor\InvestorDashboardController;
 use App\Http\Controllers\LoanAgreementController;
 use App\Http\Controllers\LoanApplicationController;
 use App\Http\Controllers\LoanController;
@@ -31,6 +33,26 @@ Route::post('/contact', [ContactController::class, 'store'])
     ->name('contact.store');
 Route::get('/terms', [LoanApplicationController::class, 'terms'])->name('terms');
 Route::get('/privacy-policy', [LoanApplicationController::class, 'privacyPolicy'])->name('privacy');
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Investor portal — separate from the client/staff 'auth' guard entirely;
+// investors are FundingFacility contacts, not User records. Session-flag
+// auth via EnsureInvestorAuthenticated, gated by an email OTP.
+// ──────────────────────────────────────────────────────────────────────────────
+
+Route::prefix('investor')->name('investor.')->group(function () {
+    Route::middleware('throttle:investor_login')->group(function () {
+        Route::get('/login', [InvestorAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [InvestorAuthController::class, 'sendCode'])->name('login.send');
+        Route::get('/verify', [InvestorAuthController::class, 'showVerify'])->name('verify');
+        Route::post('/verify', [InvestorAuthController::class, 'verifyCode'])->name('verify.submit');
+    });
+
+    Route::middleware('investor.auth')->group(function () {
+        Route::get('/dashboard', [InvestorDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [InvestorAuthController::class, 'logout'])->name('logout');
+    });
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Dashboard — redirect admins to admin panel

@@ -61,5 +61,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('nupay_import', function (Request $request) {
             return Limit::perHour(5)->by($request->user()?->id ?? $request->ip());
         });
+
+        // Investor portal login/OTP verify: 5 attempts per minute per IP —
+        // this is the entire brute-force defence for a credential pair
+        // (ID number + email) that isn't secret the way a password is.
+        RateLimiter::for('investor_login', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
     }
 }

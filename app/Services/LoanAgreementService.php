@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Mail\NcaAgreementMail;
 use App\Models\LoanApplication;
 use App\Models\LoanProduct;
 use App\Models\NcaAgreement;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class LoanAgreementService
@@ -75,6 +77,8 @@ class LoanAgreementService
             'nca_agreement_sent_at' => now(),
         ]);
 
+        $this->emailAgreement($agreement);
+
         return $agreement;
     }
 
@@ -130,7 +134,29 @@ class LoanAgreementService
             'created_by' => $generatedBy,
         ]);
 
+        $this->emailAgreement($agreement);
+
         return $agreement;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Email the generated document to the client — best-effort, a mail
+    // failure must never block agreement generation itself.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    protected function emailAgreement(NcaAgreement $agreement): void
+    {
+        try {
+            $email = $agreement->user?->email;
+            if (! $email) {
+                return;
+            }
+
+            Mail::to($email)->send(new NcaAgreementMail($agreement));
+            $agreement->update(['sent_at' => now()]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to email NCA agreement '.$agreement->reference.': '.$e->getMessage());
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

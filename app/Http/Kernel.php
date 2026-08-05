@@ -66,5 +66,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\RequireRole::class,
         '2fa.admin' => \App\Http\Middleware\AdminTwoFactor::class,
+        'investor.auth' => \App\Http\Middleware\EnsureInvestorAuthenticated::class,
     ];
 }

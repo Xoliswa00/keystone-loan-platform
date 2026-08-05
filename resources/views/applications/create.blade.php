@@ -51,13 +51,49 @@
   @if(($affordabilityResult['eligible'] ?? false))
   <div class="kc-card-navy mb-6 relative overflow-hidden">
     <div class="absolute -top-6 -right-6 w-32 h-32 bg-kc-gold opacity-10 rounded-full blur-2xl pointer-events-none"></div>
-    <div class="relative z-10 flex items-center justify-between">
-      <div>
-        <p class="text-white/60 text-xs uppercase tracking-widest">Pre-Qualified Limit</p>
-        <p class="font-display text-3xl font-bold text-kc-gold mt-1">R {{ number_format($affordabilityResult['max_instalment'] ?? 0, 2) }} <span class="text-sm font-normal text-white/50">/ month</span></p>
-        <p class="text-white/40 text-xs mt-1">Disposable: R{{ number_format($affordabilityResult['disposable_income'] ?? 0, 2) }} · 30% threshold</p>
+    <div class="relative z-10">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-white/60 text-xs uppercase tracking-widest">Pre-Qualified Limit</p>
+          <p class="font-display text-3xl font-bold text-kc-gold mt-1">R {{ number_format($affordabilityResult['max_instalment'] ?? 0, 2) }} <span class="text-sm font-normal text-white/50">/ month</span></p>
+          <p class="text-white/40 text-xs mt-1">Disposable: R{{ number_format($affordabilityResult['disposable_income'] ?? 0, 2) }} · 30% threshold</p>
+        </div>
       </div>
+
+      <details class="relative z-10 mt-4 pt-4 border-t border-white/10">
+        <summary class="text-xs text-kc-gold cursor-pointer select-none">How we calculated this →</summary>
+        <div class="mt-3 space-y-1.5 text-xs text-white/70">
+          <div class="flex justify-between"><span>Net monthly income</span><span>R{{ number_format($affordabilityResult['net_income'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between"><span>Other income</span><span>R{{ number_format($affordabilityResult['other_income'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between font-semibold text-white border-t border-white/10 pt-1.5"><span>Total income</span><span>R{{ number_format($affordabilityResult['total_income'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between"><span>Housing</span><span>− R{{ number_format($affordabilityResult['expense_housing'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between"><span>Transport</span><span>− R{{ number_format($affordabilityResult['expense_transport'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between"><span>Existing debt</span><span>− R{{ number_format($affordabilityResult['expense_debt'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between"><span>Insurance</span><span>− R{{ number_format($affordabilityResult['expense_insurance'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between"><span>Living expenses</span><span>− R{{ number_format($affordabilityResult['expense_living'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between font-semibold text-white border-t border-white/10 pt-1.5"><span>Total expenses</span><span>− R{{ number_format($affordabilityResult['total_expenses'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between font-semibold text-white border-t border-white/10 pt-1.5"><span>Disposable income</span><span>R{{ number_format($affordabilityResult['disposable_income'] ?? 0, 2) }}</span></div>
+          <div class="flex justify-between font-semibold text-kc-gold border-t border-white/10 pt-1.5">
+            <span>× 30% affordability ratio = Max instalment</span>
+            <span>R{{ number_format($affordabilityResult['max_instalment'] ?? 0, 2) }}</span>
+          </div>
+        </div>
+      </details>
     </div>
+  </div>
+  @elseif($affordabilityResult ?? null)
+  <div class="kc-alert-warning mb-6">
+    <p class="font-semibold">{{ $affordabilityResult['reason'] ?? 'Affordability could not be calculated.' }}</p>
+    @if(($affordabilityResult['total_income'] ?? null) !== null)
+    <details class="mt-3">
+      <summary class="text-xs cursor-pointer select-none underline">How we calculated this →</summary>
+      <div class="mt-3 space-y-1.5 text-xs">
+        <div class="flex justify-between"><span>Total income</span><span>R{{ number_format($affordabilityResult['total_income'] ?? 0, 2) }}</span></div>
+        <div class="flex justify-between font-semibold border-t pt-1.5"><span>Total expenses</span><span>− R{{ number_format($affordabilityResult['total_expenses'] ?? 0, 2) }}</span></div>
+        <div class="flex justify-between font-semibold border-t pt-1.5"><span>Disposable income</span><span>R{{ number_format($affordabilityResult['disposable_income'] ?? 0, 2) }}</span></div>
+      </div>
+    </details>
+    @endif
   </div>
   @endif
 
