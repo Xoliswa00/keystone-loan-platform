@@ -63,6 +63,21 @@ jobs:
             sleep 2
           done
 
+      # Explicit, not incidental: some test classes use DatabaseTransactions
+      # (assumes an already-migrated schema) rather than RefreshDatabase
+      # (which migrates on first use). Whichever runs first alphabetically
+      # determines whether the schema exists yet — on a fresh CI database,
+      # that's non-deterministic unless migrations run as their own step.
+      - name: Run migrations
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: ""
+        run: php artisan migrate --force
+
       - name: Run tests
         env:
           DB_CONNECTION: mysql
