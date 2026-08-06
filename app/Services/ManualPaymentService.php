@@ -139,7 +139,7 @@ class ManualPaymentService
             if (abs($diff) > 0.01 && abs($diff) > $toleranceAmount) {
                 throw new Exception(
                     "Payment amount R{$grossAmount} does not match the instalment amount still due (R{$remainingExpected}), ".
-                    "and is outside the ".($tolerancePct * 100)."% tolerance (max variance R{$toleranceAmount})."
+                    'and is outside the '.($tolerancePct * 100)."% tolerance (max variance R{$toleranceAmount})."
                 );
             }
 

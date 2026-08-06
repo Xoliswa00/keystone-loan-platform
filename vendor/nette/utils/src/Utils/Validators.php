@@ -1,9 +1,11 @@
-<?php declare(strict_types=1);
+<?php
 
 /**
  * This file is part of the Nette Framework (https://nette.org)
  * Copyright (c) 2004 David Grudl (https://davidgrudl.com)
  */
+
+declare(strict_types=1);
 
 namespace Nette\Utils;
 
@@ -24,7 +26,7 @@ class Validators
 		'never' => 1, 'true' => 1,
 	];
 
-	/** @var array<string, ?(callable(mixed): bool)> */
+	/** @var array<string,?callable> */
 	protected static $validators = [
 		// PHP types
 		'array' => 'is_array',
@@ -74,7 +76,7 @@ class Validators
 		'type' => [self::class, 'isType'],
 	];
 
-	/** @var array<string, callable(mixed): int> */
+	/** @var array<string,callable> */
 	protected static $counters = [
 		'string' => 'strlen',
 		'unicode' => [Strings::class, 'length'],
@@ -112,22 +114,22 @@ class Validators
 
 
 	/**
-	 * Verifies that item $key in array exists and is of expected types separated by pipe.
+	 * Verifies that element $key in array is of expected types separated by pipe.
 	 * @param  mixed[]  $array
 	 * @throws AssertionException
 	 */
 	public static function assertField(
 		array $array,
-		int|string $key,
+		$key,
 		?string $expected = null,
 		string $label = "item '%' in array",
 	): void
 	{
 		if (!array_key_exists($key, $array)) {
-			throw new AssertionException('Missing ' . str_replace('%', (string) $key, $label) . '.');
+			throw new AssertionException('Missing ' . str_replace('%', $key, $label) . '.');
 
 		} elseif ($expected) {
-			static::assert($array[$key], $expected, str_replace('%', (string) $key, $label));
+			static::assert($array[$key], $expected, str_replace('%', $key, $label));
 		}
 	}
 
@@ -157,7 +159,7 @@ class Validators
 					if (!static::$validators[$type]($value)) {
 						continue;
 					}
-				} catch (\TypeError) {
+				} catch (\TypeError $e) {
 					continue;
 				}
 			} elseif ($type === 'pattern') {
@@ -195,7 +197,7 @@ class Validators
 
 	/**
 	 * Finds whether all values are of expected types separated by pipe.
-	 * @param  iterable<mixed>  $values
+	 * @param  mixed[]  $values
 	 */
 	public static function everyIs(iterable $values, string $expected): bool
 	{
@@ -259,7 +261,7 @@ class Validators
 
 	/**
 	 * Checks if the value is 0, '', false or null.
-	 * @return ($value is 0|0.0|''|false|null ? true : false)
+	 * @return ($value is 0|''|false|null ? true : false)
 	 */
 	public static function isNone(mixed $value): bool
 	{
@@ -288,7 +290,6 @@ class Validators
 	/**
 	 * Checks if the value is in the given range [min, max], where the upper or lower limit can be omitted (null).
 	 * Numbers, strings and DateTime objects can be compared.
-	 * @param  array{int|float|string|\DateTimeInterface|null, int|float|string|\DateTimeInterface|null}  $range
 	 */
 	public static function isInRange(mixed $value, array $range): bool
 	{

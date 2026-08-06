@@ -7,7 +7,6 @@ use App\Models\Loan;
 use App\Models\LoanApplication;
 use App\Models\LoanProduct;
 use App\Models\LoanRepayment;
-use App\Models\PaymentAdjustment;
 use App\Models\RepaymentSchedule;
 use App\Models\User;
 use App\Services\PaymentAdjustmentService;

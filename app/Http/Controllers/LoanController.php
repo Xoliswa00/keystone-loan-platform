@@ -9,7 +9,6 @@ use App\Models\LoanApplication;
 use App\Models\LoanDisbursement;
 use App\Models\LoanFee;
 use App\Models\PopiaConsent;
-use App\Models\User;
 use App\Services\LoanReversalService;
 use App\Services\PaymentAdjustmentService;
 use Illuminate\Http\Request;

@@ -14,7 +14,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE loan_repayments MODIFY COLUMN payment_method VARCHAR(20) NOT NULL");
+        DB::statement('ALTER TABLE loan_repayments MODIFY COLUMN payment_method VARCHAR(20) NOT NULL');
     }
 
     public function down(): void

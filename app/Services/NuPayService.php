@@ -190,7 +190,7 @@ class NuPayService
         if (abs($diff) > 0.01 && abs($diff) > $toleranceAmount) {
             throw new Exception(
                 "NuPay instalment amount R{$grossAmount} does not match the amount still due (R{$remainingExpected}) for schedule #{$schedule->id}, ".
-                "and is outside the ".($tolerancePct * 100)."% tolerance (max variance R{$toleranceAmount})."
+                'and is outside the '.($tolerancePct * 100)."% tolerance (max variance R{$toleranceAmount})."
             );
         }
 
