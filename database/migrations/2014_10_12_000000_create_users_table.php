@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('phone');
             $table->enum('role', ['admin', 'borrower', 'master'])->default('borrower');
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->text('ID_Number'); // TODO:fix id unique feature
+            $table->string('ID_Number'); // unique index added in 2026_06_02_000008_add_compliance_fields_to_users.php — must be a keyable type, not text
             $table->enum('employment_status', ['Full-time', 'Part-time', 'Self-employed', 'Unemployed']);
             $table->enum('salary_frequency', ['Weekly', 'Bi-weekly', 'Monthly'])->nullable();
             $table->decimal('net_salary', 10, 2);
