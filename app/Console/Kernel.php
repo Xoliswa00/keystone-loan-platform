@@ -47,6 +47,10 @@ class Kernel extends ConsoleKernel
             ->weekly()
             ->sundays()
             ->at('02:00');
+
+        // ── Xquisite monitoring heartbeat ── sync, not queued, so a dead queue
+        // worker can't mask an outage (see App\Jobs\ReportHealthStatus).
+        $schedule->job(new \App\Jobs\ReportHealthStatus)->everyFiveMinutes();
     }
 
     protected function commands(): void

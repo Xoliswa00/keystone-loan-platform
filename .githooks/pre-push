@@ -1,0 +1,11 @@
+#!/bin/sh
+# Verifies the Xquisite cross-project monitoring integration (heartbeat job,
+# /api/health route, JS error beacon) is still present before allowing a
+# commit — see app/Console/Commands/VerifyMonitoringSetup.php.
+#
+# This file is tracked (unlike .git/hooks/) and wired up automatically by
+# composer's post-install-cmd/post-update-cmd (see composer.json) via
+# `git config core.hooksPath .githooks` — so a fresh clone + composer
+# install gets this enforcement without any manual step.
+php artisan --no-ansi monitoring:verify
+exit $?
