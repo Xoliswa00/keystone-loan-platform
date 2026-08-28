@@ -600,9 +600,9 @@ Route::get('/api/health', function () {
         $cache = false;
     }
 
-    $diskTotal   = disk_total_space(base_path());
-    $diskFree    = disk_free_space(base_path());
-    $diskFreeMb  = (int) ($diskFree / 1024 / 1024);
+    $diskTotal = disk_total_space(base_path());
+    $diskFree = disk_free_space(base_path());
+    $diskFreeMb = (int) ($diskFree / 1024 / 1024);
     $diskUsedPct = $diskTotal > 0 ? round((($diskTotal - $diskFree) / $diskTotal) * 100, 1) : null;
 
     try {
@@ -611,18 +611,18 @@ Route::get('/api/health', function () {
         $failedJobs = null;
     }
 
-    $critical = !$db || !$storageWritable;
+    $critical = ! $db || ! $storageWritable;
 
     return response()->json([
-        'status'            => $critical ? 'down' : 'up',
-        'db'                => $db,
-        'storage_writable'  => $storageWritable,
-        'cache'             => $cache,
-        'disk_free_mb'      => $diskFreeMb,
+        'status' => $critical ? 'down' : 'up',
+        'db' => $db,
+        'storage_writable' => $storageWritable,
+        'cache' => $cache,
+        'disk_free_mb' => $diskFreeMb,
         'disk_used_percent' => $diskUsedPct,
-        'app_key_set'       => !empty(config('app.key')),
-        'failed_jobs'       => $failedJobs,
-        'timestamp'         => now()->toISOString(),
+        'app_key_set' => ! empty(config('app.key')),
+        'failed_jobs' => $failedJobs,
+        'timestamp' => now()->toISOString(),
     ], $critical ? 503 : 200);
 })->name('health');
 

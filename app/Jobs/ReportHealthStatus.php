@@ -46,7 +46,7 @@ class ReportHealthStatus
             $response = Http::withToken($token)
                 ->timeout(5)
                 ->post($url, [
-                    'status'        => $dbConnectionOk ? 'up' : 'down',
+                    'status' => $dbConnectionOk ? 'up' : 'down',
                     'db_connection' => $dbConnectionOk,
                     'error_message' => $dbConnectionOk ? null : 'Database connection failed',
                 ]);
@@ -54,7 +54,7 @@ class ReportHealthStatus
             if (! $response->successful()) {
                 Log::warning('Health status heartbeat rejected by Xquisite.', [
                     'status' => $response->status(),
-                    'body'   => Str::limit($response->body(), 500),
+                    'body' => Str::limit($response->body(), 500),
                 ]);
             }
         } catch (\Throwable $e) {

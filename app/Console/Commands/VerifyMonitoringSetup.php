@@ -14,34 +14,35 @@ use Illuminate\Console\Command;
  */
 class VerifyMonitoringSetup extends Command
 {
-    protected $signature   = 'monitoring:verify';
+    protected $signature = 'monitoring:verify';
+
     protected $description = 'Check the Xquisite monitoring integration (heartbeat job, health route, JS beacon) is still present';
 
     public function handle(): int
     {
         $problems = [];
 
-        if (!file_exists(app_path('Jobs/ReportHealthStatus.php'))) {
+        if (! file_exists(app_path('Jobs/ReportHealthStatus.php'))) {
             $problems[] = 'app/Jobs/ReportHealthStatus.php is missing — the 5-minute heartbeat job.';
         }
 
         $beaconPath = resource_path('views/partials/monitoring-beacon.blade.php');
-        if (!file_exists($beaconPath)) {
+        if (! file_exists($beaconPath)) {
             $problems[] = 'resources/views/partials/monitoring-beacon.blade.php is missing — the JS error beacon.';
         } else {
             $includedSomewhere = false;
             foreach ($this->allBladeFiles() as $view) {
-                if (str_contains(file_get_contents($view), "partials.monitoring-beacon")) {
+                if (str_contains(file_get_contents($view), 'partials.monitoring-beacon')) {
                     $includedSomewhere = true;
                     break;
                 }
             }
-            if (!$includedSomewhere) {
+            if (! $includedSomewhere) {
                 $problems[] = "monitoring-beacon.blade.php exists but isn't @include'd in any view — it'll never actually run.";
             }
         }
 
-        if (!str_contains(file_get_contents(config_path('services.php')), "'monitoring'")) {
+        if (! str_contains(file_get_contents(config_path('services.php')), "'monitoring'")) {
             $problems[] = "config/services.php is missing the 'monitoring' block (enabled/url/token).";
         }
 
@@ -53,7 +54,7 @@ class VerifyMonitoringSetup extends Command
                 $scheduledSomewhere = true;
             }
         }
-        if (!$scheduledSomewhere) {
+        if (! $scheduledSomewhere) {
             $problems[] = 'ReportHealthStatus is never scheduled — check app/Console/Kernel.php or routes/console.php.';
         }
 
@@ -64,12 +65,13 @@ class VerifyMonitoringSetup extends Command
                 $healthRouteFound = true;
             }
         }
-        if (!$healthRouteFound) {
+        if (! $healthRouteFound) {
             $problems[] = "No '/api/health' route found — Xquisite's pull-based check has nothing to poll.";
         }
 
         if (empty($problems)) {
             $this->info('✓ Xquisite monitoring integration is intact.');
+
             return self::SUCCESS;
         }
 
@@ -89,7 +91,7 @@ class VerifyMonitoringSetup extends Command
     private function allBladeFiles(): array
     {
         $dir = resource_path('views');
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             return [];
         }
 
