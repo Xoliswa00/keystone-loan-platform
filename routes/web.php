@@ -575,5 +575,56 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
     Route::resource('Admin', AdminController::class)->only(['show']);
 });
 
+// Health check endpoint — polled by the Xquisite monitoring dashboard
+Route::get('/api/health', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $db = true;
+    } catch (\Throwable) {
+        $db = false;
+    }
+
+    try {
+        $testFile = storage_path('framework/.health-check');
+        file_put_contents($testFile, '1');
+        unlink($testFile);
+        $storageWritable = true;
+    } catch (\Throwable) {
+        $storageWritable = false;
+    }
+
+    try {
+        \Illuminate\Support\Facades\Cache::put('_health', 1, 5);
+        $cache = \Illuminate\Support\Facades\Cache::get('_health') === 1;
+    } catch (\Throwable) {
+        $cache = false;
+    }
+
+    $diskTotal = disk_total_space(base_path());
+    $diskFree = disk_free_space(base_path());
+    $diskFreeMb = (int) ($diskFree / 1024 / 1024);
+    $diskUsedPct = $diskTotal > 0 ? round((($diskTotal - $diskFree) / $diskTotal) * 100, 1) : null;
+
+    try {
+        $failedJobs = \Illuminate\Support\Facades\DB::table('failed_jobs')->count();
+    } catch (\Throwable) {
+        $failedJobs = null;
+    }
+
+    $critical = ! $db || ! $storageWritable;
+
+    return response()->json([
+        'status' => $critical ? 'down' : 'up',
+        'db' => $db,
+        'storage_writable' => $storageWritable,
+        'cache' => $cache,
+        'disk_free_mb' => $diskFreeMb,
+        'disk_used_percent' => $diskUsedPct,
+        'app_key_set' => ! empty(config('app.key')),
+        'failed_jobs' => $failedJobs,
+        'timestamp' => now()->toISOString(),
+    ], $critical ? 503 : 200);
+})->name('health');
+
 // ──────────────────────────────────────────────────────────────────────────────
 require __DIR__.'/auth.php';

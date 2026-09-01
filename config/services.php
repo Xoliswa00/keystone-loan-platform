@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'monitoring' => [
+        'enabled' => env('MONITORING_ENABLED', false),
+        'url' => env('MONITORING_URL'), // Base URL of the Xquisite monitoring instance for this site
+        'token' => env('MONITORING_TOKEN'),
+    ],
+
 ];

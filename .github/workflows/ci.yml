@@ -78,6 +78,13 @@ jobs:
           DB_PASSWORD: ""
         run: php artisan migrate --force
 
+      # Server-side mirror of .githooks/pre-commit and pre-push, which only
+      # protect a clone that's run `composer install` at least once. This
+      # makes it unconditional — can't be skipped with --no-verify or
+      # bypassed by a push from a clone that never installed the hooks.
+      - name: Verify Xquisite monitoring integration
+        run: php artisan monitoring:verify
+
       - name: Run tests
         env:
           DB_CONNECTION: mysql

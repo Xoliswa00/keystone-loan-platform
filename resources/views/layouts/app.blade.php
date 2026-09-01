@@ -274,5 +274,6 @@
     </div>
 </div>
 
+    @include('partials.monitoring-beacon')
 </body>
 </html>
