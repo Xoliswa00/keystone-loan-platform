@@ -36,7 +36,7 @@
         <p class="font-display text-xl font-bold text-kc-gold">
           {{ \Carbon\Carbon::parse($unblock_at)->format('d F Y') }}
         </p>
-        <p class="text-white/40 text-xs mt-1">
+        <p class="text-white/60 text-xs mt-1">
           {{ \Carbon\Carbon::parse($unblock_at)->diffForHumans() }}
         </p>
       </div>

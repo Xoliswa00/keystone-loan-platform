@@ -77,12 +77,12 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-white text-xs font-medium truncate">{{ Auth::user()->name }}</p>
-                    <p class="text-white/40 text-[10px] truncate">{{ Auth::user()->email }}</p>
+                    <p class="text-white/60 text-[10px] truncate">{{ Auth::user()->email }}</p>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" title="Sign out" aria-label="Sign out"
-                        class="text-white/40 hover:text-white/80 transition-colors p-1">
+                        class="text-white/60 hover:text-white transition-colors p-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/>
                         </svg>

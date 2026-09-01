@@ -61,7 +61,7 @@
       <div class="mt-6 p-4 rounded-lg bg-kc-navy text-white">
         <p class="text-xs text-white/60 mb-1">NET VAT PAYABLE TO SARS</p>
         <p class="font-display text-2xl font-bold text-kc-gold">R {{ number_format($netVatPayable, 2) }}</p>
-        <p class="text-xs text-white/40 mt-1">Output VAT R{{ number_format($totalOutputVat, 2) }} minus Input VAT R{{ number_format($totalInputVat, 2) }}</p>
+        <p class="text-xs text-white/60 mt-1">Output VAT R{{ number_format($totalOutputVat, 2) }} minus Input VAT R{{ number_format($totalInputVat, 2) }}</p>
       </div>
     </div>
   </div>

@@ -55,8 +55,8 @@
       <div class="flex items-center justify-between">
         <div>
           <p class="text-white/60 text-xs uppercase tracking-widest">Pre-Qualified Limit</p>
-          <p class="font-display text-3xl font-bold text-kc-gold mt-1">R {{ number_format($affordabilityResult['max_instalment'] ?? 0, 2) }} <span class="text-sm font-normal text-white/50">/ month</span></p>
-          <p class="text-white/40 text-xs mt-1">Disposable: R{{ number_format($affordabilityResult['disposable_income'] ?? 0, 2) }} · 30% threshold</p>
+          <p class="font-display text-3xl font-bold text-kc-gold mt-1">R {{ number_format($affordabilityResult['max_instalment'] ?? 0, 2) }} <span class="text-sm font-normal text-white/70">/ month</span></p>
+          <p class="text-white/60 text-xs mt-1">Disposable: R{{ number_format($affordabilityResult['disposable_income'] ?? 0, 2) }} · 30% threshold</p>
         </div>
       </div>
 
