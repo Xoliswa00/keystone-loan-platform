@@ -24,6 +24,15 @@ Laravel **10** · PHP target **8.1** (composer platform is pinned to 8.1) · MyS
 - [ ] You have the production `.env` values ready (see §4). `.env` is **git-ignored** — it never arrives via `git pull`.
 - [ ] Decide the app directory, e.g. `~/keystone` (repo lives here; **not** inside `public_html`).
 
+### DNS — the domain is registered but not yet pointed here
+
+`keystonecapitalpartners.co.za` currently resolves to the registrar's "registered on behalf of a client" parking page. Nothing deploys until DNS points at the cPanel server:
+
+- [ ] In cPanel, add `keystonecapitalpartners.co.za` (WHM/"Addon Domains" or "Domains") so the account will answer for it.
+- [ ] At the registrar: either set the nameservers to the host's, **or** point an `A` record for `@` and `www` at the cPanel server IP (from cPanel → *Server Information* / the welcome email).
+- [ ] Decide canonical host. The client advertises **`www.`**, so make `www.keystonecapitalpartners.co.za` canonical and 301 the apex → `www` (cPanel → *Domains* → Redirects, or an `.htaccess` rule).
+- [ ] Wait for propagation (`dig www.keystonecapitalpartners.co.za` returns the cPanel IP), **then** run cPanel → *SSL/TLS Status* → **Run AutoSSL** so `https` works before first load.
+
 ---
 
 ## 2. First deploy (one time)
@@ -126,7 +135,7 @@ If `git pull` reports local changes to `vendor/bin/*` file modes, `git checkout 
 APP_NAME="Keystone Capital Partners"
 APP_ENV=production
 APP_DEBUG=false                      # never true in prod — leaks stack traces via Ignition
-APP_URL=https://your-domain.co.za    # https, real host — used for asset URLs and emailed links
+APP_URL=https://www.keystonecapitalpartners.co.za   # canonical host — asset URLs + emailed links
 
 LOG_LEVEL=warning
 
@@ -141,19 +150,19 @@ SESSION_DRIVER=file
 QUEUE_CONNECTION=sync                # keep sync on shared hosting; a DB/Redis queue needs a worker
 
 MAIL_MAILER=smtp
-MAIL_HOST=mail.your-domain.co.za
+MAIL_HOST=mail.keystonecapitalpartners.co.za
 MAIL_PORT=587
-MAIL_USERNAME=no-reply@your-domain.co.za
+MAIL_USERNAME=no-reply@keystonecapitalpartners.co.za
 MAIL_PASSWORD=...
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS="no-reply@your-domain.co.za"
+MAIL_FROM_ADDRESS="no-reply@keystonecapitalpartners.co.za"
 MAIL_FROM_NAME="Keystone Capital Partners"
 
 # One-time admin bootstrap (used by AdminSeeder, then can be removed)
-ADMIN_EMAIL=admin@your-domain.co.za
+ADMIN_EMAIL=admin@keystonecapitalpartners.co.za
 ADMIN_PASSWORD=<<long random>>
 ```
-Force HTTPS: rely on `APP_URL` being `https` plus cPanel's AutoSSL + an `.htaccess` http→https redirect; the app does not force the scheme itself.
+Force HTTPS: `APP_URL` is `https` + cPanel AutoSSL (§1) + the apex→`www` and http→https redirects; the app does not force the scheme itself. Create the `no-reply@` mailbox in cPanel → *Email Accounts* first, and add an SPF record (cPanel usually auto-adds one) so agreement/OTP mail isn't spam-filed.
 
 ---
 
@@ -172,7 +181,7 @@ This one entry drives all scheduled work: `keystone:send-payment-reminders` (08:
 
 ## 6. Post-deploy smoke test
 
-- [ ] `https://domain/` welcome page renders with CSS (asset URLs resolve → `public/build` + `storage:link` OK).
+- [ ] `https://www.keystonecapitalpartners.co.za/` welcome page renders with CSS (asset URLs resolve → `public/build` + `storage:link` OK); apex and `http://` both 301 to it.
 - [ ] Log in as the seeded admin → redirected to `/admin/dashboard`.
 - [ ] `/admin/system/logs` loads for admin/it_admin (403 for other roles — the gate this platform explicitly enforces).
 - [ ] Create a test loan application end to end → approve → disburse → check a GL batch posted.
