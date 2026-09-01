@@ -53,6 +53,11 @@ class RoleAccessTest extends TestCase
 
         $this->actingAs($loanOfficer)->get(route('admin.staff.index'))->assertForbidden();
         $this->actingAs($loanOfficer)->get(route('reports.audit-log'))->assertForbidden();
+        // System logs (view + raw laravel.log download) are IT-only, same as
+        // the audit trail they sit alongside — not just the destructive
+        // clear/retry actions.
+        $this->actingAs($loanOfficer)->get(route('admin.system.logs'))->assertForbidden();
+        $this->actingAs($loanOfficer)->get(route('admin.system.logs.download'))->assertForbidden();
     }
 
     public function test_finance_is_blocked_from_it_only_routes(): void
@@ -61,6 +66,15 @@ class RoleAccessTest extends TestCase
 
         $this->actingAs($finance)->get(route('admin.staff.index'))->assertForbidden();
         $this->actingAs($finance)->get(route('reports.audit-log'))->assertForbidden();
+        $this->actingAs($finance)->get(route('admin.system.logs'))->assertForbidden();
+        $this->actingAs($finance)->get(route('admin.system.logs.download'))->assertForbidden();
+    }
+
+    public function test_it_admin_can_reach_system_logs(): void
+    {
+        $itAdmin = $this->makeStaff('it_admin');
+
+        $this->actingAs($itAdmin)->get(route('admin.system.logs'))->assertOk();
     }
 
     /**
@@ -135,5 +149,6 @@ class RoleAccessTest extends TestCase
         $this->actingAs($admin)->get(route('admin.staff.index'))->assertOk();
         $this->actingAs($admin)->get(route('nupay.upload.form'))->assertOk();
         $this->actingAs($admin)->get(route('reports.audit-log'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.system.logs'))->assertOk();
     }
 }

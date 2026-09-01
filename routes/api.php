@@ -160,7 +160,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── System logs — sensitive operational data, admin/it_admin only ────────
-    Route::prefix('admin')->middleware('role:it_admin')->group(function () {
+    // Same gate as the web routes (admin.system.*) and the compliance
+    // audit-log. Was role:it_admin — admin still got in via RequireRole's
+    // hardcoded admin bypass, but the declared list didn't say so and
+    // read as stricter than the web side. Made explicit for parity.
+    Route::prefix('admin')->middleware('role:admin,it_admin')->group(function () {
         Route::get('/system-logs', [SystemLogApiController::class, 'index']);
     });
 });
