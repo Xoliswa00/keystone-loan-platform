@@ -378,23 +378,21 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
     });
 
     // ── System Logs ───────────────────────────────────────────────────────────
-    Route::prefix('admin/system')->name('admin.system.')->group(function () {
+    // Entire group is IT-only, matching the compliance audit-log gate
+    // (reports.audit-log, below) and the API equivalent (api/admin/system-logs).
+    // Viewing/downloading raw application logs and failed-job payloads exposes
+    // stack traces and PII; it must not be broader than the audit trail it
+    // sits alongside. Previously /logs and /logs/download inherited only the
+    // broad staff group, so loan_officer and finance could read (and stream
+    // the raw laravel.log via /logs/download) an area barred from them in nav
+    // and in the mobile API.
+    Route::prefix('admin/system')->name('admin.system.')->middleware('role:admin,it_admin')->group(function () {
         Route::get('/logs', [\App\Http\Controllers\SystemLogController::class, 'index'])->name('logs');
         Route::get('/logs/download', [\App\Http\Controllers\SystemLogController::class, 'download'])->name('logs.download');
-
-        // Destructive/operational actions — narrowed to match the
-        // read-only audit-log's own role gate (reports.audit-log, below).
-        // These were previously reachable by loan_officer/finance too,
-        // meaning a role explicitly barred from *viewing* the compliance
-        // audit trail could nonetheless truncate failed_jobs or clear the
-        // live application log — destroying evidence gated more loosely
-        // than reading it.
-        Route::middleware('role:admin,it_admin')->group(function () {
-            Route::post('/logs/retry', [\App\Http\Controllers\SystemLogController::class, 'retryJob'])->name('logs.retry');
-            Route::post('/logs/clear-failed', [\App\Http\Controllers\SystemLogController::class, 'clearFailed'])->name('logs.clear-failed');
-            Route::post('/logs/clear', [\App\Http\Controllers\SystemLogController::class, 'clearLog'])->name('logs.clear');
-            Route::post('/jobs/run', [\App\Http\Controllers\SystemLogController::class, 'runJob'])->name('jobs.run');
-        });
+        Route::post('/logs/retry', [\App\Http\Controllers\SystemLogController::class, 'retryJob'])->name('logs.retry');
+        Route::post('/logs/clear-failed', [\App\Http\Controllers\SystemLogController::class, 'clearFailed'])->name('logs.clear-failed');
+        Route::post('/logs/clear', [\App\Http\Controllers\SystemLogController::class, 'clearLog'])->name('logs.clear');
+        Route::post('/jobs/run', [\App\Http\Controllers\SystemLogController::class, 'runJob'])->name('jobs.run');
     });
 
     // ── Company Settings ──────────────────────────────────────────────────────
