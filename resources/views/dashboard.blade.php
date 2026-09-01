@@ -33,9 +33,9 @@
 
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
         <div>
-            <p class="text-white/50 text-xs font-medium uppercase tracking-widest mb-1">{{ $greeting }}</p>
+            <p class="text-white/70 text-xs font-medium uppercase tracking-widest mb-1">{{ $greeting }}</p>
             <h2 class="font-display text-2xl font-semibold text-white">{{ $user->name }}</h2>
-            <p class="text-white/40 text-sm mt-1">
+            <p class="text-white/60 text-sm mt-1">
                 {{ now()->format('l, d F Y') }} &nbsp;·&nbsp; Client #{{ $userId }}
             </p>
         </div>

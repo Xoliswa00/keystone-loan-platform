@@ -22,15 +22,15 @@
         <div class="absolute -top-6 -right-6 w-32 h-32 bg-kc-gold opacity-10 rounded-full blur-2xl pointer-events-none"></div>
         <div class="relative z-10 grid grid-cols-3 gap-4 text-center">
           <div>
-            <p class="text-white/50 text-xs uppercase tracking-wider">Income</p>
+            <p class="text-white/70 text-xs uppercase tracking-wider">Income</p>
             <p class="font-display text-xl font-bold text-emerald-400 mt-1">R {{ number_format($period->period_income,2) }}</p>
           </div>
           <div>
-            <p class="text-white/50 text-xs uppercase tracking-wider">Expenses</p>
+            <p class="text-white/70 text-xs uppercase tracking-wider">Expenses</p>
             <p class="font-display text-xl font-bold text-red-400 mt-1">R {{ number_format($period->period_expenses,2) }}</p>
           </div>
           <div>
-            <p class="text-white/50 text-xs uppercase tracking-wider">Net Profit</p>
+            <p class="text-white/70 text-xs uppercase tracking-wider">Net Profit</p>
             <p class="font-display text-xl font-bold {{ $period->period_net_profit >= 0 ? 'text-kc-gold' : 'text-red-400' }} mt-1">
               R {{ number_format($period->period_net_profit,2) }}
             </p>

@@ -34,9 +34,9 @@
       <h3 class="font-display text-2xl font-bold text-white">You qualify for up to</h3>
       <p class="font-display text-4xl font-bold text-kc-gold mt-1">
         R {{ number_format($affordabilityResult['max_instalment'] * 1, 2) }}
-        <span class="text-base font-normal text-white/50">per month</span>
+        <span class="text-base font-normal text-white/70">per month</span>
       </p>
-      <p class="text-white/40 text-xs mt-2">
+      <p class="text-white/60 text-xs mt-2">
         Disposable income: R{{ number_format($affordabilityResult['disposable_income'], 2) }} ·
         Max instalment (30%): R{{ number_format($affordabilityResult['max_instalment'], 2) }}
       </p>

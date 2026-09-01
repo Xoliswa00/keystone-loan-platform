@@ -14,7 +14,7 @@
 
     <h1 class="font-display text-8xl font-bold text-white/10 mb-2">@yield('code')</h1>
     <h2 class="font-display text-2xl font-semibold text-white mb-3">@yield('heading')</h2>
-    <p class="text-white/50 text-sm leading-relaxed mb-8">@yield('message')</p>
+    <p class="text-white/70 text-sm leading-relaxed mb-8">@yield('message')</p>
 
     <div class="flex gap-3 justify-center">
       <a href="{{ url('/') }}" class="kc-btn-primary">Go Home</a>
