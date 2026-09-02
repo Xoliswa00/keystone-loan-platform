@@ -45,7 +45,7 @@ class ReportHealthStatus
         try {
             $response = Http::withToken($token)
                 ->timeout(5)
-                ->post($url, [
+                ->post(rtrim($url, '/').'/api/health-report', [
                     'status' => $dbConnectionOk ? 'up' : 'down',
                     'db_connection' => $dbConnectionOk,
                     'error_message' => $dbConnectionOk ? null : 'Database connection failed',

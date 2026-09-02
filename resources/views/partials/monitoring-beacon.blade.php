@@ -2,7 +2,7 @@
 @if(config('services.monitoring.enabled'))
 <script>
 (function () {
-    var endpoint = 'https://xquisite.brightfinance-x.co.za/js-error';
+    var endpoint = @js(rtrim((string) config('services.monitoring.url'), '/') . '/js-error');
     var token    = @js(config('services.monitoring.token'));
     var project  = @js(config('app.name'));
 

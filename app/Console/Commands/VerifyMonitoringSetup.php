@@ -6,8 +6,9 @@ use Illuminate\Console\Command;
 
 /**
  * Enforces that the Xquisite monitoring integration stays intact — a
- * heartbeat job, a health endpoint, and the JS error beacon wired into at
- * least one layout. Run via monitoring:verify, wired into .git/hooks/
+ * heartbeat job, a health endpoint, the JS error beacon wired into at least
+ * one layout, and the server-side error forwarder (keystone:report-errors)
+ * with its schedule entry. Run via monitoring:verify, wired into .githooks/
  * pre-commit and pre-push so this can't get silently deleted or forgotten
  * on a future change. Registering the instance + token on Xquisite's own
  * dashboard is a separate manual step — this only checks the code is here.
@@ -24,6 +25,10 @@ class VerifyMonitoringSetup extends Command
 
         if (! file_exists(app_path('Jobs/ReportHealthStatus.php'))) {
             $problems[] = 'app/Jobs/ReportHealthStatus.php is missing — the 5-minute heartbeat job.';
+        }
+
+        if (! file_exists(app_path('Console/Commands/ReportErrorsToXquisite.php'))) {
+            $problems[] = 'app/Console/Commands/ReportErrorsToXquisite.php is missing — the error forwarder (keystone:report-errors).';
         }
 
         $beaconPath = resource_path('views/partials/monitoring-beacon.blade.php');
@@ -46,16 +51,18 @@ class VerifyMonitoringSetup extends Command
             $problems[] = "config/services.php is missing the 'monitoring' block (enabled/url/token).";
         }
 
-        $scheduledSomewhere = false;
         $kernelPath = app_path('Console/Kernel.php');
         $consolePath = base_path('routes/console.php');
-        foreach ([$kernelPath, $consolePath] as $path) {
-            if (file_exists($path) && str_contains(file_get_contents($path), 'ReportHealthStatus')) {
-                $scheduledSomewhere = true;
-            }
-        }
-        if (! $scheduledSomewhere) {
+        $scheduleFiles = array_filter(
+            array_map(fn ($p) => file_exists($p) ? file_get_contents($p) : '', [$kernelPath, $consolePath])
+        );
+        $scheduleText = implode("\n", $scheduleFiles);
+
+        if (! str_contains($scheduleText, 'ReportHealthStatus')) {
             $problems[] = 'ReportHealthStatus is never scheduled — check app/Console/Kernel.php or routes/console.php.';
+        }
+        if (! str_contains($scheduleText, 'keystone:report-errors')) {
+            $problems[] = 'keystone:report-errors is never scheduled — the error forwarder will never run.';
         }
 
         $healthRouteFound = false;
