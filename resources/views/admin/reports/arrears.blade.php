@@ -4,7 +4,7 @@
     <p class="kc-page-subtitle">IFRS 9 DPD buckets · As at {{ \Carbon\Carbon::parse($asAt)->format('d F Y') }}</p>
   </x-slot>
 
-  <form method="GET" class="flex gap-3 mb-6">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
     <div><label class="kc-label">As at</label><input type="date" name="as_at_date" value="{{ $asAt }}" class="kc-input"></div>
     <div class="flex items-end"><button type="submit" class="kc-btn-primary">Apply</button></div>
   </form>

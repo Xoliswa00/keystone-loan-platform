@@ -4,13 +4,13 @@
     <p class="kc-page-subtitle">{{ \Carbon\Carbon::parse($from)->format('d M Y') }} — {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
   </x-slot>
 
-  <form method="GET" class="flex gap-3 mb-6">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
     <div><label class="kc-label">From</label><input type="date" name="from_date" value="{{ $from }}" class="kc-input"></div>
     <div><label class="kc-label">To</label><input type="date" name="to_date" value="{{ $to }}" class="kc-input"></div>
     <div class="flex items-end"><button type="submit" class="kc-btn-primary">Apply</button></div>
   </form>
 
-  <div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card text-center">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Debits</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalDebits ?? 0, 2) }}</p>

@@ -28,7 +28,9 @@
                 <td data-label="Role">
                   <form method="POST" action="{{ route('admin.staff.update-role', $member) }}" class="flex items-center gap-2">
                     @csrf @method('PUT')
-                    <select name="system_role" class="kc-select !py-1 !text-xs" onchange="this.form.submit()">
+                    <select name="system_role" class="kc-select !py-1 !text-xs"
+                            data-current="{{ $member->system_role }}"
+                            onchange="if (confirm('Change ' + @js($member->name) + ' to ' + this.options[this.selectedIndex].text.trim() + '?')) { this.form.submit(); } else { this.value = this.dataset.current; }">
                       <option value="loan_officer" {{ $member->system_role==='loan_officer'?'selected':'' }}>Loan Officer</option>
                       <option value="finance" {{ $member->system_role==='finance'?'selected':'' }}>Finance</option>
                       <option value="admin" {{ $member->system_role==='admin'?'selected':'' }}>Admin</option>

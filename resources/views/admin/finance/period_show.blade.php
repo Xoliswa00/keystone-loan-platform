@@ -1,15 +1,16 @@
 <x-app-layout>
   <x-slot name="header">
     <span class="kc-page-title">{{ $period->displayLabel() }}</span>
-    <p class="kc-page-subtitle">
-      Financial period ·
-      @php $sc = \App\Models\FinancialPeriod::STATUS_CLASSES[$period->status] ?? 'kc-badge-silver'; @endphp
-      <span class="kc-badge {{ $sc }}">{{ ucfirst($period->status) }}</span>
-      @if($period->is_year_end)
-        <span class="kc-badge kc-badge-gold ml-1">Year-End</span>
-      @endif
-    </p>
+    <p class="kc-page-subtitle">Financial period</p>
   </x-slot>
+
+  @php $sc = \App\Models\FinancialPeriod::STATUS_CLASSES[$period->status] ?? 'kc-badge-silver'; @endphp
+  <div class="flex flex-wrap items-center gap-2 mb-6">
+    <span class="kc-badge {{ $sc }}">{{ ucfirst($period->status) }}</span>
+    @if($period->is_year_end)
+      <span class="kc-badge kc-badge-gold">Year-End</span>
+    @endif
+  </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -18,9 +19,8 @@
 
       {{-- P&L summary --}}
       @if($period->period_net_profit !== null)
-      <div class="kc-card-navy relative overflow-hidden">
-        <div class="absolute -top-6 -right-6 w-32 h-32 bg-kc-gold opacity-10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="relative z-10 grid grid-cols-3 gap-4 text-center">
+      <div class="kc-card-navy">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div>
             <p class="text-white/70 text-xs uppercase tracking-wider">Income</p>
             <p class="font-display text-xl font-bold text-emerald-400 mt-1">R {{ number_format($period->period_income,2) }}</p>

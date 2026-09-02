@@ -174,7 +174,7 @@
             {{ ($application->affordability_instalment_requested ?? 0) <= ($application->affordability_max_instalment ?? 1) ? 'PASSES' : 'FAILS' }}
           </span>
         </h5>
-        <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div><p class="text-xs text-kc-charcoal/50">Disposable Income</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_disposable_income ?? 0, 2) }}</p></div>
           <div><p class="text-xs text-kc-charcoal/50">Max Instalment (30%)</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_max_instalment ?? 0, 2) }}</p></div>
           <div><p class="text-xs text-kc-charcoal/50">Requested</p>

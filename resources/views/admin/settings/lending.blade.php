@@ -80,7 +80,7 @@
       <div class="kc-card space-y-4">
         <h4 class="font-display font-semibold text-kc-navy">IFRS 9 Provisioning & Write-off</h4>
 
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="kc-label">Stage 2 DPD</label>
             <input type="number" name="ifrs9_stage2_dpd" min="1" max="364"
@@ -104,7 +104,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="kc-label">Stage 1 Rate</label>
             <input type="number" step="0.01" name="ifrs9_stage1_rate" min="0" max="1"

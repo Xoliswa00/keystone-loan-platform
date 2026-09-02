@@ -29,7 +29,7 @@
   </div>
 
   {{-- Error count cards --}}
-  <div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card text-center {{ $counts['error'] > 0 ? 'border border-red-200' : '' }}">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Errors Today</p>
       <p class="font-display text-2xl font-bold {{ $counts['error'] > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ $counts['error'] }}</p>

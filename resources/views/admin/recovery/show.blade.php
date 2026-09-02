@@ -10,7 +10,7 @@
     <div class="lg:col-span-2 space-y-6">
 
       {{-- Stats --}}
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="kc-stat-card">
           <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Written Off</span>
           <p class="font-display text-xl font-semibold text-red-600 mt-1">R {{ number_format($recovery->original_write_off_amount, 2) }}</p>

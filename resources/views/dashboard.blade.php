@@ -27,11 +27,8 @@
 @endphp
 
 {{-- ── Welcome banner ── --}}
-<div class="kc-card-navy mb-6 animate-fadeIn relative overflow-hidden">
-    {{-- subtle gold glow --}}
-    <div class="absolute -top-8 -right-8 w-40 h-40 bg-kc-gold opacity-10 rounded-full blur-2xl pointer-events-none"></div>
-
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
+<div class="kc-card-navy mb-6 animate-fadeIn">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <p class="text-white/70 text-xs font-medium uppercase tracking-widest mb-1">{{ $greeting }}</p>
             <h2 class="font-display text-2xl font-semibold text-white">{{ $user->name }}</h2>

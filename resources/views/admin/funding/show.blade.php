@@ -46,7 +46,7 @@
           <span>R0</span>
           <span>R {{ number_format($fundingFacility->facility_limit,0) }}</span>
         </div>
-        <div class="mt-3 grid grid-cols-3 gap-3 text-center text-xs">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-xs">
           <div><p class="text-kc-charcoal/50">Monthly Interest Due</p><p class="font-semibold text-kc-navy">R {{ number_format($monthlyInterest,2) }}</p></div>
           <div><p class="text-kc-charcoal/50">Rate p.a.</p><p class="font-semibold">{{ round($fundingFacility->interest_rate*100,2) }}%</p></div>
           <div><p class="text-kc-charcoal/50">Payment Day</p><p class="font-semibold">{{ $fundingFacility->payment_day ? $fundingFacility->payment_day.'th' : '—' }}</p></div>

@@ -29,7 +29,7 @@
   </div>
 
   {{-- Filter --}}
-  <form method="GET" class="flex gap-3 mb-4">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-4">
     <select name="status" class="kc-select">
       <option value="">All statuses</option>
       @foreach(\App\Models\DebtRecovery::STATUSES as $val => $info)
