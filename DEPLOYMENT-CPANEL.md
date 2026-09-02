@@ -12,7 +12,7 @@ Laravel **10** · runs on PHP **8.2 or 8.3** · MySQL **8.0** · queue `sync` ·
 | Web server | LiteSpeed (`lsapi_module`) — reads `.htaccess`, but see §9 |
 | PHP error log | `/home/keystof9z0m9/logs/php.error.log` |
 
-The account is fresh: `public_html` holds only the stock cPanel `index` + `.htaccess`. Manage domain/DNS in **Afrihost ClientZone**; NS are `ns1.afrihost.co.za` / `ns2.afrihost.co.za`.
+The account is fresh: `public_html` holds only the stock cPanel `index` + `.htaccess`. Manage domain/DNS in **Afrihost ClientZone**; NS are `ns.dns1.co.za` / `ns.dns2.co.za` (+ `ns.otherdns.com` / `.net`). Server IP: **`197.242.159.146`**.
 
 > **Confirm the plan has SSH before starting.** Afrihost "Shared Hosting – Home" has **no SSH and no cPanel Terminal**, which blocks every `artisan` step (migrate, seed, `storage:link`, `config:cache`). You need **Shared – Pro/Advanced** (SSH on request) or Cloud/VPS. No-SSH fallbacks are in §8.
 
@@ -38,14 +38,22 @@ The account is fresh: `public_html` holds only the stock cPanel `index` + `.htac
 - [ ] You have the production `.env` values ready (see §4). `.env` is **git-ignored** — it never arrives via `git pull`.
 - [ ] Decide the app directory, e.g. `~/keystone` (repo lives here; **not** inside `public_html`).
 
-### DNS — the domain is registered but not yet pointed here
+### DNS — already pointed at the server
 
-`keystonecapitalpartners.co.za` currently resolves to the registrar's "registered on behalf of a client" parking page. Nothing deploys until DNS points at the cPanel server:
+The zone is on Afrihost NS (`ns.dns1.co.za`, `ns.dns2.co.za`, `ns.otherdns.com/.net`) and the records are already live:
 
-- [ ] In cPanel, add `keystonecapitalpartners.co.za` (WHM/"Addon Domains" or "Domains") so the account will answer for it.
-- [ ] At the registrar: either set the nameservers to the host's, **or** point an `A` record for `@` and `www` at the cPanel server IP (from cPanel → *Server Information* / the welcome email).
-- [ ] Decide canonical host. The client advertises **`www.`**, so make `www.keystonecapitalpartners.co.za` canonical and 301 the apex → `www` (cPanel → *Domains* → Redirects, or an `.htaccess` rule).
-- [ ] Wait for propagation (`dig www.keystonecapitalpartners.co.za` returns the cPanel IP), **then** run cPanel → *SSL/TLS Status* → **Run AutoSSL** so `https` works before first load.
+| Host | Type | Value | Meaning |
+|---|---|---|---|
+| `@`, `www`, `*` | A | **`197.242.159.146`** | the cPanel box (`keystof9z0m9`). Apex and `www` both already resolve here. |
+| `@` | MX 10 | `mx7967617497.spe.ucebox.co.za` | **mail is external** — Afrihost's aserv/ucebox platform, *not* this cPanel account. See §4 mail. |
+| `@` | TXT | `v=spf1 include:spf.aserv.co.za +a +mx -all` | SPF already covers aserv **and** the server's own IP (`+a`). |
+| `_dmarc` | TXT | `v=DMARC1; p=none; adkim=s; aspf=s` | strict alignment — send From `@keystonecapitalpartners.co.za` through aserv so DKIM aligns. |
+
+So there is **no registrar or nameserver change to make**. The "registered on behalf of a client" page you saw is just Afrihost's default for an account with nothing deployed yet.
+
+- [ ] Confirm `keystonecapitalpartners.co.za` is the account's primary domain in cPanel (it will be, given the A records) — or add it as an addon/alias if not.
+- [ ] Canonical host = **`www.`** (client advertises it). 301 apex → `www` via cPanel → *Domains* → Redirects, or a rule in `keystone/public/.htaccess`.
+- [ ] After the app is deployed and the docroot is set (step D), run cPanel → *SSL/TLS Status* → **Run AutoSSL** for both `@` and `www` (no CAA record blocks it). A-record TTL is 7200s, so allow ~2h if anything is changed.
 
 ---
 
@@ -73,15 +81,20 @@ php artisan key:generate
 cPanel → **MultiPHP Manager** → select `keystonecapitalpartners.co.za` → set to **`ea-php83`** (or 8.2). This is vhost-level and keeps working after the docroot change in step D. Don't hand-edit the `AddHandler` line in `public_html/.htaccess`.
 
 ### D. Point the web root at `public/`
-- cPanel → **Domains** → set the Document Root for `keystonecapitalpartners.co.za` (and `www.`) to `/home/keystof9z0m9/keystone/public`.
-- If cPanel refuses a root outside `public_html`: symlink it instead —
-  ```bash
-  rm -f /home/keystof9z0m9/public_html/index.html
-  ln -s /home/keystof9z0m9/keystone/public /home/keystof9z0m9/public_html/app
-  # then set the domain's docroot to public_html/app
-  ```
-- Do **not** use the "copy `public/*` up and edit `index.php` paths" hack — it breaks `storage:link` and every later `git pull`.
-- `keystone/public/.htaccess` is committed (Laravel's rewrite rules). LiteSpeed reads it; `AllowOverride All` is the Afrihost default. Leave the stock `public_html/.htaccess` alone.
+`keystonecapitalpartners.co.za` is the account's **primary** domain, and Afrihost locks the primary domain's docroot to `~/public_html`. Two ways to deal with it:
+
+**Preferred — replace `public_html` with a symlink to the app's `public/`:**
+```bash
+cd /home/keystof9z0m9
+rm -rf public_html                       # it only holds the stock index + .htaccess
+ln -s keystone/public public_html
+```
+LiteSpeed follows the symlink; `keystone/public/.htaccess` (committed, Laravel's rewrite rules) then applies. If Afrihost's setup won't serve through a symlinked `public_html` (test: `curl -I https://www.keystonecapitalpartners.co.za/` → expect Laravel, not 403), fall back to:
+
+**Fallback — add a subdomain/alias** `app.keystonecapitalpartners.co.za` (or re-add the domain as an alias) whose docroot *can* be set, point it at `/home/keystof9z0m9/keystone/public`, and 301 the primary domain to it.
+
+- Do **not** copy `public/*` up and rewrite `index.php`'s paths — it breaks `storage:link` and every later `git pull`.
+- After a symlink swap, re-check the PHP version stuck (step C) — `MultiPHP Manager` is vhost-level so it should, but verify with a `phpinfo()` probe you delete immediately.
 
 ### E. Database
 - cPanel → **MySQL Databases** → create DB + user (names auto-prefix to `keystof9z0m9_`), add the user to the DB with **ALL PRIVILEGES**.
@@ -172,9 +185,12 @@ CACHE_DRIVER=file
 SESSION_DRIVER=file
 QUEUE_CONNECTION=sync                # keep sync on shared hosting; a DB/Redis queue needs a worker
 
+# Mail is on Afrihost's aserv platform (per the MX/SRV records), NOT this
+# cPanel account. Use the aserv submission host, not mail.keystone... (that
+# A record just points back at the web box).
 MAIL_MAILER=smtp
-MAIL_HOST=mail.keystonecapitalpartners.co.za
-MAIL_PORT=587
+MAIL_HOST=envoy.aserv.co.za
+MAIL_PORT=587                        # 465/ssl also offered; match what ClientZone shows for the mailbox
 MAIL_USERNAME=no-reply@keystonecapitalpartners.co.za
 MAIL_PASSWORD=...
 MAIL_ENCRYPTION=tls
@@ -185,7 +201,14 @@ MAIL_FROM_NAME="Keystone Capital Partners"
 ADMIN_EMAIL=admin@keystonecapitalpartners.co.za
 ADMIN_PASSWORD=<<long random>>
 ```
-Force HTTPS: `APP_URL` is `https` + cPanel AutoSSL (§1) + the apex→`www` and http→https redirects; the app does not force the scheme itself. Create the `no-reply@` mailbox in cPanel → *Email Accounts* first, and add an SPF record (cPanel usually auto-adds one) so agreement/OTP mail isn't spam-filed.
+
+**Mail setup (external — don't use cPanel Email Accounts):**
+- Create the `no-reply@keystonecapitalpartners.co.za` mailbox in **Afrihost ClientZone → Email**, not cPanel. Note the outgoing server / port it gives you and use those for `MAIL_HOST`/`MAIL_PORT`.
+- cPanel → **Email Routing** for the domain → set to **Remote Mail Exchanger** (MX points to `ucebox`, so cPanel must not deliver locally).
+- SPF (`include:spf.aserv.co.za +a +mx -all`) and DMARC already exist in the zone. DMARC is strict-alignment (`adkim=s; aspf=s`) — sending through the aserv mailbox above keeps DKIM/From aligned. Do **not** fall back to PHP `mail()` / cPanel `sendmail` (no aligned DKIM → poor deliverability; `p=none` means it won't hard-fail, but treat that as luck).
+- Verify after deploy: generate an agreement, confirm it arrives and lands in inbox, not spam.
+
+**Force HTTPS:** `APP_URL` is `https` + AutoSSL (§1) + the apex→`www` and http→https redirects. The app does not force the scheme itself.
 
 ---
 
