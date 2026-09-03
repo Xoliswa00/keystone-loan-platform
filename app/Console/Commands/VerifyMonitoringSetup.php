@@ -47,8 +47,24 @@ class VerifyMonitoringSetup extends Command
             }
         }
 
-        if (! str_contains(file_get_contents(config_path('services.php')), "'monitoring'")) {
-            $problems[] = "config/services.php is missing the 'monitoring' block (enabled/url/token).";
+        $services = file_get_contents(config_path('services.php'));
+        if (! str_contains($services, "'monitoring'")) {
+            $problems[] = "config/services.php is missing the 'monitoring' block.";
+        } else {
+            foreach (['MONITORING_ENABLED', 'MONITORING_URL', 'MONITORING_TOKEN', 'MONITORING_SLUG'] as $var) {
+                if (! str_contains($services, $var)) {
+                    $problems[] = "config/services.php 'monitoring' block no longer reads {$var}.";
+                }
+            }
+        }
+
+        $envExample = base_path('.env.example');
+        if (is_file($envExample)) {
+            foreach (['MONITORING_ENABLED', 'MONITORING_URL', 'MONITORING_TOKEN', 'MONITORING_SLUG'] as $var) {
+                if (! str_contains(file_get_contents($envExample), $var)) {
+                    $problems[] = ".env.example is missing {$var}.";
+                }
+            }
         }
 
         $kernelPath = app_path('Console/Kernel.php');
