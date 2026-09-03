@@ -65,11 +65,13 @@ class ReportErrorsToXquisite extends Command
             return self::SUCCESS;
         }
 
+        $slug = config('services.monitoring.slug') ?: 'keystone';
+
         $events = $rows->map(fn (SystemLog $row) => [
             'level' => $row->level,
             'message' => $this->scrub((string) $row->message),
             'logged_at' => $row->logged_at->toIso8601String(),
-            'fingerprint' => 'keystone-'.$row->id,
+            'fingerprint' => $slug.'-'.$row->id,
         ])->all();
 
         try {

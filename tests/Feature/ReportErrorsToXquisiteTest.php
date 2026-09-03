@@ -53,6 +53,18 @@ class ReportErrorsToXquisiteTest extends TestCase
         });
     }
 
+    public function test_fingerprint_uses_the_configured_slug(): void
+    {
+        config()->set('services.monitoring.slug', 'keystone-staging');
+        Http::fake(['*/ingest/logs' => Http::response(['accepted' => 1], 200)]);
+
+        $log = $this->makeLog('error', 'slug test');
+
+        $this->artisan('keystone:report-errors')->assertSuccessful();
+
+        Http::assertSent(fn ($request) => $request['events'][0]['fingerprint'] === 'keystone-staging-'.$log->id);
+    }
+
     public function test_it_ignores_below_error_levels(): void
     {
         Http::fake(['*/ingest/logs' => Http::response(['accepted' => 0, 'duplicates' => 0], 200)]);

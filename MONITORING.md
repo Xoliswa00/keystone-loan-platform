@@ -1,8 +1,10 @@
 # Keystone → Xquisite monitoring
 
-Keystone reports to the central **Xquisite** monitoring hub so every app's
-health and errors are visible in one place
-(`https://xquisite.brightfinance-x.co.za`).
+Keystone is a **reporter** to the central hub — the **Xquisite Creations Suite**
+(`https://xquisite.brightfinance-x.co.za`) — so every app's health and errors
+are visible in one place. Keystone does not run its own hub; it just points a
+few env vars and two scheduled jobs at that one. Ingest contract:
+`Xquisite/suite/docs/MONITORING_INGEST.md`.
 
 ## What gets sent where
 
@@ -22,18 +24,21 @@ the scheduler runs the heartbeat and the forwarder synchronously.
 MONITORING_ENABLED=true
 MONITORING_URL=https://xquisite.brightfinance-x.co.za   # BASE url, no path
 MONITORING_TOKEN=<the api_token from the instance's row on the hub>
+MONITORING_SLUG=keystone                                # this instance's slug on the hub
 ```
 
 `MONITORING_URL` is the **base** URL. Each sender appends its own path
 (`/api/health-report`, `/ingest/logs`, `/js-error`) — do not put a path in the
-env var.
+env var. `MONITORING_SLUG` is used to build the per-row dedup fingerprint
+(`<slug>-<id>`); the hub still derives `system_logs.source` from the token, not
+from this value.
 
 ### Getting a token
 
 On the hub: **`/admin/monitoring` → Add Instance**. Set `name` (`Keystone`),
-`slug` (`keystone` — this becomes `source` on every forwarded log row),
-`url` (`https://<this site>/api/health`), and generate `api_token`
-(`Str::random(48)`). Put that token in `MONITORING_TOKEN` here.
+`slug` (`keystone` — this becomes `source` on every forwarded log row, and goes
+in `MONITORING_SLUG` here), `url` (`https://<this site>/api/health`), and
+generate `api_token` (`Str::random(48)`) for `MONITORING_TOKEN`.
 
 ## How the error forwarder works
 
