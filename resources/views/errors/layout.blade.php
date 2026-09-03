@@ -23,7 +23,7 @@
       @endauth
     </div>
 
-    <p class="text-white/20 text-xs mt-10">Capital. Partnership. Growth.</p>
+    <p class="text-white/55 text-xs mt-10">Capital. Partnership. Growth.</p>
   </div>
 </body>
 </html>

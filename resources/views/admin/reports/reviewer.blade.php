@@ -66,7 +66,7 @@
         <p class="text-xs font-semibold text-red-600 mt-1">R {{ number_format($d->remaining_balance??0,2) }}</p>
       </div>
       @empty
-      <p class="text-sm text-kc-charcoal/40 text-center py-4">No defaults.</p>
+      <p class="text-sm text-kc-charcoal/60 text-center py-4">No defaults.</p>
       @endforelse
     </div>
   </div>

@@ -6,14 +6,14 @@
 
   <div class="kc-card">
     @if($agreements->isEmpty())
-    <p class="text-center text-kc-charcoal/40 py-8">No NCA documents generated yet.</p>
+    <p class="text-center text-kc-charcoal/60 py-8">No NCA documents generated yet.</p>
     @else
     <div class="space-y-3">
       @foreach($agreements as $ag)
       <div class="flex items-center justify-between p-4 rounded-xl border border-kc-silver-light hover:border-kc-gold/30 transition">
         <div>
           <p class="font-semibold text-kc-navy">{{ $ag->getTypeLabel() }}</p>
-          <p class="text-xs text-kc-charcoal/40 font-mono">{{ $ag->reference }}</p>
+          <p class="text-xs text-kc-charcoal/60 font-mono">{{ $ag->reference }}</p>
           <p class="text-xs text-kc-charcoal/50 mt-1">Generated {{ $ag->generated_at?->format('d M Y H:i') }}</p>
           @if($ag->accepted_at)
             <span class="kc-badge kc-badge-green text-[10px] mt-1">Signed {{ $ag->accepted_at->format('d M Y') }}</span>

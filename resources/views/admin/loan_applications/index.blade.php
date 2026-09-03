@@ -65,7 +65,7 @@
             <td data-label="Ref" class="font-mono text-xs text-kc-charcoal/50">#{{ str_pad($app->id,6,'0',STR_PAD_LEFT) }}</td>
             <td data-label="Client">
               <div class="font-semibold">{{ $app->user?->name }}</div>
-              <div class="text-xs text-kc-charcoal/40">{{ $app->user?->customer?->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/60">{{ $app->user?->customer?->customer_code }}</div>
             </td>
             <td data-label="Amount" class="font-semibold">R {{ number_format($app->loan_amount,2) }}</td>
             <td data-label="Product"><span class="kc-badge kc-badge-silver">{{ $app->product?->name ?? 'Standard' }}</span></td>
@@ -81,7 +81,7 @@
             <td data-label="Action"><a href="{{ route('Admin.show', $app->id) }}" class="kc-btn-ghost text-xs py-1 px-3">Review</a></td>
           </tr>
           @empty
-          <tr><td colspan="9" class="text-center py-10 text-kc-charcoal/40">No pending applications.</td></tr>
+          <tr><td colspan="9" class="text-center py-10 text-kc-charcoal/60">No pending applications.</td></tr>
           @endforelse
         </tbody>
       </table>

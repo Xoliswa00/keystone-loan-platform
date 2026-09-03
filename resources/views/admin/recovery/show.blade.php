@@ -81,7 +81,7 @@
         <div class="space-y-3">
           @foreach($notes as $note)
           <div class="border-l-2 border-kc-gold/40 pl-3">
-            <p class="text-xs text-kc-charcoal/40">{{ \Carbon\Carbon::parse($note->created_at)->format('d M Y H:i') }}</p>
+            <p class="text-xs text-kc-charcoal/60">{{ \Carbon\Carbon::parse($note->created_at)->format('d M Y H:i') }}</p>
             <p class="text-sm">{{ $note->note }}</p>
           </div>
           @endforeach

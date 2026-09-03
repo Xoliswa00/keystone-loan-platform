@@ -47,7 +47,7 @@
             <td data-label="Period">
               <div class="font-semibold text-kc-navy">{{ $fp->displayLabel() }}</div>
               @if($fp->period === now()->format('Y-m'))
-                <div class="text-[10px] text-kc-gold font-semibold uppercase tracking-wide">Current</div>
+                <div class="text-[10px] text-kc-gold-muted font-semibold uppercase tracking-wide">Current</div>
               @endif
             </td>
             <td data-label="Status"><span class="kc-badge {{ $sc }}">{{ ucfirst($fp->status) }}</span></td>
@@ -76,7 +76,7 @@
                   {{ $fp->year_end_complete ? 'Complete' : 'Pending' }}
                 </span>
               @else
-                <span class="text-kc-charcoal/20 text-xs">—</span>
+                <span class="text-kc-charcoal/60 text-xs">—</span>
               @endif
             </td>
             <td data-label="Closed" class="text-xs text-kc-charcoal/50">
@@ -84,7 +84,7 @@
             </td>
             <td data-label="">
               <a href="{{ route('admin.periods.show', $fp) }}"
-                class="text-xs text-kc-gold hover:underline">
+                class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">
                 {{ $fp->isOpen() || $fp->isClosing() ? 'Manage →' : 'View →' }}
               </a>
             </td>

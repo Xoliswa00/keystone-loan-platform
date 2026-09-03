@@ -46,7 +46,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/40">No GL entries in this period.</td></tr>
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/60">No GL entries in this period.</td></tr>
           @endforelse
         </tbody>
       </table>

@@ -34,7 +34,7 @@
             <td data-label="Credit" class="text-emerald-600">{{ $line->credit_amount > 0 ? 'R '.number_format($line->credit_amount,2) : '—' }}</td>
             <td data-label="Balance" class="text-xs">{{ $line->running_balance ? 'R '.number_format($line->running_balance,2) : '—' }}</td>
             <td data-label="Match"><span class="kc-badge {{ $msc }}">{{ ucfirst($line->match_status) }}</span></td>
-            <td data-label="Note" class="text-xs text-kc-charcoal/40">{{ Str::limit($line->match_note ?? '',40) }}</td>
+            <td data-label="Note" class="text-xs text-kc-charcoal/60">{{ Str::limit($line->match_note ?? '',40) }}</td>
           </tr>
           @endforeach
         </tbody>

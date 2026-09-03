@@ -93,7 +93,7 @@
 
             {{-- Bottom — Tagline --}}
             <div class="relative z-10">
-                <p class="text-white/25 text-xs">
+                <p class="text-white/55 text-xs">
                     NCR Registered Credit Provider &nbsp;·&nbsp; Keystone Lending (Pty) Ltd
                 </p>
             </div>
@@ -122,7 +122,7 @@
 
             {{-- Footer --}}
             <div class="px-8 pb-6 text-center">
-                <p class="text-xs text-kc-charcoal/30">
+                <p class="text-xs text-kc-charcoal/60">
                     &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
                 </p>
             </div>

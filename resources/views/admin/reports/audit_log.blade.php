@@ -42,12 +42,12 @@
       <tbody>
         @foreach($logs as $log)
         <tr>
-          <td class="text-xs text-kc-charcoal/50">{{ $log->created_at->format('d M Y H:i') }}</td>
-          <td><span class="kc-badge kc-badge-navy">{{ $log->event }}</span></td>
-          <td class="text-xs font-mono">{{ class_basename($log->auditable_type) }} #{{ $log->auditable_id }}</td>
-          <td class="text-xs">{{ $log->user?->name ?? 'System' }}</td>
-          <td class="text-xs text-kc-charcoal/40">{{ $log->ip_address }}</td>
-          <td class="text-xs max-w-xs truncate text-kc-charcoal/60">
+          <td data-label="When" class="text-xs text-kc-charcoal/60">{{ $log->created_at->format('d M Y H:i') }}</td>
+          <td data-label="Event"><span class="kc-badge kc-badge-navy">{{ $log->event }}</span></td>
+          <td data-label="Record" class="text-xs font-mono">{{ class_basename($log->auditable_type) }} #{{ $log->auditable_id }}</td>
+          <td data-label="User" class="text-xs">{{ $log->user?->name ?? 'System' }}</td>
+          <td data-label="IP" class="text-xs text-kc-charcoal/60">{{ $log->ip_address }}</td>
+          <td data-label="Changes" class="text-xs max-w-xs truncate text-kc-charcoal/60">
             @if($log->new_values)
               {{ implode(', ', array_map(fn($k,$v) => $k.': '.(is_array($v) ? json_encode($v) : $v), array_keys($log->new_values ?? []), array_values($log->new_values ?? []))) }}
             @endif

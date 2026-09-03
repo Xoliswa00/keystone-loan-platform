@@ -107,7 +107,7 @@
                                 <td data-label="Ref" class="text-xs">{{ $txn->reference ?? '—' }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="text-center py-6 text-kc-charcoal/40">No transactions yet.</td></tr>
+                            <tr><td colspan="4" class="text-center py-6 text-kc-charcoal/60">No transactions yet.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -120,7 +120,7 @@
         </div>
         @endforelse
 
-        <p class="text-center text-xs text-kc-charcoal/30 pb-6">
+        <p class="text-center text-xs text-kc-charcoal/60 pb-6">
             &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
         </p>
     </div>

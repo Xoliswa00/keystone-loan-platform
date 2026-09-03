@@ -95,7 +95,7 @@
         <div class="max-w-xl mx-auto px-6" data-aos="fade-up">
             <h2 class="kc-display-2">Ready to build on solid ground.</h2>
             <a href="{{ route('register') }}" class="kc-btn-primary inline-flex mt-8">Apply for a Loan</a>
-            <p class="text-xs text-kc-charcoal/30 mt-6">
+            <p class="text-xs text-kc-charcoal/60 mt-6">
                 NCR Registered Credit Provider &nbsp;·&nbsp; Keystone Lending (Pty) Ltd
             </p>
         </div>

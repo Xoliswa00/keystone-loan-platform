@@ -59,7 +59,7 @@
             </div>
         </div>
         <p class="font-display text-2xl font-semibold text-kc-navy">R{{ number_format($balance, 2) }}</p>
-        <p class="text-xs text-kc-charcoal/40 mt-1">Total outstanding balance</p>
+        <p class="text-xs text-kc-charcoal/60 mt-1">Total outstanding balance</p>
     </div>
 
     {{-- Next instalment --}}
@@ -73,7 +73,7 @@
             </div>
         </div>
         <p class="font-display text-2xl font-semibold text-kc-navy">R{{ number_format($next->emi_amount ?? 0, 2) }}</p>
-        <p class="text-xs text-kc-charcoal/40 mt-1">Scheduled instalment</p>
+        <p class="text-xs text-kc-charcoal/60 mt-1">Scheduled instalment</p>
     </div>
 
     {{-- Due date --}}
@@ -93,7 +93,7 @@
                 <span class="text-kc-silver">—</span>
             @endif
         </p>
-        <p class="text-xs text-kc-charcoal/40 mt-1">
+        <p class="text-xs text-kc-charcoal/60 mt-1">
             @if($next)
                 {{ \Carbon\Carbon::parse($next->due_date)->format('Y') }} &nbsp;·&nbsp;
                 @if(\Carbon\Carbon::parse($next->due_date)->isPast())
@@ -127,7 +127,7 @@
             };
         @endphp
         <p class="mt-1"><span class="kc-badge {{ $statusClass }} text-sm px-3 py-1">{{ ucfirst($status) }}</span></p>
-        <p class="text-xs text-kc-charcoal/40 mt-2">Account standing</p>
+        <p class="text-xs text-kc-charcoal/60 mt-2">Account standing</p>
     </div>
 </div>
 
@@ -169,7 +169,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Profile</p>
-            <p class="text-xs text-kc-charcoal/40">Personal details</p>
+            <p class="text-xs text-kc-charcoal/60">Personal details</p>
         </div>
     </a>
 
@@ -184,7 +184,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Enquiries</p>
-            <p class="text-xs text-kc-charcoal/40">Chat with us</p>
+            <p class="text-xs text-kc-charcoal/60">Chat with us</p>
         </div>
     </a>
 
@@ -196,7 +196,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Statements</p>
-            <p class="text-xs text-kc-charcoal/40">Account statements</p>
+            <p class="text-xs text-kc-charcoal/60">Account statements</p>
         </div>
     </a>
 
@@ -210,7 +210,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Support</p>
-            <p class="text-xs text-kc-charcoal/40">Get assistance</p>
+            <p class="text-xs text-kc-charcoal/60">Get assistance</p>
         </div>
     </a>
 </div>
@@ -220,9 +220,9 @@
     <div class="flex items-center justify-between mb-5">
         <div>
             <h3 class="font-display text-base font-semibold text-kc-navy">My Loans</h3>
-            <p class="text-xs text-kc-charcoal/40 mt-0.5">Your active and recent loan agreements</p>
+            <p class="text-xs text-kc-charcoal/60 mt-0.5">Your active and recent loan agreements</p>
         </div>
-        <a href="{{ route('loan.index') }}" class="text-xs text-kc-gold hover:text-kc-gold-muted transition font-medium">
+        <a href="{{ route('loan.index') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted transition font-medium">
             View all
         </a>
     </div>
@@ -239,7 +239,7 @@
                 </svg>
             </div>
             <p class="text-sm font-medium text-kc-charcoal/60">No loans yet</p>
-            <p class="text-xs text-kc-charcoal/40 mt-1">Your loan applications will appear here</p>
+            <p class="text-xs text-kc-charcoal/60 mt-1">Your loan applications will appear here</p>
             <a href="{{ route('loanapplications.create') }}" class="kc-btn-primary mt-4 text-xs">
                 Apply for a Loan
             </a>
@@ -268,16 +268,16 @@
                         };
                     @endphp
                     <tr>
-                        <td class="font-mono text-xs text-kc-charcoal/60">
+                        <td data-label="Reference" class="font-mono text-xs text-kc-charcoal/60">
                             #{{ str_pad($la->id, 6, '0', STR_PAD_LEFT) }}
                         </td>
-                        <td class="font-semibold">R{{ number_format($la->loan_amount, 2) }}</td>
-                        <td class="capitalize">{{ $la->loan_type ?? '—' }}</td>
-                        <td><span class="kc-badge {{ $badgeClass }}">{{ ucfirst($la->status) }}</span></td>
-                        <td class="text-kc-charcoal/50">{{ \Carbon\Carbon::parse($la->created_at)->format('d M Y') }}</td>
-                        <td>
+                        <td data-label="Amount" class="font-semibold">R{{ number_format($la->loan_amount, 2) }}</td>
+                        <td data-label="Type" class="capitalize">{{ $la->loan_type ?? '—' }}</td>
+                        <td data-label="Status"><span class="kc-badge {{ $badgeClass }}">{{ ucfirst($la->status) }}</span></td>
+                        <td data-label="Applied" class="text-kc-charcoal/60">{{ \Carbon\Carbon::parse($la->created_at)->format('d M Y') }}</td>
+                        <td data-label="Action">
                             <a href="{{ route('loanapplications.show', $la->id) }}"
-                                class="text-xs text-kc-gold hover:text-kc-gold-muted transition font-medium">
+                                class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted transition font-medium">
                                 View
                             </a>
                         </td>

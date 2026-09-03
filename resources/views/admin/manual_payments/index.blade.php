@@ -16,7 +16,7 @@
           <tr>
             <td data-label="Client">
               <div class="font-semibold">{{ $p->user?->name ?? '—' }}</div>
-              <div class="text-xs text-kc-charcoal/40">{{ $p->user?->customer?->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/60">{{ $p->user?->customer?->customer_code }}</div>
             </td>
             <td data-label="Schedule" class="text-xs">
               Instalment #{{ $p->repaymentSchedule?->installment_number ?? '—' }}
@@ -30,7 +30,7 @@
               <a href="{{ route('secure-documents.repayment-proof', $p) }}"
                  target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
               @else
-              <span class="text-xs text-kc-charcoal/30">—</span>
+              <span class="text-xs text-kc-charcoal/60">—</span>
               @endif
             </td>
             <td data-label="Submitted" class="text-xs text-kc-charcoal/50">
@@ -58,7 +58,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/40">No payments awaiting verification.</td></tr>
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">No payments awaiting verification.</td></tr>
           @endforelse
         </tbody>
       </table>

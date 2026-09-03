@@ -55,13 +55,13 @@
           Resend code
         </button>
       </form>
-      <span class="text-xs text-kc-charcoal/30 mx-2">·</span>
+      <span class="text-xs text-kc-charcoal/60 mx-2">·</span>
       <form method="POST" action="{{ route('logout') }}" class="inline">
         @csrf
-        <button type="submit" class="text-xs text-kc-charcoal/40 hover:underline">Cancel</button>
+        <button type="submit" class="text-xs text-kc-charcoal/60 hover:underline">Cancel</button>
       </form>
     </div>
 
-    <p class="text-center text-xs text-kc-charcoal/30">Code expires in 10 minutes</p>
+    <p class="text-center text-xs text-kc-charcoal/60">Code expires in 10 minutes</p>
   </form>
 </x-guest-layout>

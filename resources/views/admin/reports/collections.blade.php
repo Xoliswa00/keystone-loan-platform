@@ -27,17 +27,17 @@
           @forelse($collections as $row)
           <tr>
             <td data-label="Date">{{ \Carbon\Carbon::parse($row->payment_date)->format('d M Y') }}</td>
-            <td data-label="Client"><div class="font-semibold">{{ $row->client_name }}</div><div class="text-xs text-kc-charcoal/40">{{ $row->customer_code }}</div></td>
+            <td data-label="Client"><div class="font-semibold">{{ $row->client_name }}</div><div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }}</div></td>
             <td data-label="Principal">R {{ number_format($row->principal_amount, 2) }}</td>
             <td data-label="Interest">R {{ number_format($row->interest_amount, 2) }}</td>
             <td data-label="Fees">R {{ number_format($row->fee_amount, 2) }}</td>
             <td data-label="Nu-Pay Fee" class="text-kc-charcoal/50">R {{ number_format($row->nupay_fee, 2) }}</td>
             <td data-label="Total" class="font-semibold text-emerald-600">R {{ number_format($row->payment_amount, 2) }}</td>
             <td data-label="Method"><span class="kc-badge kc-badge-silver">{{ ucfirst(str_replace('_',' ',$row->payment_method ?? '—')) }}</span></td>
-            <td data-label="GL Ref" class="text-xs font-mono text-kc-charcoal/40">{{ $row->gl_batch_reference ?? '—' }}</td>
+            <td data-label="GL Ref" class="text-xs font-mono text-kc-charcoal/60">{{ $row->gl_batch_reference ?? '—' }}</td>
           </tr>
           @empty
-          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/40">No collections in this period.</td></tr>
+          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/60">No collections in this period.</td></tr>
           @endforelse
         </tbody>
       </table>

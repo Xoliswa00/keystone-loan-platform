@@ -272,7 +272,7 @@
             <td data-label="Debit" class="text-red-600">{{ $line->debit_amount > 0 ? 'R '.number_format($line->debit_amount,2) : '' }}</td>
             <td data-label="Credit" class="text-emerald-600">{{ $line->credit_amount > 0 ? 'R '.number_format($line->credit_amount,2) : '' }}</td>
             <td data-label="Category"><span class="kc-badge {{ $catClass }} text-[10px]">{{ ucfirst(str_replace('_',' ',$line->match_category ?? 'matched')) }}</span></td>
-            <td data-label="GL Ref" class="font-mono text-[10px] text-kc-charcoal/40">{{ $line->allocation_gl_batch_ref ?? $line->match_note ? Str::limit($line->match_note,30) : '—' }}</td>
+            <td data-label="GL Ref" class="font-mono text-[10px] text-kc-charcoal/60">{{ $line->allocation_gl_batch_ref ?? $line->match_note ? Str::limit($line->match_note,30) : '—' }}</td>
             <td data-label="Action">
               @if(!$status['all_lines_matched'] || $batch->status !== 'RECONCILED')
               <form method="POST" action="{{ route('admin.finance.recon.unallocate', $batch->id) }}"

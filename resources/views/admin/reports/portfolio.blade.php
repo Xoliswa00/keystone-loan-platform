@@ -40,7 +40,7 @@
     <div class="kc-stat-card">
       <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Portfolio Growth (MoM)</p>
       <p class="font-display text-xl font-bold {{ $monthlyGrowth >= 0 ? 'text-emerald-600' : 'text-red-600' }} mt-1">{{ number_format($monthlyGrowth, 1) }}%</p>
-      <p class="text-xs text-kc-charcoal/40 mt-0.5">R{{ number_format($newDisbursementsThisMonth ?? 0, 0) }} disbursed this month</p>
+      <p class="text-xs text-kc-charcoal/60 mt-0.5">R{{ number_format($newDisbursementsThisMonth ?? 0, 0) }} disbursed this month</p>
     </div>
   </div>
 
@@ -60,7 +60,7 @@
             <div class="h-full {{ $cls }} rounded-full" style="width:{{ $pct }}%"></div>
           </div>
           <span class="text-xs font-semibold w-24 text-right">R {{ number_format($stage->outstanding, 0) }}</span>
-          <span class="text-xs text-kc-charcoal/40 w-16 text-right">{{ $stage->count }} loans</span>
+          <span class="text-xs text-kc-charcoal/60 w-16 text-right">{{ $stage->count }} loans</span>
         </div>
         @endforeach
       </div>
@@ -99,7 +99,7 @@
             <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($row->id,6,'0',STR_PAD_LEFT) }}</td>
             <td data-label="Client">
               <div class="font-semibold">{{ $row->client_name }}</div>
-              <div class="text-xs text-kc-charcoal/40">{{ $row->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }}</div>
             </td>
             <td data-label="Outstanding" class="font-semibold text-red-600">R {{ number_format($row->outstanding,2) }}</td>
             <td data-label="Days Late" class="font-bold {{ $row->days_late >= 90 ? 'text-red-600' : 'text-orange-500' }}">
@@ -107,7 +107,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="4" class="text-center py-6 text-kc-charcoal/40">No overdue accounts.</td></tr>
+          <tr><td colspan="4" class="text-center py-6 text-kc-charcoal/60">No overdue accounts.</td></tr>
           @endforelse
         </tbody>
       </table>

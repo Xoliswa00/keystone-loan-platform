@@ -38,7 +38,7 @@
           </tr>
         </tbody>
       </table>
-      <p class="text-xs text-kc-charcoal/40 mt-3">Interest income of R{{ number_format($interestIncome, 2) }} is VAT-exempt under the financial services exemption (VAT Act s.2(1)(f)).</p>
+      <p class="text-xs text-kc-charcoal/60 mt-3">Interest income of R{{ number_format($interestIncome, 2) }} is VAT-exempt under the financial services exemption (VAT Act s.2(1)(f)).</p>
     </div>
 
     {{-- Input VAT --}}

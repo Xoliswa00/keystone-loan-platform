@@ -64,7 +64,7 @@
             <td data-label="Code" class="font-mono text-xs text-kc-charcoal/60">{{ $c->customer_code }}</td>
             <td data-label="Name">
               <div class="font-semibold">{{ $c->name }}</div>
-              <div class="text-xs text-kc-charcoal/40">{{ $c->email }}</div>
+              <div class="text-xs text-kc-charcoal/60">{{ $c->email }}</div>
             </td>
             <td data-label="ID" class="font-mono text-xs">{{ $c->ID_Number }}</td>
             <td data-label="Phone" class="text-xs">{{ $c->phone }}</td>
@@ -72,10 +72,10 @@
               @if($c->active_loans_count > 0)
                 <span class="kc-badge kc-badge-gold">{{ $c->active_loans_count }}</span>
               @else
-                <span class="text-kc-charcoal/30 text-xs">—</span>
+                <span class="text-kc-charcoal/60 text-xs">—</span>
               @endif
             </td>
-            <td data-label="Outstanding" class="{{ $c->current_balance > 0 ? 'font-semibold text-kc-navy' : 'text-kc-charcoal/30' }}">
+            <td data-label="Outstanding" class="{{ $c->current_balance > 0 ? 'font-semibold text-kc-navy' : 'text-kc-charcoal/60' }}">
               {{ $c->current_balance > 0 ? 'R '.number_format($c->current_balance,2) : '—' }}
             </td>
             <td data-label="Status"><span class="kc-badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
@@ -84,7 +84,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/40">
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">
             @if(request('search')) No clients match "{{ request('search') }}" @else No clients yet. @endif
           </td></tr>
           @endforelse

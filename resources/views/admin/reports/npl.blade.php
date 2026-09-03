@@ -34,7 +34,7 @@
   <div class="kc-card">
     <div class="flex items-center justify-between mb-4">
       <h4 class="font-display font-semibold text-kc-navy">Overdue Loan Detail</h4>
-      <a href="{{ route('admin.recovery.index') }}" class="text-xs text-kc-gold hover:text-kc-gold-muted">View Recovery Cases →</a>
+      <a href="{{ route('admin.recovery.index') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View Recovery Cases →</a>
     </div>
     <div class="overflow-x-auto">
       <table class="kc-table">
@@ -51,20 +51,20 @@
                         : ($loan->ifrs9_stage == 2 ? 'kc-badge-gold' : 'kc-badge-silver');
           @endphp
           <tr>
-            <td class="font-mono text-xs">#{{ str_pad($loan->loan_id, 6, '0', STR_PAD_LEFT) }}</td>
-            <td>
+            <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($loan->loan_id, 6, '0', STR_PAD_LEFT) }}</td>
+            <td data-label="Client">
               <div class="font-semibold text-kc-navy">{{ $loan->client_name }}</div>
-              <div class="text-xs text-kc-charcoal/40">{{ $loan->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/60">{{ $loan->customer_code }}</div>
             </td>
-            <td class="font-bold {{ $loan->dpd >= 90 ? 'text-red-600' : ($loan->dpd >= 30 ? 'text-orange-500' : 'text-kc-charcoal') }}">
+            <td data-label="DPD" class="font-bold {{ $loan->dpd >= 90 ? 'text-red-600' : ($loan->dpd >= 30 ? 'text-orange-500' : 'text-kc-charcoal') }}">
               {{ $loan->dpd }}
             </td>
-            <td><span class="kc-badge {{ $stageClass }}">{{ $loan->dpd_bucket }}</span></td>
-            <td><span class="kc-badge {{ $stageClass }}">Stage {{ $loan->ifrs9_stage }}</span></td>
-            <td class="font-semibold">R {{ number_format($loan->remaining_balance, 2) }}</td>
-            <td class="text-red-600 font-semibold">R {{ number_format($loan->arrears, 2) }}</td>
-            <td class="text-orange-600">R {{ number_format($loan->provision_amount, 2) }}</td>
-            <td>
+            <td data-label="Bucket"><span class="kc-badge {{ $stageClass }}">{{ $loan->dpd_bucket }}</span></td>
+            <td data-label="Stage"><span class="kc-badge {{ $stageClass }}">Stage {{ $loan->ifrs9_stage }}</span></td>
+            <td data-label="Outstanding" class="font-semibold">R {{ number_format($loan->remaining_balance, 2) }}</td>
+            <td data-label="Arrears" class="text-red-600 font-semibold">R {{ number_format($loan->arrears, 2) }}</td>
+            <td data-label="Provision" class="text-orange-600">R {{ number_format($loan->provision_amount, 2) }}</td>
+            <td data-label="Coverage %">
               <div class="flex items-center gap-1">
                 <div class="w-12 h-1.5 bg-kc-silver-light rounded-full overflow-hidden">
                   <div class="h-full bg-orange-500 rounded-full" style="width:{{ min(100, $coverage) }}%"></div>
@@ -72,12 +72,12 @@
                 <span class="text-xs">{{ $coverage }}%</span>
               </div>
             </td>
-            <td>
-              <a href="{{ route('admin.collections') }}" class="text-xs text-kc-gold hover:underline">Collections</a>
+            <td data-label="Action">
+              <a href="{{ route('admin.collections') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Collections</a>
             </td>
           </tr>
           @empty
-          <tr><td colspan="10" class="text-center text-kc-charcoal/40 py-8">No overdue loans. 🎉</td></tr>
+          <tr><td colspan="10" class="text-center text-kc-charcoal/60 py-8">No overdue loans. 🎉</td></tr>
           @endforelse
         </tbody>
       </table>
@@ -98,8 +98,8 @@
       ] as $i => $s)
       <div>
         <div class="border rounded p-2 {{ $s['colour'] }} font-semibold">{{ $s['step'] }}</div>
-        <div class="text-kc-charcoal/40 mt-1">{{ $s['note'] }}</div>
-        @if($i < 4) <div class="text-kc-charcoal/30 text-base">→</div> @endif
+        <div class="text-kc-charcoal/60 mt-1">{{ $s['note'] }}</div>
+        @if($i < 4) <div class="text-kc-charcoal/60 text-base">→</div> @endif
       </div>
       @endforeach
     </div>

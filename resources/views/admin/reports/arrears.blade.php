@@ -32,7 +32,7 @@
           <tr>
             <td data-label="Client">
               <div class="font-semibold">{{ $row->client_name }}</div>
-              <div class="text-xs text-kc-charcoal/40">{{ $row->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }}</div>
             </td>
             <td data-label="Bucket">
               @php $cls = str_contains($row->dpd_bucket,'180') || str_contains($row->dpd_bucket,'90') ? 'kc-badge-red' : (str_contains($row->dpd_bucket,'60') ? 'kc-badge-gold' : 'kc-badge-silver'); @endphp
@@ -42,11 +42,11 @@
             <td data-label="Balance">R {{ number_format($row->remaining_balance, 2) }}</td>
             <td data-label="Arrears" class="font-semibold text-red-600">R {{ number_format($row->arrears_amount, 2) }}</td>
             <td data-label="Actions">
-              <a href="{{ route('admin.collections') }}" class="text-xs text-kc-gold hover:underline">Collections</a>
+              <a href="{{ route('admin.collections') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Collections</a>
             </td>
           </tr>
           @empty
-          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/40">No overdue accounts.</td></tr>
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/60">No overdue accounts.</td></tr>
           @endforelse
         </tbody>
       </table>

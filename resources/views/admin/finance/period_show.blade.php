@@ -236,12 +236,12 @@
 
         @if($period->isLocked())
         <div class="flex items-center gap-2 p-3 rounded-lg border border-kc-silver-light bg-kc-silver-light/30">
-          <svg class="w-4 h-4 text-kc-charcoal/40 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-4 h-4 text-kc-charcoal/60 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
           </svg>
           <div>
             <p class="text-xs font-semibold text-kc-charcoal/60">Period Locked</p>
-            <p class="text-[10px] text-kc-charcoal/40">Locked {{ $period->locked_at?->format('d M Y') }} by {{ $period->lockedBy?->name ?? 'System' }}</p>
+            <p class="text-[10px] text-kc-charcoal/60">Locked {{ $period->locked_at?->format('d M Y') }} by {{ $period->lockedBy?->name ?? 'System' }}</p>
           </div>
         </div>
         @endif
@@ -263,7 +263,7 @@
         @if($period->year_end_complete)
         <div class="mt-3">
           <span class="kc-badge kc-badge-green">Year-end complete</span>
-          <p class="text-xs text-kc-charcoal/40 mt-1">GL ref: {{ $period->year_end_gl_batch_ref }}</p>
+          <p class="text-xs text-kc-charcoal/60 mt-1">GL ref: {{ $period->year_end_gl_batch_ref }}</p>
         </div>
         @endif
       </div>

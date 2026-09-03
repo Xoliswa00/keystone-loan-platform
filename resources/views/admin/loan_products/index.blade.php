@@ -67,13 +67,13 @@
             @endif
           </tr>
           @empty
-          <tr><td colspan="{{ $canManage ? 8 : 7 }}" class="text-center py-8 text-kc-charcoal/40">No loan products configured yet.</td></tr>
+          <tr><td colspan="{{ $canManage ? 8 : 7 }}" class="text-center py-8 text-kc-charcoal/60">No loan products configured yet.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
 
-    <p class="text-[11px] text-kc-charcoal/40 mt-3">
+    <p class="text-[11px] text-kc-charcoal/60 mt-3">
       "Active" products are offered to every client. To open a multi-month product to one
       specific client without activating it for everyone, grant that override from the client's
       profile page instead ("Extended Terms Eligible").

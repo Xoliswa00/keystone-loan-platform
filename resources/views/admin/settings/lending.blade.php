@@ -26,7 +26,7 @@
             value="{{ old('max_active_loans', $settings->max_active_loans) }}"
             required class="kc-input @error('max_active_loans') border-red-400 @enderror">
           @error('max_active_loans')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-          <p class="text-[11px] text-kc-charcoal/40 mt-1">A client with this many active (non-settled) loans is blocked from applying for another. Set to 1 for the standard "one loan at a time" rule.</p>
+          <p class="text-[11px] text-kc-charcoal/60 mt-1">A client with this many active (non-settled) loans is blocked from applying for another. Set to 1 for the standard "one loan at a time" rule.</p>
         </div>
 
         <div>
@@ -35,7 +35,7 @@
             value="{{ old('rejection_cooldown_days', $settings->rejection_cooldown_days) }}"
             required class="kc-input @error('rejection_cooldown_days') border-red-400 @enderror">
           @error('rejection_cooldown_days')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-          <p class="text-[11px] text-kc-charcoal/40 mt-1">NCR reckless-lending waiting period after a rejected application before the client may reapply.</p>
+          <p class="text-[11px] text-kc-charcoal/60 mt-1">NCR reckless-lending waiting period after a rejected application before the client may reapply.</p>
         </div>
       </div>
 
@@ -49,14 +49,14 @@
             value="{{ old('affordability_ratio', $settings->affordability_ratio) }}"
             required class="kc-input @error('affordability_ratio') border-red-400 @enderror">
           @error('affordability_ratio')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-          <p class="text-[11px] text-kc-charcoal/40 mt-1">As a fraction, e.g. 0.30 = 30%. NCA affordability guideline.</p>
+          <p class="text-[11px] text-kc-charcoal/60 mt-1">As a fraction, e.g. 0.30 = 30%. NCA affordability guideline.</p>
         </div>
       </div>
 
       {{-- CLO Risk Thresholds --}}
       <div class="kc-card space-y-4">
         <h4 class="font-display font-semibold text-kc-navy">CLO Advisory Risk Bands</h4>
-        <p class="text-[11px] text-kc-charcoal/40">Risk score (0–100) at which the CLO advisory engine recommends REVIEW or ESCALATE instead of APPROVE.</p>
+        <p class="text-[11px] text-kc-charcoal/60">Risk score (0–100) at which the CLO advisory engine recommends REVIEW or ESCALATE instead of APPROVE.</p>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -127,7 +127,7 @@
             @error('ifrs9_stage3_rate')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
           </div>
         </div>
-        <p class="text-[11px] text-kc-charcoal/40">Rates as fractions, e.g. 0.20 = 20%. Should escalate: Stage 1 &lt; Stage 2 &lt; Stage 3.</p>
+        <p class="text-[11px] text-kc-charcoal/60">Rates as fractions, e.g. 0.20 = 20%. Should escalate: Stage 1 &lt; Stage 2 &lt; Stage 3.</p>
       </div>
 
       {{-- Arrears Escalation --}}
@@ -140,7 +140,7 @@
             value="{{ old('arrears_second_notice_dpd', $settings->arrears_second_notice_dpd) }}"
             required class="kc-input @error('arrears_second_notice_dpd') border-red-400 @enderror">
           @error('arrears_second_notice_dpd')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-          <p class="text-[11px] text-kc-charcoal/40 mt-1">DPD at which the intermediate "second notice" escalation tier fires — between the Stage 2 and Stage 3 IFRS 9 boundaries above.</p>
+          <p class="text-[11px] text-kc-charcoal/60 mt-1">DPD at which the intermediate "second notice" escalation tier fires — between the Stage 2 and Stage 3 IFRS 9 boundaries above.</p>
         </div>
       </div>
 
@@ -154,7 +154,7 @@
             value="{{ old('payment_reminder_days_before_due', $settings->payment_reminder_days_before_due) }}"
             required class="kc-input @error('payment_reminder_days_before_due') border-red-400 @enderror">
           @error('payment_reminder_days_before_due')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-          <p class="text-[11px] text-kc-charcoal/40 mt-1">Default for the daily reminder cron. A manual run with an explicit <code>--days</code> flag still overrides this.</p>
+          <p class="text-[11px] text-kc-charcoal/60 mt-1">Default for the daily reminder cron. A manual run with an explicit <code>--days</code> flag still overrides this.</p>
         </div>
       </div>
     </div>
