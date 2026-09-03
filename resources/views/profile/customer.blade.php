@@ -83,11 +83,11 @@
               <input type="number" name="net_monthly_income" value="{{ $profile->net_monthly_income }}" class="kc-input" required min="0" step="0.01" placeholder="Take-home pay">
             </div>
             <div>
-              <label class="kc-label">Gross Monthly Income (R) <span class="text-kc-charcoal/40 text-[10px]">optional</span></label>
+              <label class="kc-label">Gross Monthly Income (R) <span class="text-kc-charcoal/60 text-[10px]">optional</span></label>
               <input type="number" name="gross_monthly_income" value="{{ $profile->gross_monthly_income }}" class="kc-input" min="0" step="0.01" placeholder="Before deductions">
             </div>
             <div>
-              <label class="kc-label">Other Income (R) <span class="text-kc-charcoal/40 text-[10px]">optional</span></label>
+              <label class="kc-label">Other Income (R) <span class="text-kc-charcoal/60 text-[10px]">optional</span></label>
               <input type="number" name="other_income" value="{{ $profile->other_income ?? 0 }}" class="kc-input" min="0" step="0.01" placeholder="Rental, freelance, etc.">
             </div>
           </div>
@@ -160,7 +160,7 @@
       <div class="kc-card">
         <h4 class="font-display font-semibold text-kc-navy mb-4">
           Bank Statement Analysis
-          <span class="text-xs font-normal text-kc-charcoal/40 ml-2">Run {{ $profile->bank_analysis_run_at->diffForHumans() }}</span>
+          <span class="text-xs font-normal text-kc-charcoal/60 ml-2">Run {{ $profile->bank_analysis_run_at->diffForHumans() }}</span>
         </h4>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
           <div class="text-center">
@@ -210,7 +210,7 @@
         </div>
 
         @if($accountDetails->isEmpty())
-          <p class="text-[10px] text-kc-charcoal/30 uppercase">Missing</p>
+          <p class="text-[10px] text-kc-charcoal/60 uppercase">Missing</p>
         @else
           <div class="space-y-2">
             @foreach($accountDetails as $account)
@@ -247,7 +247,7 @@
             <input type="date" name="document_date" class="kc-input" max="{{ now()->toDateString() }}">
           </div>
           <div>
-            <label class="kc-label">File <span class="text-kc-charcoal/40 text-[10px]">PDF, JPG, PNG or CSV (for statements)</span></label>
+            <label class="kc-label">File <span class="text-kc-charcoal/60 text-[10px]">PDF, JPG, PNG or CSV (for statements)</span></label>
             <input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png,.csv" required class="kc-input py-2 cursor-pointer">
           </div>
           <button type="submit" class="kc-btn-primary w-full justify-center">Upload</button>
@@ -275,10 +275,10 @@
                   </div>
                 @endif
                 <span class="text-xs font-medium text-kc-charcoal/70">{{ $label }}</span>
-                <span class="text-[10px] text-kc-charcoal/30">— upload one per bank</span>
+                <span class="text-[10px] text-kc-charcoal/60">— upload one per bank</span>
               </div>
               @if($docsOfType->isEmpty())
-                <p class="text-[10px] text-kc-charcoal/30 uppercase pl-7">Missing</p>
+                <p class="text-[10px] text-kc-charcoal/60 uppercase pl-7">Missing</p>
               @else
                 <div class="pl-7 space-y-1">
                   @foreach($docsOfType as $doc)
@@ -320,7 +320,7 @@
                   <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
                 </div>
               @else
-                <span class="text-[10px] text-kc-charcoal/30 uppercase">Missing</span>
+                <span class="text-[10px] text-kc-charcoal/60 uppercase">Missing</span>
               @endif
             </div>
           @endif

@@ -30,7 +30,7 @@
     <div class="kc-stat-card">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Outstanding (Liabilities)</p>
       <p class="font-display text-2xl font-bold text-red-600 mt-1">R {{ number_format($summary['total_drawn'],2) }}</p>
-      <p class="text-xs text-kc-charcoal/40 mt-0.5">On balance sheet</p>
+      <p class="text-xs text-kc-charcoal/60 mt-0.5">On balance sheet</p>
     </div>
     <div class="kc-stat-card">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Accrued Interest</p>
@@ -60,7 +60,7 @@
             <td data-label="Type" class="text-xs"><span class="kc-badge kc-badge-silver">{{ \App\Models\FundingFacility::FUNDER_TYPES[$f->funder_type] ?? $f->funder_type }}</span></td>
             <td data-label="Funder">
               <div>{{ $f->funder_name }}</div>
-              <div class="text-xs text-kc-charcoal/40">{{ $f->contact_person }}</div>
+              <div class="text-xs text-kc-charcoal/60">{{ $f->contact_person }}</div>
             </td>
             <td data-label="Limit">R {{ number_format($f->facility_limit,2) }}</td>
             <td data-label="Outstanding" class="font-semibold text-red-600">R {{ number_format($f->current_balance,2) }}</td>
@@ -74,17 +74,17 @@
               </div>
             </td>
             <td data-label="Rate" class="text-xs">{{ round($f->interest_rate*100,2) }}%</td>
-            <td data-label="Accrued" class="{{ $f->accrued_interest > 0 ? 'text-orange-600 font-semibold' : 'text-kc-charcoal/40' }}">
+            <td data-label="Accrued" class="{{ $f->accrued_interest > 0 ? 'text-orange-600 font-semibold' : 'text-kc-charcoal/60' }}">
               R {{ number_format($f->accrued_interest,2) }}
             </td>
             <td data-label="Status"><span class="kc-badge {{ $sc }}">{{ ucfirst(str_replace('_',' ',$f->status)) }}</span></td>
             <td data-label="Actions">
-              <a href="{{ route('admin.funding.show', $f) }}" class="text-xs text-kc-gold hover:underline">Manage →</a>
+              <a href="{{ route('admin.funding.show', $f) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Manage →</a>
             </td>
           </tr>
           @empty
-          <tr><td colspan="11" class="text-center py-10 text-kc-charcoal/40">
-            No funding facilities yet. <a href="{{ route('admin.funding.create') }}" class="text-kc-gold hover:underline">Add one →</a>
+          <tr><td colspan="11" class="text-center py-10 text-kc-charcoal/60">
+            No funding facilities yet. <a href="{{ route('admin.funding.create') }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Add one →</a>
           </td></tr>
           @endforelse
         </tbody>

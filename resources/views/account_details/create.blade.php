@@ -53,7 +53,7 @@
       <div>
         <label class="kc-label">Branch Code</label>
         <input type="text" name="branch_code" x-model="branchCode" class="kc-input font-mono" placeholder="Filled in automatically once you pick a bank">
-        <p class="mt-1 text-[11px] text-kc-charcoal/40">Every branch of a bank shares one universal code — filled in for you, but you can edit it if yours differs.</p>
+        <p class="mt-1 text-[11px] text-kc-charcoal/60">Every branch of a bank shares one universal code — filled in for you, but you can edit it if yours differs.</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">

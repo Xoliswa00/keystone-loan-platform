@@ -106,7 +106,7 @@
             </div>
         </div>
         <div class="border-t border-white/10">
-            <div class="max-w-6xl mx-auto px-6 py-5 text-center text-xs text-white/30">
+            <div class="max-w-6xl mx-auto px-6 py-5 text-center text-xs text-white/55">
                 &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
                 &nbsp;·&nbsp; NCR Registered Credit Provider &nbsp;·&nbsp; Keystone Lending (Pty) Ltd
             </div>

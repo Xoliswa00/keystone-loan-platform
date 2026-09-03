@@ -28,7 +28,9 @@
                 <td data-label="Role">
                   <form method="POST" action="{{ route('admin.staff.update-role', $member) }}" class="flex items-center gap-2">
                     @csrf @method('PUT')
-                    <select name="system_role" class="kc-select !py-1 !text-xs" onchange="this.form.submit()">
+                    <select name="system_role" class="kc-select !py-1 !text-xs"
+                            data-current="{{ $member->system_role }}"
+                            onchange="if (confirm('Change ' + @js($member->name) + ' to ' + this.options[this.selectedIndex].text.trim() + '?')) { this.form.submit(); } else { this.value = this.dataset.current; }">
                       <option value="loan_officer" {{ $member->system_role==='loan_officer'?'selected':'' }}>Loan Officer</option>
                       <option value="finance" {{ $member->system_role==='finance'?'selected':'' }}>Finance</option>
                       <option value="admin" {{ $member->system_role==='admin'?'selected':'' }}>Admin</option>
@@ -38,12 +40,12 @@
                     </select>
                   </form>
                 </td>
-                <td data-label="Action" class="text-xs text-kc-charcoal/40">
+                <td data-label="Action" class="text-xs text-kc-charcoal/60">
                   {{ $member->id === Auth::id() ? 'You' : '' }}
                 </td>
               </tr>
               @empty
-              <tr><td colspan="4" class="text-center py-8 text-kc-charcoal/40">No staff accounts yet.</td></tr>
+              <tr><td colspan="4" class="text-center py-8 text-kc-charcoal/60">No staff accounts yet.</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -76,7 +78,7 @@
             </select>
             @error('system_role')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
           </div>
-          <p class="text-[11px] text-kc-charcoal/40">They'll receive an email with a link to set their own password.</p>
+          <p class="text-[11px] text-kc-charcoal/60">They'll receive an email with a link to set their own password.</p>
           <button type="submit" class="kc-btn-primary w-full justify-center">Send Invite</button>
         </form>
       </div>
@@ -102,11 +104,11 @@
                   <option value="{{ $role }}">{{ ucfirst(str_replace('_',' ',$role)) }}</option>
                 @endforeach
               </select>
-              <button type="submit" class="text-xs text-kc-gold hover:underline">Promote</button>
+              <button type="submit" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Promote</button>
             </form>
           </div>
           @empty
-          <p class="text-xs text-kc-charcoal/40">No matching clients found.</p>
+          <p class="text-xs text-kc-charcoal/60">No matching clients found.</p>
           @endforelse
         @endif
       </div>

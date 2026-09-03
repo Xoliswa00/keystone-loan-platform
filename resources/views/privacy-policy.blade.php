@@ -37,7 +37,7 @@
           @endforeach
         </div>
 
-        <div class="mt-5 pt-4 border-t border-kc-silver-light text-xs text-kc-charcoal/40">
+        <div class="mt-5 pt-4 border-t border-kc-silver-light text-xs text-kc-charcoal/60">
           NCR Registration: {{ \App\Models\Company::settings()?->ncr_number ?? 'Contact us for details' }} · <em>Capital. Partnership. Growth.</em>
         </div>
       </div>

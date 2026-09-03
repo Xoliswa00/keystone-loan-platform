@@ -4,7 +4,7 @@
     <p class="kc-page-subtitle">As at {{ \Carbon\Carbon::parse($asAt)->format('d F Y') }}</p>
   </x-slot>
 
-  <form method="GET" class="flex gap-3 mb-6">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
     <div>
       <label class="kc-label">As at date</label>
       <input type="date" name="as_at_date" value="{{ $asAt }}" class="kc-input">
@@ -66,14 +66,14 @@
           @endforeach
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No equity accounts configured.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No equity accounts configured.</td>
         </tr>
         @endforelse
         {{-- Unclosed net income sitting in Income/Expense accounts — only
              swept into Retained Earnings at a formal year-end close, so an
              interim statement needs this to actually balance. --}}
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Current Period Earnings <span class="text-xs text-kc-charcoal/40">(unaudited, pre-close)</span></td>
+          <td class="py-2 pl-4">Current Period Earnings <span class="text-xs text-kc-charcoal/60">(unaudited, pre-close)</span></td>
           <td class="text-right py-2">{{ number_format($currentPeriodEarnings, 2) }}</td>
         </tr>
         <tr class="bg-kc-silver-light font-semibold">
@@ -107,7 +107,7 @@
         </tr>
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No liability accounts configured.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No liability accounts configured.</td>
         </tr>
         @endforelse
         <tr class="bg-kc-silver-light font-semibold">
@@ -134,7 +134,7 @@
       </tfoot>
     </table>
 
-    <div class="mt-4 text-xs text-kc-charcoal/40">
+    <div class="mt-4 text-xs text-kc-charcoal/60">
       Prepared in accordance with IFRS 9 (Financial Instruments). ECL provisions based on Days Past Due staging.
     </div>
   </div>

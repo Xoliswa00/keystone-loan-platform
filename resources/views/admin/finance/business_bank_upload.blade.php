@@ -60,7 +60,7 @@
         </div>
       </div>
       @empty
-      <p class="text-sm text-kc-charcoal/40">No statements uploaded yet.</p>
+      <p class="text-sm text-kc-charcoal/60">No statements uploaded yet.</p>
       @endforelse
     </div>
   </div>

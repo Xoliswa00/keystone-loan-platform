@@ -25,7 +25,7 @@
             <td data-label=""><a href="{{ route('loanapplications.show', $app->id) }}" class="text-xs text-kc-gold hover:underline">View →</a></td>
           </tr>
           @empty
-          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/40">No applications yet. <a href="{{ route('loanapplications.create') }}" class="text-kc-gold hover:underline">Apply now →</a></td></tr>
+          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/60">No applications yet. <a href="{{ route('loanapplications.create') }}" class="text-kc-gold hover:underline">Apply now →</a></td></tr>
           @endforelse
         </tbody>
       </table>

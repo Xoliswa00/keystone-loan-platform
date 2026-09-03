@@ -163,11 +163,11 @@
                                     @csrf
                                     <button type="submit" class="w-full text-left px-4 py-3 hover:bg-kc-silver-light/60 transition">
                                         <p class="text-xs text-kc-charcoal/80">{{ $n->data['message'] ?? 'Notification' }}</p>
-                                        <p class="text-[10px] text-kc-charcoal/40 mt-0.5">{{ $n->created_at->diffForHumans() }}</p>
+                                        <p class="text-[10px] text-kc-charcoal/60 mt-0.5">{{ $n->created_at->diffForHumans() }}</p>
                                     </button>
                                 </form>
                             @empty
-                                <p class="px-4 py-6 text-center text-xs text-kc-charcoal/40">No notifications yet.</p>
+                                <p class="px-4 py-6 text-center text-xs text-kc-charcoal/60">No notifications yet.</p>
                             @endforelse
                         </div>
                     </div>
@@ -266,7 +266,7 @@
 
         {{-- Footer --}}
         <footer class="px-6 py-4 border-t border-kc-silver-light bg-white">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-kc-charcoal/40">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-kc-charcoal/60">
                 <span>&copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.</span>
                 <span class="font-display italic text-kc-gold/70">Capital. Partnership. Growth.</span>
             </div>

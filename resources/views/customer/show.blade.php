@@ -109,7 +109,7 @@
                 <td data-label="Disbursed" class="text-xs text-kc-charcoal/50">{{ $loan->disbursed_date ? \Carbon\Carbon::parse($loan->disbursed_date)->format('d M Y') : '—' }}</td>
               </tr>
               @empty
-              <tr><td colspan="5" class="text-center py-4 text-kc-charcoal/40">No loans.</td></tr>
+              <tr><td colspan="5" class="text-center py-4 text-kc-charcoal/60">No loans.</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -129,7 +129,7 @@
                 <td data-label="Date">{{ \Carbon\Carbon::parse($r->payment_date)->format('d M Y') }}</td>
                 <td data-label="Amount" class="font-semibold text-emerald-600">R {{ number_format($r->payment_amount,2) }}</td>
                 <td data-label="Method" class="text-xs">{{ ucfirst(str_replace('_',' ',$r->payment_method??'—')) }}</td>
-                <td data-label="GL" class="font-mono text-[10px] text-kc-charcoal/40">{{ $r->gl_batch_reference ?? '—' }}</td>
+                <td data-label="GL" class="font-mono text-[10px] text-kc-charcoal/60">{{ $r->gl_batch_reference ?? '—' }}</td>
               </tr>
               @endforeach
             </tbody>
@@ -192,7 +192,7 @@
             @endif
           </div>
           @else
-          <span class="text-[10px] text-kc-charcoal/20">Missing</span>
+          <span class="text-[10px] text-kc-charcoal/60">Missing</span>
           @endif
         </div>
         @endforeach

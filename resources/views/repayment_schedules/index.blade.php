@@ -29,7 +29,7 @@
             <td data-label="Paid" class="text-xs text-kc-charcoal/50">{{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}</td>
           </tr>
           @empty
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/40">No schedule yet.</td></tr>
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">No schedule yet.</td></tr>
           @endforelse
         </tbody>
       </table>

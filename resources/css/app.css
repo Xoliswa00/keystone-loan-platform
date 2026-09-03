@@ -47,7 +47,7 @@
         @apply text-kc-gold bg-white/10 border-l-2 border-kc-gold;
     }
     .kc-nav-section {
-        @apply px-4 pt-5 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/35;
+        @apply px-4 pt-5 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/60;
     }
 
     /* ── Top header ── */
@@ -153,15 +153,10 @@
         @apply font-display text-2xl font-semibold text-kc-navy truncate;
     }
     .kc-page-subtitle {
-        @apply text-sm text-kc-charcoal/50 mt-0.5 truncate;
+        @apply text-sm text-kc-charcoal/60 mt-0.5 truncate;
     }
 
-    /* ── Marketing typography (public-facing pages) ──
-       Canonical eyebrow/display tokens — replaces one-off tracking values
-       hand-copied across welcome.blade.php / guest.blade.php. */
-    .kc-eyebrow {
-        @apply text-kc-gold text-xs font-semibold uppercase tracking-[0.25em];
-    }
+    /* ── Marketing typography (public-facing pages) ── */
     .kc-display-1 {
         @apply font-display text-4xl sm:text-5xl xl:text-6xl font-semibold leading-tight;
     }
@@ -182,12 +177,6 @@
         /* Soft shadow at the top edge so consecutive white sections still
            read as distinct layers instead of one endless flow. */
         @apply kc-section bg-kc-white text-kc-charcoal shadow-[0_-12px_28px_-18px_rgba(7,27,52,0.12)];
-    }
-
-    /* ── Gold foil / accent animation (brand doc: "gold accent animations") ── */
-    .kc-text-gold-foil {
-        @apply bg-gradient-to-r from-kc-gold-muted via-kc-gold-light to-kc-gold-muted
-               bg-[length:200%_auto] bg-clip-text text-transparent animate-shimmer;
     }
 
     /* ── Alert boxes ── */
@@ -223,13 +212,6 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #B8BDC7; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #C89B3C; }
-
-/* ── Gold shimmer on loading skeleton ── */
-.kc-skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-}
 
 /* ── Mobile-responsive tables ───────────────────────────────────────────────
    On mobile (< 640px): rows collapse into labelled cards.

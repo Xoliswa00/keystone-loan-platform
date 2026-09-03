@@ -79,9 +79,9 @@
           <label class="kc-label">Interest Rate (p.a.) <span class="text-red-500">*</span></label>
           <div class="relative">
             <input type="number" name="interest_rate" value="{{ old('interest_rate',0.12) }}" required min="0" max="1" step="0.0001" class="kc-input pr-12" placeholder="0.1200">
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-kc-charcoal/40">decimal</span>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-kc-charcoal/60">decimal</span>
           </div>
-          <p class="text-[10px] text-kc-charcoal/40 mt-0.5">e.g. 0.1200 = 12% per annum</p>
+          <p class="text-[10px] text-kc-charcoal/60 mt-0.5">e.g. 0.1200 = 12% per annum</p>
           @error('interest_rate')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
         <div>
@@ -117,7 +117,7 @@
           <input type="date" name="facility_start_date" value="{{ old('facility_start_date', now()->toDateString()) }}" class="kc-input">
         </div>
         <div>
-          <label class="kc-label">Maturity Date <span class="text-kc-charcoal/40 text-[10px]">(blank = revolving)</span></label>
+          <label class="kc-label">Maturity Date <span class="text-kc-charcoal/60 text-[10px]">(blank = revolving)</span></label>
           <input type="date" name="maturity_date" value="{{ old('maturity_date') }}" class="kc-input">
         </div>
       </div>
@@ -133,7 +133,7 @@
       </div>
 
       <div>
-        <label class="kc-label">Facility Agreement (PDF) <span class="text-kc-charcoal/40 text-[10px]">optional</span></label>
+        <label class="kc-label">Facility Agreement (PDF) <span class="text-kc-charcoal/60 text-[10px]">optional</span></label>
         <input type="file" name="agreement_document" accept=".pdf" class="kc-input py-2 cursor-pointer">
       </div>
 

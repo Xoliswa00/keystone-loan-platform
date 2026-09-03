@@ -76,7 +76,7 @@
               @if(!$txn->posted_at)
               <button type="button" @click="open=!open" class="text-xs text-kc-gold hover:underline" x-text="open ? 'Cancel' : 'Edit'"></button>
               @else
-              <span class="text-xs text-kc-charcoal/30">—</span>
+              <span class="text-xs text-kc-charcoal/60">—</span>
               @endif
             </td>
           </tr>
@@ -133,7 +133,7 @@
         </tbody>
         @empty
         <tbody>
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/40">No transactions staged.</td></tr>
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">No transactions staged.</td></tr>
         </tbody>
         @endforelse
       </table>

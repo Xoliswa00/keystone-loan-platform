@@ -12,18 +12,18 @@
       <tbody>
         @forelse($overdue as $row)
         <tr>
-          <td>
+          <td data-label="Client">
             <div class="font-semibold text-kc-navy">{{ $row->client_name }}</div>
-            <div class="text-xs text-kc-charcoal/40">{{ $row->customer_code }} · {{ $row->phone }}</div>
+            <div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }} · {{ $row->phone }}</div>
           </td>
-          <td>
+          <td data-label="DPD">
             @php $cls = $row->days_overdue >= 90 ? 'kc-badge-red' : ($row->days_overdue >= 60 ? 'kc-badge-gold' : 'kc-badge-silver'); @endphp
             <span class="kc-badge {{ $cls }}">{{ $row->days_overdue }} DPD</span>
           </td>
-          <td>{{ $row->instalments_missed }}</td>
-          <td class="font-semibold text-red-600">R {{ number_format($row->arrears_total, 2) }}</td>
-          <td>R {{ number_format($row->remaining_balance, 2) }}</td>
-          <td class="text-xs text-kc-charcoal/50">
+          <td data-label="Missed">{{ $row->instalments_missed }}</td>
+          <td data-label="Arrears" class="font-semibold text-red-600">R {{ number_format($row->arrears_total, 2) }}</td>
+          <td data-label="Balance">R {{ number_format($row->remaining_balance, 2) }}</td>
+          <td data-label="Last Contact" class="text-xs text-kc-charcoal/60">
             @if($row->last_contact_date)
               {{ \Carbon\Carbon::parse($row->last_contact_date)->diffForHumans() }}<br>
               <span class="truncate max-w-xs block">{{ Str::limit($row->last_contact_note, 60) }}</span>
@@ -31,7 +31,7 @@
               <span class="text-red-500">No contact yet</span>
             @endif
           </td>
-          <td>
+          <td data-label="Actions">
             <div x-data="{ open: false }" class="relative">
               <button @click="open = !open" class="kc-btn-ghost text-xs">Log Contact</button>
               <div x-show="open" @click.outside="open = false"
@@ -69,7 +69,7 @@
           </td>
         </tr>
         @empty
-        <tr><td colspan="7" class="text-center text-kc-charcoal/40 py-10">No overdue accounts. 🎉</td></tr>
+        <tr><td colspan="7" class="text-center text-kc-charcoal/60 py-10">No overdue accounts. 🎉</td></tr>
         @endforelse
       </tbody>
     </table>

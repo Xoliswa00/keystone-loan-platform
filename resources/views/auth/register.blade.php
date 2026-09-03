@@ -54,11 +54,11 @@
         <div class="flex items-center gap-1 mb-6">
             @foreach(['Personal', 'Contact', 'Security'] as $i => $label)
             <div class="flex-1 flex flex-col items-center gap-1">
-                <div :class="step >= {{ $i + 1 }} ? 'bg-kc-gold text-kc-navy' : 'bg-kc-silver-light text-kc-charcoal/40'"
+                <div :class="step >= {{ $i + 1 }} ? 'bg-kc-gold text-kc-navy' : 'bg-kc-silver-light text-kc-charcoal/60'"
                     class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors">
                     {{ $i + 1 }}
                 </div>
-                <span :class="step >= {{ $i + 1 }} ? 'text-kc-gold-muted' : 'text-kc-charcoal/30'"
+                <span :class="step >= {{ $i + 1 }} ? 'text-kc-gold-muted' : 'text-kc-charcoal/60'"
                     class="text-[9px] font-semibold uppercase tracking-wider hidden sm:block transition-colors">
                     {{ $label }}
                 </span>
@@ -129,7 +129,7 @@
                     <label class="kc-label">ID Document</label>
                     <input type="file" name="ID_copy" required accept=".jpg,.jpeg,.png,.pdf"
                         class="kc-input py-2 cursor-pointer @error('ID_copy') border-red-400 @enderror">
-                    <p class="mt-1 text-[11px] text-kc-charcoal/40">Clear copy — JPG, PNG or PDF, max 5MB</p>
+                    <p class="mt-1 text-[11px] text-kc-charcoal/60">Clear copy — JPG, PNG or PDF, max 5MB</p>
                     <x-input-error :messages="$errors->get('ID_copy')"/>
                 </div>
 
@@ -138,7 +138,7 @@
                     <input type="number" name="salary_payment_day" value="{{ old('salary_payment_day') }}" required
                         min="1" max="31" placeholder="e.g. 25"
                         class="kc-input @error('salary_payment_day') border-red-400 @enderror">
-                    <p class="mt-1 text-[11px] text-kc-charcoal/40">So repayment dates can be set to match your payday</p>
+                    <p class="mt-1 text-[11px] text-kc-charcoal/60">So repayment dates can be set to match your payday</p>
                     <x-input-error :messages="$errors->get('salary_payment_day')"/>
                 </div>
             </div>
@@ -171,7 +171,7 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="mt-1 text-[11px] text-kc-charcoal/40">At least 8 characters with letters and numbers</p>
+                    <p class="mt-1 text-[11px] text-kc-charcoal/60">At least 8 characters with letters and numbers</p>
                     <x-input-error :messages="$errors->get('password')"/>
                 </div>
 

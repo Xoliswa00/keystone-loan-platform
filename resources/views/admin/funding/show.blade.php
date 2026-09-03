@@ -20,7 +20,7 @@
         <div class="kc-stat-card text-center">
           <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Outstanding</p>
           <p class="font-display text-xl font-bold text-red-600 mt-1">R {{ number_format($fundingFacility->current_balance,2) }}</p>
-          <p class="text-[10px] text-kc-charcoal/40">Balance sheet liability</p>
+          <p class="text-[10px] text-kc-charcoal/60">Balance sheet liability</p>
         </div>
         <div class="kc-stat-card text-center">
           <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Available</p>
@@ -42,11 +42,11 @@
           <div class="h-full {{ $fundingFacility->utilisationRate()>90?'bg-red-500':'bg-kc-gold' }} rounded-full transition-all"
                style="width:{{ min(100,$fundingFacility->utilisationRate()) }}%"></div>
         </div>
-        <div class="flex justify-between text-xs text-kc-charcoal/40 mt-1">
+        <div class="flex justify-between text-xs text-kc-charcoal/60 mt-1">
           <span>R0</span>
           <span>R {{ number_format($fundingFacility->facility_limit,0) }}</span>
         </div>
-        <div class="mt-3 grid grid-cols-3 gap-3 text-center text-xs">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-xs">
           <div><p class="text-kc-charcoal/50">Monthly Interest Due</p><p class="font-semibold text-kc-navy">R {{ number_format($monthlyInterest,2) }}</p></div>
           <div><p class="text-kc-charcoal/50">Rate p.a.</p><p class="font-semibold">{{ round($fundingFacility->interest_rate*100,2) }}%</p></div>
           <div><p class="text-kc-charcoal/50">Payment Day</p><p class="font-semibold">{{ $fundingFacility->payment_day ? $fundingFacility->payment_day.'th' : '—' }}</p></div>
@@ -69,7 +69,7 @@
                   {{ in_array($txn->transaction_type,['drawdown']) ? '+' : '-' }} R {{ number_format($txn->amount,2) }}
                 </td>
                 <td data-label="Ref" class="text-xs">{{ $txn->reference ?? '—' }}</td>
-                <td data-label="GL Ref" class="font-mono text-xs text-kc-charcoal/40">{{ $txn->gl_batch_reference ?? '—' }}</td>
+                <td data-label="GL Ref" class="font-mono text-xs text-kc-charcoal/60">{{ $txn->gl_batch_reference ?? '—' }}</td>
                 <td data-label="Posted">
                   <span class="kc-badge {{ $txn->gl_posted ? 'kc-badge-green' : 'kc-badge-silver' }} text-[10px]">
                     {{ $txn->gl_posted ? 'Posted' : 'Pending' }}
@@ -77,7 +77,7 @@
                 </td>
               </tr>
               @empty
-              <tr><td colspan="6" class="text-center py-6 text-kc-charcoal/40">No transactions yet.</td></tr>
+              <tr><td colspan="6" class="text-center py-6 text-kc-charcoal/60">No transactions yet.</td></tr>
               @endforelse
             </tbody>
           </table>

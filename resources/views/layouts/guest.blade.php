@@ -36,10 +36,6 @@
 
             {{-- Background texture --}}
             <div class="absolute inset-0 bg-kc-navy">
-                {{-- Subtle gold radial glow --}}
-                <div class="absolute top-0 right-0 w-96 h-96 bg-kc-gold opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div class="absolute bottom-0 left-0 w-64 h-64 bg-kc-gold opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-
                 {{-- Sunburst fan — the same brand symbol used on Welcome/About/Contact
                      (abstracted from the mark's gold fan ornament), scaled up as a large
                      watermark so this panel actually tells the brand's story instead of
@@ -97,7 +93,7 @@
 
             {{-- Bottom — Tagline --}}
             <div class="relative z-10">
-                <p class="text-white/25 text-xs">
+                <p class="text-white/55 text-xs">
                     NCR Registered Credit Provider &nbsp;·&nbsp; Keystone Lending (Pty) Ltd
                 </p>
             </div>
@@ -126,7 +122,7 @@
 
             {{-- Footer --}}
             <div class="px-8 pb-6 text-center">
-                <p class="text-xs text-kc-charcoal/30">
+                <p class="text-xs text-kc-charcoal/60">
                     &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
                 </p>
             </div>

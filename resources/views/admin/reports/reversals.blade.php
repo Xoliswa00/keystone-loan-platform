@@ -4,7 +4,7 @@
     <p class="kc-page-subtitle">{{ \Carbon\Carbon::parse($from)->format('d M Y') }} — {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
   </x-slot>
 
-  <form method="GET" class="flex gap-3 mb-6">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
     <div><label class="kc-label">From</label><input type="date" name="from_date" value="{{ $from }}" class="kc-input"></div>
     <div><label class="kc-label">To</label><input type="date" name="to_date" value="{{ $to }}" class="kc-input"></div>
     <div class="flex items-end"><button type="submit" class="kc-btn-primary">Apply</button></div>
@@ -13,7 +13,7 @@
   <h5 class="font-display font-semibold text-kc-navy mb-3">Payment Reversals</h5>
   <div class="kc-card mb-6">
     @if($reversals->isEmpty())
-      <p class="text-center text-kc-charcoal/40 py-8">No payment reversals in this period.</p>
+      <p class="text-center text-kc-charcoal/60 py-8">No payment reversals in this period.</p>
     @else
       <table class="kc-table">
         <thead><tr><th>Date</th><th>Client</th><th>Loan</th><th>Amount Reversed</th><th>Reference</th><th>GL Batch</th></tr></thead>
@@ -25,7 +25,7 @@
             <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($r->loan_id, 6, '0', STR_PAD_LEFT) }}</td>
             <td data-label="Amount" class="font-semibold text-red-600">R {{ number_format(abs($r->payment_amount), 2) }}</td>
             <td data-label="Reference" class="text-xs">{{ $r->payment_reference ?? '—' }}</td>
-            <td data-label="GL Batch" class="font-mono text-xs text-kc-charcoal/40">{{ $r->gl_batch_reference }}</td>
+            <td data-label="GL Batch" class="font-mono text-xs text-kc-charcoal/60">{{ $r->gl_batch_reference }}</td>
           </tr>
           @endforeach
         </tbody>
@@ -36,7 +36,7 @@
   <h5 class="font-display font-semibold text-kc-navy mb-3">Loan Approval / Disbursement Reversals</h5>
   <div class="kc-card">
     @if($approvalReversals->isEmpty())
-      <p class="text-center text-kc-charcoal/40 py-8">No approval/disbursement reversals in this period.</p>
+      <p class="text-center text-kc-charcoal/60 py-8">No approval/disbursement reversals in this period.</p>
     @else
       <table class="kc-table">
         <thead><tr><th>Date</th><th>Client</th><th>Application</th><th>Reversed By</th><th>Reason</th></tr></thead>

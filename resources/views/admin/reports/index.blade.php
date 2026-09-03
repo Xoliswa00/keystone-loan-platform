@@ -13,7 +13,7 @@
     <div class="kc-stat-card">
       <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Total Risky Exposure</span>
       <p class="font-display text-2xl font-semibold text-red-600 mt-2">R {{ number_format($totals['total_risky'], 2) }}</p>
-      <p class="text-xs text-kc-charcoal/40 mt-1">Written-off or 90+ DPD</p>
+      <p class="text-xs text-kc-charcoal/60 mt-1">Written-off or 90+ DPD</p>
     </div>
     <div class="kc-stat-card">
       <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Avg Default Rate</span>
@@ -56,7 +56,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="10" class="text-center text-kc-charcoal/40 py-8">No reviewed applications yet.</td></tr>
+          <tr><td colspan="10" class="text-center text-kc-charcoal/60 py-8">No reviewed applications yet.</td></tr>
           @endforelse
         </tbody>
       </table>

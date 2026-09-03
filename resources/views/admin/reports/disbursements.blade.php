@@ -4,7 +4,7 @@
     <p class="kc-page-subtitle">{{ \Carbon\Carbon::parse($from)->format('d M Y') }} — {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
   </x-slot>
 
-  <form method="GET" class="flex gap-3 mb-6">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
     <div><label class="kc-label">From</label><input type="date" name="from_date" value="{{ $from }}" class="kc-input"></div>
     <div><label class="kc-label">To</label><input type="date" name="to_date" value="{{ $to }}" class="kc-input"></div>
     <div class="flex items-end"><button type="submit" class="kc-btn-primary">Apply</button></div>
@@ -23,7 +23,7 @@
           @forelse($disbursements as $row)
           <tr>
             <td data-label="Date">{{ \Carbon\Carbon::parse($row->disbursement_date)->format('d M Y') }}</td>
-            <td data-label="Client"><div class="font-semibold">{{ $row->client_name }}</div><div class="text-xs text-kc-charcoal/40">{{ $row->customer_code }}</div></td>
+            <td data-label="Client"><div class="font-semibold">{{ $row->client_name }}</div><div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }}</div></td>
             <td data-label="Type">{{ ucfirst($row->loan_type ?? '—') }}</td>
             <td data-label="Principal" class="font-semibold">R {{ number_format($row->disbursed_amount, 2) }}</td>
             <td data-label="Init Fee">R {{ number_format($row->initiation_fee ?? 0, 2) }}</td>
@@ -33,7 +33,7 @@
             <td data-label="Term">{{ $row->loan_term_months ?? 1 }} mo</td>
           </tr>
           @empty
-          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/40">No disbursements in this period.</td></tr>
+          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/60">No disbursements in this period.</td></tr>
           @endforelse
         </tbody>
       </table>

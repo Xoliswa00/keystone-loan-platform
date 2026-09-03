@@ -29,7 +29,7 @@
   </div>
 
   {{-- Filter --}}
-  <form method="GET" class="flex gap-3 mb-4">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-4">
     <select name="status" class="kc-select">
       <option value="">All statuses</option>
       @foreach(\App\Models\DebtRecovery::STATUSES as $val => $info)
@@ -52,15 +52,15 @@
           $isOverdue  = $case->next_action_date && $case->next_action_date->isPast() && $case->status === 'open';
         @endphp
         <tr class="{{ $isOverdue ? 'bg-red-50' : '' }}">
-          <td class="font-mono text-xs">#{{ str_pad($case->loan_id, 6, '0', STR_PAD_LEFT) }}</td>
-          <td>
+          <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($case->loan_id, 6, '0', STR_PAD_LEFT) }}</td>
+          <td data-label="Client">
             <div class="font-semibold">{{ $case->user?->name }}</div>
-            <div class="text-xs text-kc-charcoal/40">{{ $case->user?->customer?->customer_code }}</div>
+            <div class="text-xs text-kc-charcoal/60">{{ $case->user?->customer?->customer_code }}</div>
           </td>
-          <td class="text-xs">{{ $case->opened_at->format('d M Y') }}</td>
-          <td class="font-semibold text-red-600">R {{ number_format($case->original_write_off_amount, 2) }}</td>
-          <td class="font-semibold text-emerald-600">R {{ number_format($case->total_recovered, 2) }}</td>
-          <td>
+          <td data-label="Opened" class="text-xs">{{ $case->opened_at->format('d M Y') }}</td>
+          <td data-label="Written Off" class="font-semibold text-red-600">R {{ number_format($case->original_write_off_amount, 2) }}</td>
+          <td data-label="Recovered" class="font-semibold text-emerald-600">R {{ number_format($case->total_recovered, 2) }}</td>
+          <td data-label="Recovery %">
             <div class="flex items-center gap-2">
               <div class="w-16 h-1.5 bg-kc-silver-light rounded-full overflow-hidden">
                 <div class="h-full bg-emerald-500 rounded-full" style="width:{{ min(100, $case->recoveryRate()) }}%"></div>
@@ -68,15 +68,15 @@
               <span class="text-xs">{{ $case->recoveryRate() }}%</span>
             </div>
           </td>
-          <td><span class="kc-badge {{ $statusInfo['class'] }}">{{ $statusInfo['label'] }}</span></td>
-          <td class="text-xs {{ $isOverdue ? 'text-red-600 font-semibold' : 'text-kc-charcoal/50' }}">
+          <td data-label="Status"><span class="kc-badge {{ $statusInfo['class'] }}">{{ $statusInfo['label'] }}</span></td>
+          <td data-label="Next Action" class="text-xs {{ $isOverdue ? 'text-red-600 font-semibold' : 'text-kc-charcoal/60' }}">
             {{ $case->next_action_date?->format('d M Y') ?? '—' }}
           </td>
-          <td class="text-xs">{{ $case->assignedTo?->name ?? '—' }}</td>
-          <td><a href="{{ route('admin.recovery.show', $case) }}" class="text-xs text-kc-gold hover:text-kc-gold-muted">Manage →</a></td>
+          <td data-label="Assigned" class="text-xs">{{ $case->assignedTo?->name ?? '—' }}</td>
+          <td data-label="Action"><a href="{{ route('admin.recovery.show', $case) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Manage →</a></td>
         </tr>
         @empty
-        <tr><td colspan="10" class="text-center text-kc-charcoal/40 py-8">No recovery cases.</td></tr>
+        <tr><td colspan="10" class="text-center text-kc-charcoal/60 py-8">No recovery cases.</td></tr>
         @endforelse
       </tbody>
     </table>

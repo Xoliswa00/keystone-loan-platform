@@ -14,17 +14,17 @@
     <div class="kc-stat-card text-center">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Pending</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $pending->count() }}</p>
-      <p class="text-xs text-kc-charcoal/40">R {{ number_format($pending->sum('emi_amount'),2) }}</p>
+      <p class="text-xs text-kc-charcoal/60">R {{ number_format($pending->sum('emi_amount'),2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Failed</p>
       <p class="font-display text-2xl font-bold text-red-600 mt-1">{{ $overdue->count() }}</p>
-      <p class="text-xs text-kc-charcoal/40">R {{ number_format($overdue->sum('emi_amount'),2) }}</p>
+      <p class="text-xs text-kc-charcoal/60">R {{ number_format($overdue->sum('emi_amount'),2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Paid</p>
       <p class="font-display text-2xl font-bold text-emerald-600 mt-1">{{ $paid->count() }}</p>
-      <p class="text-xs text-kc-charcoal/40">R {{ number_format($paid->sum('emi_amount'),2) }}</p>
+      <p class="text-xs text-kc-charcoal/60">R {{ number_format($paid->sum('emi_amount'),2) }}</p>
     </div>
   </div>
 
@@ -67,7 +67,7 @@
             @endif
           </tr>
           @empty
-          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/40">No repayment schedule yet.</td></tr>
+          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/60">No repayment schedule yet.</td></tr>
           @endforelse
         </tbody>
       </table>

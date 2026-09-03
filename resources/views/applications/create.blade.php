@@ -149,7 +149,7 @@
               <input type="range" name="loan_amount" :min="minAmount" :max="maxAmount" step="50"
                 x-model.number="amount" @input="recalculate()"
                 class="w-full h-1.5 appearance-none bg-kc-silver-light rounded-full accent-kc-gold cursor-pointer">
-              <div class="flex justify-between text-[10px] text-kc-charcoal/40 mt-0.5">
+              <div class="flex justify-between text-[10px] text-kc-charcoal/60 mt-0.5">
                 <span>R <span x-text="minAmount.toLocaleString()"></span></span>
                 <span>R <span x-text="maxAmount.toLocaleString()"></span></span>
               </div>
@@ -196,7 +196,7 @@
               @endif
               <input id="payslips" type="file" name="payslips" accept=".pdf,.jpg,.jpeg,.png"
                 {{ $existingPayslip ? '' : 'required' }} class="kc-input py-2 cursor-pointer @error('payslips') border-red-400 @enderror">
-              <p class="text-[10px] text-kc-charcoal/40 mt-0.5">
+              <p class="text-[10px] text-kc-charcoal/60 mt-0.5">
                 {{ $existingPayslip ? 'Only attach a new one if yours is outdated.' : '' }}
               </p>
               @error('payslips')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
@@ -213,7 +213,7 @@
               @endif
               <input id="bank_statement" type="file" name="bank_statement" accept=".pdf,.jpg,.jpeg,.png,.csv"
                 {{ $existingBankStatement ? '' : 'required' }} class="kc-input py-2 cursor-pointer @error('bank_statement') border-red-400 @enderror">
-              <p class="text-[10px] text-kc-charcoal/40 mt-0.5">
+              <p class="text-[10px] text-kc-charcoal/60 mt-0.5">
                 {{ $existingBankStatement ? 'Only attach a new one if yours is outdated. CSV re-enables automatic affordability analysis.' : 'CSV format enables automatic affordability analysis' }}
               </p>
               @error('bank_statement')<p class="text-xs text-red-600">{{ $message }}</p>@enderror

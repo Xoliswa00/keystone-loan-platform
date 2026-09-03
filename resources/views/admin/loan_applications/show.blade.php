@@ -87,7 +87,7 @@
           @endforeach
         </ul>
       @endif
-      <p class="text-xs text-kc-charcoal/40 mt-3">Evaluated {{ $cloDecision->evaluated_at->format('d M Y H:i') }} · advisory only, does not block manual approval/rejection</p>
+      <p class="text-xs text-kc-charcoal/60 mt-3">Evaluated {{ $cloDecision->evaluated_at->format('d M Y H:i') }} · advisory only, does not block manual approval/rejection</p>
     </div>
   @endif
 
@@ -174,7 +174,7 @@
             {{ ($application->affordability_instalment_requested ?? 0) <= ($application->affordability_max_instalment ?? 1) ? 'PASSES' : 'FAILS' }}
           </span>
         </h5>
-        <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div><p class="text-xs text-kc-charcoal/50">Disposable Income</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_disposable_income ?? 0, 2) }}</p></div>
           <div><p class="text-xs text-kc-charcoal/50">Max Instalment (30%)</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_max_instalment ?? 0, 2) }}</p></div>
           <div><p class="text-xs text-kc-charcoal/50">Requested</p>
@@ -454,7 +454,7 @@
           @if($fp)
             <a href="{{ route('secure-documents.application-file', [$application, $field]) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
           @else
-            <span class="text-[10px] text-kc-charcoal/30">Missing</span>
+            <span class="text-[10px] text-kc-charcoal/60">Missing</span>
           @endif
         </div>
         @endforeach
@@ -502,7 +502,7 @@
         <div class="flex items-center justify-between py-1.5 border-b border-kc-silver-light/60 last:border-0">
           <div>
             <p class="text-xs font-medium">{{ $ag->getTypeLabel() }}</p>
-            <p class="text-[10px] text-kc-charcoal/40">{{ $ag->reference }}</p>
+            <p class="text-[10px] text-kc-charcoal/60">{{ $ag->reference }}</p>
           </div>
           <div class="flex items-center gap-1.5">
             @if($ag->accepted_at)<span class="kc-badge kc-badge-green text-[9px]">Signed</span>@endif

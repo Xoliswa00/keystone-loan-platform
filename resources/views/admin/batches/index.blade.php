@@ -26,7 +26,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/40">No imports yet. <a href="{{ route('nupay.upload.form') }}" class="text-kc-gold hover:underline">Upload now →</a></td></tr>
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/60">No imports yet. <a href="{{ route('nupay.upload.form') }}" class="text-kc-gold hover:underline">Upload now →</a></td></tr>
           @endforelse
         </tbody>
       </table>

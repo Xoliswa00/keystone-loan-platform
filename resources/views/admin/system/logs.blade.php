@@ -29,7 +29,7 @@
   </div>
 
   {{-- Error count cards --}}
-  <div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card text-center {{ $counts['error'] > 0 ? 'border border-red-200' : '' }}">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Errors Today</p>
       <p class="font-display text-2xl font-bold {{ $counts['error'] > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ $counts['error'] }}</p>
@@ -40,7 +40,7 @@
     </div>
     <div class="kc-stat-card text-center">
       <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Info Today</p>
-      <p class="font-display text-2xl font-bold text-kc-charcoal/40 mt-1">{{ $counts['info'] }}</p>
+      <p class="font-display text-2xl font-bold text-kc-charcoal/60 mt-1">{{ $counts['info'] }}</p>
     </div>
   </div>
 
@@ -136,7 +136,7 @@
               <form method="POST" action="{{ route('admin.system.logs.retry') }}" class="inline">
                 @csrf
                 <input type="hidden" name="uuid" value="{{ $job['uuid'] }}">
-                <button type="submit" class="text-xs text-kc-gold hover:underline">Retry</button>
+                <button type="submit" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Retry</button>
               </form>
             </td>
           </tr>
@@ -151,11 +151,11 @@
   <div class="kc-card">
     <div class="flex items-center justify-between mb-4">
       <h4 class="font-display font-semibold text-kc-navy">Log Entries (most recent first)</h4>
-      <span class="text-xs text-kc-charcoal/40">Showing up to 500 lines from today</span>
+      <span class="text-xs text-kc-charcoal/60">Showing up to 500 lines from today</span>
     </div>
 
     @if(empty($entries))
-    <p class="text-center text-kc-charcoal/40 py-8">
+    <p class="text-center text-kc-charcoal/60 py-8">
       @if($level !== 'all' || $search)
         No entries match your filter.
       @else
@@ -187,7 +187,7 @@
             <p class="text-xs font-mono text-kc-charcoal/70 flex-shrink-0 mr-2">{{ $entry['timestamp'] }}</p>
             <p class="text-sm text-kc-charcoal truncate">{{ $entry['message'] }}</p>
           </div>
-          <svg :class="open?'rotate-90':''" class="w-4 h-4 text-kc-charcoal/30 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg :class="open?'rotate-90':''" class="w-4 h-4 text-kc-charcoal/60 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
           </svg>
         </button>

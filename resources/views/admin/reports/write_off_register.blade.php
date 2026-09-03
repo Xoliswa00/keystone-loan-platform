@@ -4,7 +4,7 @@
     <p class="kc-page-subtitle">{{ \Carbon\Carbon::parse($from)->format('d M Y') }} — {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
   </x-slot>
 
-  <form method="GET" class="flex gap-3 mb-6">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
     <div><label class="kc-label">From</label><input type="date" name="from_date" value="{{ $from }}" class="kc-input"></div>
     <div><label class="kc-label">To</label><input type="date" name="to_date" value="{{ $to }}" class="kc-input"></div>
     <div class="flex items-end"><button type="submit" class="kc-btn-primary">Apply</button></div>
@@ -22,15 +22,15 @@
       <tbody>
         @forelse($writeOffs as $loan)
         <tr>
-          <td class="font-mono text-xs">#{{ str_pad($loan->id, 6, '0', STR_PAD_LEFT) }}</td>
-          <td>{{ $loan->user?->name ?? '—' }}<br><span class="text-xs text-kc-charcoal/40">{{ $loan->user?->customer?->customer_code }}</span></td>
-          <td>{{ \Carbon\Carbon::parse($loan->written_off_date)->format('d M Y') }}</td>
-          <td class="text-red-600 font-semibold">R {{ number_format($loan->write_off_amount, 2) }}</td>
-          <td class="text-xs">{{ $loan->write_off_reason ?? '—' }}</td>
-          <td class="text-xs">{{ $loan->writtenOffBy?->name ?? '—' }}</td>
+          <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($loan->id, 6, '0', STR_PAD_LEFT) }}</td>
+          <td data-label="Client">{{ $loan->user?->name ?? '—' }}<br><span class="text-xs text-kc-charcoal/60">{{ $loan->user?->customer?->customer_code }}</span></td>
+          <td data-label="Write-Off Date">{{ \Carbon\Carbon::parse($loan->written_off_date)->format('d M Y') }}</td>
+          <td data-label="Amount" class="text-red-600 font-semibold">R {{ number_format($loan->write_off_amount, 2) }}</td>
+          <td data-label="Reason" class="text-xs">{{ $loan->write_off_reason ?? '—' }}</td>
+          <td data-label="By" class="text-xs">{{ $loan->writtenOffBy?->name ?? '—' }}</td>
         </tr>
         @empty
-        <tr><td colspan="6" class="text-center text-kc-charcoal/40 py-8">No write-offs in this period.</td></tr>
+        <tr><td colspan="6" class="text-center text-kc-charcoal/60 py-8">No write-offs in this period.</td></tr>
         @endforelse
       </tbody>
     </table>

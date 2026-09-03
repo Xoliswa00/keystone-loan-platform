@@ -4,7 +4,7 @@
     <p class="kc-page-subtitle">{{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
   </x-slot>
 
-  <form method="GET" class="flex gap-3 mb-6">
+  <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
     <div>
       <label class="kc-label">From</label>
       <input type="date" name="from_date" value="{{ $from }}" class="kc-input">
@@ -77,7 +77,7 @@
         @endforeach
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No non-interest income posted for this period.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No non-interest income posted for this period.</td>
         </tr>
         @endforelse
         <tr class="border-b border-kc-navy/20 font-semibold">
@@ -106,7 +106,7 @@
         @endforeach
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/40" colspan="2">No operating expenses posted for this period.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No operating expenses posted for this period.</td>
         </tr>
         @endforelse
         <tr class="border-b border-kc-navy/20 font-semibold">

@@ -122,7 +122,7 @@
                 Apply in minutes. We'll confirm affordability and get back to you fast.
             </p>
             <a href="{{ route('register') }}" class="kc-btn-primary inline-flex mt-8">Apply for a Loan</a>
-            <p class="text-xs text-kc-charcoal/30 mt-6">
+            <p class="text-xs text-kc-charcoal/60 mt-6">
                 NCR Registered Credit Provider &nbsp;·&nbsp; Keystone Lending (Pty) Ltd
             </p>
         </div>
