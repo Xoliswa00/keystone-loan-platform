@@ -33,8 +33,9 @@ return [
 
     'monitoring' => [
         'enabled' => env('MONITORING_ENABLED', false),
-        'url' => env('MONITORING_URL'), // Base URL of the Xquisite monitoring instance for this site
+        'url' => env('MONITORING_URL'), // Base URL of the Xquisite monitoring hub
         'token' => env('MONITORING_TOKEN'),
+        'slug' => env('MONITORING_SLUG', 'keystone'), // this instance's slug on the hub — drives the dedup fingerprint
     ],
 
 ];
