@@ -68,25 +68,51 @@ this instance went quiet.
 After `git pull` + `composer install --no-dev -o` + `php artisan migrate --force`:
 
 ```bash
-php artisan keystone:report-errors --backfill   # mark existing error history as sent — do NOT skip
-php artisan config:cache
+# .env — set ALL FOUR. MONITORING_URL is the hub base ONLY (scheme + host),
+# no /api/... and no trailing path. If this box previously reported health via
+# a full URL, strip the path off the value.
+#   MONITORING_ENABLED=true
+#   MONITORING_URL=https://xquisite.brightfinance-x.co.za
+#   MONITORING_TOKEN=<exact api_token from the hub's instance row>
+#   MONITORING_SLUG=keystone
+php artisan config:clear && php artisan config:cache
+
+php artisan monitoring:ping                      # <-- MUST print "OK" before trusting the scheduler
+php artisan keystone:report-errors --backfill    # mark existing error history as sent — do NOT skip
 php artisan schedule:list                        # confirm keystone:report-errors + the heartbeat
 ```
+
+`monitoring:ping` actively authenticates against the hub and tells you exactly
+what's wrong — `401` = wrong/inactive token, `404` = `MONITORING_URL` has a path
+or the hub route isn't live, connection error = DNS/TLS. Don't move on until it
+says `OK`.
 
 Skipping `--backfill` floods the hub (and its critical-error email alert) with
 months of old errors on the first run.
 
 The minute cron (`* * * * * php artisan schedule:run`) already exists for the
-other `keystone:*` jobs — nothing new to add.
+other `keystone:*` jobs — nothing new to add. **Do not** run `php artisan
+route:cache` or `optimize` on this box — `routes/web.php` has closure routes and
+it 500s the whole site (see DEPLOYMENT-CPANEL.md). `config:cache` / `view:cache`
+are fine.
+
+The `MonitoredInstance` / `/admin/monitoring` checks run on the **hub** server,
+not here — this box only has the reporter half.
 
 ## Enforcement
 
 `php artisan monitoring:verify` checks the heartbeat job, the `/api/health`
 route, the JS beacon (and that it's `@include`d somewhere), the
-`config/services.php` `monitoring` block, the forwarder command, and both
-schedule entries. It runs from `.githooks/pre-commit` and `.githooks/pre-push`
-(wired up by `composer install` via `git config core.hooksPath .githooks`), so
-the integration can't be silently removed.
+`config/services.php` `monitoring` block, all four `MONITORING_*` vars in
+`services.php` + `.env.example`, that `MONITORING_URL` (if set) has no path, the
+forwarder command, and both schedule entries. It runs from `.githooks/pre-commit`
+and `.githooks/pre-push` (wired up by `composer install` via `git config
+core.hooksPath .githooks`), so the integration can't be silently removed.
+
+`monitoring:verify` is a static/code check. `monitoring:ping` is the runtime
+one — it proves the deployed `MONITORING_URL` + `MONITORING_TOKEN` actually
+authenticate against the hub. Run `ping` after every deploy that touches the
+`MONITORING_*` env.
 
 If you deliberately change any of this, update
 `app/Console/Commands/VerifyMonitoringSetup.php` in the same commit and

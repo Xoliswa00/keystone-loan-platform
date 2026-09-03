@@ -67,6 +67,14 @@ class VerifyMonitoringSetup extends Command
             }
         }
 
+        // MONITORING_URL must be the hub base only — every sender appends its
+        // own path. A full endpoint here silently 404s /ingest/logs in prod.
+        $url = (string) config('services.monitoring.url');
+        $urlPath = rtrim((string) parse_url($url, PHP_URL_PATH), '/');
+        if ($url !== '' && $urlPath !== '') {
+            $problems[] = "MONITORING_URL has a path (\"{$urlPath}\") — it must be scheme+host only (e.g. https://hub.example.com).";
+        }
+
         $kernelPath = app_path('Console/Kernel.php');
         $consolePath = base_path('routes/console.php');
         $scheduleFiles = array_filter(
