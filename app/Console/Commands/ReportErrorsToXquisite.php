@@ -38,7 +38,7 @@ class ReportErrorsToXquisite extends Command
             return self::SUCCESS;
         }
 
-        $base  = config('services.monitoring.url');
+        $base = config('services.monitoring.url');
         $token = config('services.monitoring.token');
 
         if (! $base || ! $token) {
@@ -66,9 +66,9 @@ class ReportErrorsToXquisite extends Command
         }
 
         $events = $rows->map(fn (SystemLog $row) => [
-            'level'       => $row->level,
-            'message'     => $this->scrub((string) $row->message),
-            'logged_at'   => $row->logged_at->toIso8601String(),
+            'level' => $row->level,
+            'message' => $this->scrub((string) $row->message),
+            'logged_at' => $row->logged_at->toIso8601String(),
             'fingerprint' => 'keystone-'.$row->id,
         ])->all();
 
@@ -87,7 +87,7 @@ class ReportErrorsToXquisite extends Command
         if (! $response->successful()) {
             Log::warning('Xquisite error-forward rejected by hub.', [
                 'status' => $response->status(),
-                'body'   => Str::limit($response->body(), 500),
+                'body' => Str::limit($response->body(), 500),
             ]);
             $this->warn("Hub returned {$response->status()} — will retry next run.");
 

@@ -27,9 +27,9 @@ class ReportErrorsToXquisiteTest extends TestCase
     private function makeLog(string $level, string $message): SystemLog
     {
         return SystemLog::create([
-            'level'     => $level,
-            'channel'   => 'testing',
-            'message'   => $message,
+            'level' => $level,
+            'channel' => 'testing',
+            'message' => $message,
             'logged_at' => now()->subMinute(),
         ]);
     }
