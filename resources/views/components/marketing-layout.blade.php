@@ -63,18 +63,18 @@
                 </a>
             </div>
 
-            <button type="button" class="md:hidden p-2 -mr-2 text-kc-navy" @click="mobileOpen = !mobileOpen" aria-label="Toggle menu">
+            <button type="button" class="md:hidden p-2.5 -mr-2.5 text-kc-navy" @click="mobileOpen = !mobileOpen" aria-label="Toggle menu">
                 <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
                 <svg x-show="mobileOpen" x-cloak class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </nav>
 
         <div x-show="mobileOpen" x-cloak x-transition class="md:hidden border-t border-kc-silver-light bg-kc-white px-6 py-5 space-y-4">
-            <a href="{{ route('about') }}" class="flex items-center gap-2 text-sm font-medium text-kc-navy/80">
+            <a href="{{ route('about') }}" class="flex items-center gap-2 text-sm font-medium text-kc-navy/80 min-h-[44px]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 About
             </a>
-            <a href="{{ route('contact') }}" class="flex items-center gap-2 text-sm font-medium text-kc-navy/80">
+            <a href="{{ route('contact') }}" class="flex items-center gap-2 text-sm font-medium text-kc-navy/80 min-h-[44px]">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 Contact
             </a>
@@ -99,12 +99,12 @@
                 <p class="text-white text-sm font-display font-medium">Keystone Capital Partners</p>
             </div>
 
-            <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-                <a href="{{ route('about') }}" class="hover:text-white transition-colors">About</a>
-                <a href="{{ route('contact') }}" class="hover:text-white transition-colors">Contact</a>
-                <a href="{{ route('terms') }}" class="hover:text-white transition-colors">Terms</a>
-                <a href="{{ route('privacy') }}" class="hover:text-white transition-colors">Privacy</a>
-                <a href="{{ route('login') }}" class="hover:text-white transition-colors">Sign In</a>
+            <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm -my-2.5">
+                <a href="{{ route('about') }}" class="inline-flex items-center px-2 py-2.5 hover:text-white transition-colors">About</a>
+                <a href="{{ route('contact') }}" class="inline-flex items-center px-2 py-2.5 hover:text-white transition-colors">Contact</a>
+                <a href="{{ route('terms') }}" class="inline-flex items-center px-2 py-2.5 hover:text-white transition-colors">Terms</a>
+                <a href="{{ route('privacy') }}" class="inline-flex items-center px-2 py-2.5 hover:text-white transition-colors">Privacy</a>
+                <a href="{{ route('login') }}" class="inline-flex items-center px-2 py-2.5 hover:text-white transition-colors">Sign In</a>
             </div>
         </div>
 

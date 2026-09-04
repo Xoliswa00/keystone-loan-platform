@@ -158,12 +158,27 @@
         @apply text-sm text-kc-charcoal/60 mt-0.5 truncate;
     }
 
-    /* ── Marketing typography (public-facing pages) ── */
+    /* ── Marketing typography (public-facing pages) ──────────────────────────
+       Two display weights, not one repeated at every level: 700 for the hero,
+       600 for section heads, so the ramp reads as a hierarchy rather than
+       "big bold navy heading" copy-pasted at three sizes. Sizes are fluid
+       (clamp, ~1.4x steps) instead of jumping at sm:/xl: — that also removes
+       the trap where a template's own responsive override (e.g. an inline
+       xl:text-5xl) can silently cap the size below what the class intends. */
     .kc-display-1 {
-        @apply font-display text-4xl sm:text-5xl xl:text-6xl font-semibold leading-tight;
+        @apply font-display font-bold leading-[1.08];
+        font-size: clamp(2.5rem, 1.7rem + 3.2vw, 4.5rem); /* 40px → 72px */
     }
     .kc-display-2 {
-        @apply font-display text-2xl sm:text-3xl font-semibold text-kc-navy leading-snug;
+        @apply font-display font-semibold text-kc-navy leading-snug;
+        font-size: clamp(1.75rem, 1.55rem + 0.9vw, 2.5rem); /* 28px → 40px */
+    }
+    /* Measure — the same paragraph was ~49 characters at 1280px (cramped into
+       a 5-col well) and ~90 at 768px (wider as the screen got narrower)
+       because nothing capped it; width came from whatever grid column it
+       landed in. Applied at the component, not left to the grid. */
+    .kc-prose {
+        @apply max-w-[62ch];
     }
 
     /* ── Marketing section wrappers — structured layout, strong whitespace ──
@@ -204,6 +219,12 @@
        without inventing a colour outside the token set. */
     .kc-section-plain {
         @apply kc-section bg-white text-kc-charcoal;
+    }
+    /* A third light tone — kc-silver-light was used only for hairline borders
+       across this surface, never as a fill, so the light half of every page
+       was cream/white pretending to be more than two values. */
+    .kc-section-tint {
+        @apply kc-section bg-kc-silver-light text-kc-charcoal;
     }
 
     /* ── Keystone arch mark ────────────────────────────────────────────────

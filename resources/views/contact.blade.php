@@ -11,7 +11,7 @@
         <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 animate-fadeIn">
             <div class="lg:col-span-5">
                 <div class="kc-arch-mark mb-8" aria-hidden="true"></div>
-                <h1 class="kc-display-1 text-white">Let's talk.</h1>
+                <h1 class="kc-display-1 text-white [text-wrap:balance]">Ask before you owe anything.</h1>
                 <p class="mt-5 text-white/75 leading-relaxed">
                     Questions about an application, a repayment date or an existing
                     account. WhatsApp reaches us fastest.
