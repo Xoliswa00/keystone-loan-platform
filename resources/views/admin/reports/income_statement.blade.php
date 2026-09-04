@@ -20,7 +20,7 @@
 
   <div class="kc-card max-w-2xl">
     <h3 class="font-display text-lg font-semibold text-kc-navy mb-1">Keystone Capital Partners</h3>
-    <p class="text-xs text-kc-charcoal/50 mb-6">Income Statement — {{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
+    <p class="text-xs text-kc-charcoal/60 mb-6">Income Statement — {{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
 
     <table class="w-full text-sm">
       {{-- Net Interest Income — industry-standard presentation (per Capitec/
@@ -67,7 +67,7 @@
       <tbody>
         @forelse($nonInterestIncomeGroups as $groupName => $lines)
         <tr>
-          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50" colspan="2">{{ $groupName }}</td>
+          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60" colspan="2">{{ $groupName }}</td>
         </tr>
         @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
@@ -96,7 +96,7 @@
       <tbody>
         @forelse($operatingExpenseGroups as $groupName => $lines)
         <tr>
-          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50" colspan="2">{{ $groupName }}</td>
+          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60" colspan="2">{{ $groupName }}</td>
         </tr>
         @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
@@ -116,7 +116,7 @@
 
         <tr class="bg-kc-navy text-white">
           <td class="py-3 px-4 font-display font-semibold">NET PROFIT / (LOSS)</td>
-          <td class="text-right py-3 px-4 font-display font-semibold text-kc-gold">{{ number_format($netProfit, 2) }}</td>
+          <td class="text-right py-3 px-4 font-display font-semibold text-kc-navy">{{ number_format($netProfit, 2) }}</td>
         </tr>
       </tbody>
     </table>

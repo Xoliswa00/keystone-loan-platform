@@ -118,7 +118,7 @@
                 class="sr-only peer" {{ $loop->first ? 'checked' : '' }}>
               <div class="p-4 rounded-xl border-2 border-kc-silver-light peer-checked:border-kc-gold peer-checked:bg-kc-gold/5 transition">
                 <p class="font-semibold text-kc-navy">{{ $product->name }}</p>
-                <p class="text-xs text-kc-charcoal/50 mt-1">
+                <p class="text-xs text-kc-charcoal/60 mt-1">
                   R{{ number_format($product->min_amount,0) }}–R{{ number_format($product->max_amount,0) }} ·
                   {{ $product->min_months }}–{{ $product->max_months }} month{{ $product->max_months > 1 ? 's' : '' }} ·
                   {{ round($product->monthly_interest_rate*100,1) }}% p/m
@@ -182,7 +182,7 @@
         {{-- Documents --}}
         <div class="kc-card">
           <h4 class="font-display font-semibold text-kc-navy mb-4">Required Documents</h4>
-          <p class="text-xs text-kc-charcoal/50 mb-4">Required under NCA s.81 for affordability assessment. PDF, JPG, PNG — max 5MB each.</p>
+          <p class="text-xs text-kc-charcoal/60 mb-4">Required under NCA s.81 for affordability assessment. PDF, JPG, PNG — max 5MB each.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="kc-label" for="payslips">
@@ -228,7 +228,7 @@
               class="mt-0.5 w-4 h-4 rounded border-kc-silver text-kc-gold focus:ring-kc-gold/30 cursor-pointer @error('terms_conditions') border-red-400 @enderror">
             <span class="text-sm text-kc-charcoal/70">
               I confirm all information is accurate. I consent to an affordability assessment and credit bureau check (NCA s.81).
-              I have read and accept the <a href="{{ route('terms') }}" target="_blank" class="text-kc-gold hover:underline">Terms & Conditions</a>.
+              I have read and accept the <a href="{{ route('terms') }}" target="_blank" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Terms & Conditions</a>.
             </span>
           </label>
           @error('terms_conditions')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror

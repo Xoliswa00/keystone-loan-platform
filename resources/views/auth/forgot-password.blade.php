@@ -3,7 +3,7 @@
 <x-guest-layout>
   <div class="mb-6">
     <h2 class="font-display text-2xl font-semibold text-kc-navy">Reset Password</h2>
-    <p class="text-sm text-kc-charcoal/50 mt-1">Enter your email and we'll send a reset link.</p>
+    <p class="text-sm text-kc-charcoal/60 mt-1">Enter your email and we'll send a reset link.</p>
   </div>
 
   <div class="flex items-center gap-3 mb-6">
@@ -25,7 +25,7 @@
       <x-input-error :messages="$errors->get('email')"/>
     </div>
     <button type="submit" class="kc-btn-primary w-full justify-center">Send Reset Link</button>
-    <p class="text-center text-xs text-kc-charcoal/50">
+    <p class="text-center text-xs text-kc-charcoal/60">
       <a href="{{ route('login') }}" class="text-kc-gold hover:underline">Back to Sign In</a>
     </p>
   </form>

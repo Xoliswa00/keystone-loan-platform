@@ -33,7 +33,7 @@
           <tr class="font-semibold border-t-2 border-kc-gold/30">
             <td>TOTAL OUTPUT VAT</td>
             <td></td>
-            <td class="text-kc-gold font-bold text-base">R {{ number_format($totalOutputVat, 2) }}</td>
+            <td class="text-kc-navy font-bold text-base">R {{ number_format($totalOutputVat, 2) }}</td>
             <td></td>
           </tr>
         </tbody>
@@ -60,14 +60,14 @@
 
       <div class="mt-6 p-4 rounded-lg bg-kc-navy text-white">
         <p class="text-xs text-white/60 mb-1">NET VAT PAYABLE TO SARS</p>
-        <p class="font-display text-2xl font-bold text-kc-gold">R {{ number_format($netVatPayable, 2) }}</p>
+        <p class="font-display text-2xl font-bold text-kc-navy">R {{ number_format($netVatPayable, 2) }}</p>
         <p class="text-xs text-white/60 mt-1">Output VAT R{{ number_format($totalOutputVat, 2) }} minus Input VAT R{{ number_format($totalInputVat, 2) }}</p>
       </div>
     </div>
   </div>
 
   <div class="kc-card mt-6">
-    <p class="text-xs text-kc-charcoal/50">
+    <p class="text-xs text-kc-charcoal/60">
       <strong>Note:</strong> This extract is for reference only. Verify against your accounting records before submitting VAT 201 to SARS.
       Submit via SARS eFiling at <strong>www.sarsefiling.co.za</strong>. VAT period: {{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}.
     </p>

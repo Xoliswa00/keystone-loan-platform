@@ -46,7 +46,7 @@
             <td data-label="Date">{{ $r->created_at->format('d M Y H:i') }}</td>
             <td data-label="Client">{{ $r->auditable?->user?->name ?? '—' }}</td>
             <td data-label="Application">
-              <a href="{{ route('Admin.show', $r->auditable_id) }}" class="text-kc-gold hover:underline font-mono text-xs">#{{ str_pad($r->auditable_id, 6, '0', STR_PAD_LEFT) }}</a>
+              <a href="{{ route('Admin.show', $r->auditable_id) }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted font-mono text-xs">#{{ str_pad($r->auditable_id, 6, '0', STR_PAD_LEFT) }}</a>
             </td>
             <td data-label="Reversed By" class="text-xs">{{ $r->user?->name ?? '—' }}</td>
             <td data-label="Reason" class="text-xs">{{ $r->note ?? '—' }}</td>

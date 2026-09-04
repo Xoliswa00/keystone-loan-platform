@@ -19,12 +19,12 @@
               : 'border-kc-gold/40 bg-kc-gold/5');
     @endphp
     <div class="kc-card border-l-4 {{ $colour }}">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">{{ $stage->stage }}</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">{{ $stage->stage }}</p>
       <p class="font-display text-xl font-semibold text-kc-navy mt-1">{{ $stage->loan_count }} loan(s)</p>
       <table class="w-full text-xs mt-2">
-        <tr><td class="text-kc-charcoal/50">Outstanding</td><td class="text-right font-semibold">R {{ number_format($stage->total_outstanding, 2) }}</td></tr>
-        <tr><td class="text-kc-charcoal/50">Arrears</td><td class="text-right font-semibold text-red-600">R {{ number_format($stage->total_arrears, 2) }}</td></tr>
-        <tr class="border-t border-kc-silver-light"><td class="text-kc-charcoal/50">ECL Provision</td><td class="text-right font-semibold text-orange-600">R {{ number_format($stage->total_provision, 2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60">Outstanding</td><td class="text-right font-semibold">R {{ number_format($stage->total_outstanding, 2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60">Arrears</td><td class="text-right font-semibold text-red-600">R {{ number_format($stage->total_arrears, 2) }}</td></tr>
+        <tr class="border-t border-kc-silver-light"><td class="text-kc-charcoal/60">ECL Provision</td><td class="text-right font-semibold text-orange-600">R {{ number_format($stage->total_provision, 2) }}</td></tr>
       </table>
     </div>
     @endforeach
@@ -91,8 +91,8 @@
     <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs text-center">
       @foreach([
         ['step'=>'Missed Payment','note'=>'schedule: payment_failed','colour'=>'bg-orange-100 border-orange-300'],
-        ['step'=>'Provision','note'=>'IFRS 9 ECL monthly','colour'=>'bg-yellow-100 border-yellow-300'],
-        ['step'=>'Collections','note'=>'Contact & escalation log','colour'=>'bg-blue-100 border-blue-300'],
+        ['step'=>'Provision','note'=>'IFRS 9 ECL monthly','colour'=>'bg-amber-100 border-amber-300'],
+        ['step'=>'Collections','note'=>'Contact & escalation log','colour'=>'bg-kc-navy/5 border-kc-navy/20'],
         ['step'=>'180 DPD Write-off','note'=>'GL: Dr Allowance / Cr Loans Recv','colour'=>'bg-red-100 border-red-300'],
         ['step'=>'Recovery','note'=>'GL: Dr Bank / Cr Recovery Income','colour'=>'bg-emerald-100 border-emerald-300'],
       ] as $i => $s)

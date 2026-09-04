@@ -11,8 +11,8 @@
   </form>
 
   <div class="grid grid-cols-2 gap-4 mb-6">
-    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Disbursements</p><p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $totals->count ?? 0 }}</p></div>
-    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Disbursed</p><p class="font-display text-2xl font-bold text-kc-gold mt-1">R {{ number_format($totals->total ?? 0, 2) }}</p></div>
+    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Disbursements</p><p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $totals->count ?? 0 }}</p></div>
+    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Disbursed</p><p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totals->total ?? 0, 2) }}</p></div>
   </div>
 
   <div class="kc-card">
@@ -29,7 +29,7 @@
             <td data-label="Init Fee">R {{ number_format($row->initiation_fee ?? 0, 2) }}</td>
             <td data-label="Service Fee">R {{ number_format($row->service_fee ?? 0, 2) }}</td>
             <td data-label="Interest">R {{ number_format($row->interest_amount ?? 0, 2) }}</td>
-            <td data-label="Total Due" class="font-semibold text-kc-gold">R {{ number_format($row->total_due ?? 0, 2) }}</td>
+            <td data-label="Total Due" class="font-semibold text-kc-navy">R {{ number_format($row->total_due ?? 0, 2) }}</td>
             <td data-label="Term">{{ $row->loan_term_months ?? 1 }} mo</td>
           </tr>
           @empty

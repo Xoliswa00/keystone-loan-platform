@@ -95,7 +95,7 @@
           <div class="flex items-center justify-between py-2 border-b border-kc-silver-light/60 last:border-0">
             <div class="min-w-0">
               <p class="text-xs font-semibold text-kc-navy truncate">{{ $client->name }}</p>
-              <p class="text-[11px] text-kc-charcoal/50 truncate">{{ $client->email }}</p>
+              <p class="text-[11px] text-kc-charcoal/60 truncate">{{ $client->email }}</p>
             </div>
             <form method="POST" action="{{ route('admin.staff.update-role', $client) }}" class="flex items-center gap-1 flex-shrink-0">
               @csrf @method('PUT')

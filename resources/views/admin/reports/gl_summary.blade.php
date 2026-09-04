@@ -12,15 +12,15 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Debits</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Debits</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalDebits ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Credits</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Credits</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalCredits ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Balanced</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Balanced</p>
       <p class="font-display text-2xl font-bold {{ ($balanced ?? true) ? 'text-emerald-600' : 'text-red-600' }} mt-1">
         {{ ($balanced ?? true) ? 'Yes' : 'No' }}
       </p>

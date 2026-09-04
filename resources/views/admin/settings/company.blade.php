@@ -135,7 +135,7 @@
       {{-- Notification settings --}}
       <div class="kc-card space-y-4 lg:col-span-2">
         <h4 class="font-display font-semibold text-kc-navy">Email Notification Settings</h4>
-        <p class="text-xs text-kc-charcoal/50">These settings control how all system emails appear and who receives copies.</p>
+        <p class="text-xs text-kc-charcoal/60">These settings control how all system emails appear and who receives copies.</p>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>

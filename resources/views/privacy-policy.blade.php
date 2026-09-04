@@ -13,7 +13,7 @@
           </div>
           <div>
             <p class="font-semibold text-kc-navy">Keystone Capital Partners</p>
-            <p class="text-xs text-kc-charcoal/50">Registered Credit Provider · Protection of Personal Information Act 4 of 2013</p>
+            <p class="text-xs text-kc-charcoal/60">Registered Credit Provider · Protection of Personal Information Act 4 of 2013</p>
           </div>
         </div>
 

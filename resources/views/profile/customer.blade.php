@@ -8,7 +8,7 @@
   <div class="kc-card mb-6">
     <div class="flex items-center justify-between mb-2">
       <span class="text-sm font-semibold text-kc-navy">Profile Completeness</span>
-      <span class="text-sm font-bold text-kc-gold">{{ $profileStatus['percentage'] }}%</span>
+      <span class="text-sm font-bold text-kc-navy">{{ $profileStatus['percentage'] }}%</span>
     </div>
     <div class="w-full h-2 bg-kc-silver-light rounded-full overflow-hidden">
       <div class="h-full bg-kc-gold rounded-full transition-all duration-500"
@@ -32,7 +32,7 @@
     <div class="relative z-10">
       <p class="text-white/60 text-xs uppercase tracking-widest mb-1">Pre-Qualification</p>
       <h3 class="font-display text-2xl font-bold text-white">You qualify for up to</h3>
-      <p class="font-display text-4xl font-bold text-kc-gold mt-1">
+      <p class="font-display text-4xl font-bold text-kc-navy mt-1">
         R {{ number_format($affordabilityResult['max_instalment'] * 1, 2) }}
         <span class="text-base font-normal text-white/70">per month</span>
       </p>
@@ -110,7 +110,7 @@
 
           {{-- Monthly expenses — sliders --}}
           <h5 class="font-semibold text-kc-navy mt-2 pt-2 border-t border-kc-silver-light">Monthly Expenses</h5>
-          <p class="text-xs text-kc-charcoal/50 -mt-2 mb-3">Estimates are fine — the system uses these for your affordability calculation (NCA s.81).</p>
+          <p class="text-xs text-kc-charcoal/60 -mt-2 mb-3">Estimates are fine — the system uses these for your affordability calculation (NCA s.81).</p>
 
           @php
           $expenses = [
@@ -167,23 +167,23 @@
             <p class="font-display text-2xl font-bold {{ ($profile->avg_days_to_zero ?? 99) < 7 ? 'text-red-600' : 'text-kc-navy' }}">
               {{ $profile->avg_days_to_zero ?? '—' }}
             </p>
-            <p class="text-xs text-kc-charcoal/50">Days to R500 after payday</p>
+            <p class="text-xs text-kc-charcoal/60">Days to R500 after payday</p>
           </div>
           <div class="text-center">
             <p class="font-display text-2xl font-bold text-kc-navy">{{ $profile->avg_days_to_low ?? '—' }}</p>
-            <p class="text-xs text-kc-charcoal/50">Days to &lt;20% balance</p>
+            <p class="text-xs text-kc-charcoal/60">Days to &lt;20% balance</p>
           </div>
           <div class="text-center">
             <p class="font-display text-2xl font-bold text-kc-navy">
               R {{ number_format($profile->avg_daily_spend_post_payday ?? 0, 0) }}
             </p>
-            <p class="text-xs text-kc-charcoal/50">Avg daily spend (7d post-pay)</p>
+            <p class="text-xs text-kc-charcoal/60">Avg daily spend (7d post-pay)</p>
           </div>
           <div class="text-center">
             <p class="font-display text-2xl font-bold text-kc-navy">
               R {{ number_format($profile->verified_income_amount ?? 0, 0) }}
             </p>
-            <p class="text-xs text-kc-charcoal/50">Verified salary</p>
+            <p class="text-xs text-kc-charcoal/60">Verified salary</p>
           </div>
         </div>
         @if($profile->bank_statement_risk_flag)
@@ -204,7 +204,7 @@
       <div class="kc-card">
         <div class="flex items-center justify-between mb-4">
           <h4 class="font-display font-semibold text-kc-navy">Bank Account</h4>
-          <a href="{{ route('accountdetails.create') }}" class="text-xs text-kc-gold hover:underline font-medium">
+          <a href="{{ route('accountdetails.create') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted font-medium">
             + Add account
           </a>
         </div>
@@ -223,7 +223,7 @@
                     {{ $account->bank_name }} — •••• {{ substr($account->account_number, -4) }}
                   </span>
                 </div>
-                <a href="{{ route('accountdetails.edit', $account) }}" class="text-xs text-kc-gold hover:underline flex-shrink-0 ml-2">Edit</a>
+                <a href="{{ route('accountdetails.edit', $account) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted flex-shrink-0 ml-2">Edit</a>
               </div>
             @endforeach
           </div>
@@ -287,7 +287,7 @@
                         Uploaded {{ $doc->created_at->format('d M Y') }} — {{ $doc->original_name }}
                         <span class="{{ $doc->verified ? 'text-emerald-600' : 'text-kc-gold-muted' }} font-medium">{{ $doc->verified ? '· Verified' : '· Pending review' }}</span>
                       </span>
-                      <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-xs text-kc-gold hover:underline flex-shrink-0 ml-2">View</a>
+                      <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted flex-shrink-0 ml-2">View</a>
                     </div>
                   @endforeach
                 </div>
@@ -317,7 +317,7 @@
                   @unless($doc->verified)
                     <span class="text-[10px] text-kc-gold-muted uppercase">Pending review</span>
                   @endunless
-                  <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
+                  <a href="{{ route('secure-documents.customer-document', $doc) }}" target="_blank" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View</a>
                 </div>
               @else
                 <span class="text-[10px] text-kc-charcoal/60 uppercase">Missing</span>

@@ -14,7 +14,7 @@
         <div>
           <p class="font-semibold text-kc-navy">{{ $ag->getTypeLabel() }}</p>
           <p class="text-xs text-kc-charcoal/60 font-mono">{{ $ag->reference }}</p>
-          <p class="text-xs text-kc-charcoal/50 mt-1">Generated {{ $ag->generated_at?->format('d M Y H:i') }}</p>
+          <p class="text-xs text-kc-charcoal/60 mt-1">Generated {{ $ag->generated_at?->format('d M Y H:i') }}</p>
           @if($ag->accepted_at)
             <span class="kc-badge kc-badge-green text-[10px] mt-1">Signed {{ $ag->accepted_at->format('d M Y') }}</span>
           @endif

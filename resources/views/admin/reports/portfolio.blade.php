@@ -7,38 +7,38 @@
   {{-- KPI summary row --}}
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Capital Deployed</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Capital Deployed</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($principalDeployed, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Total Outstanding</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Total Outstanding</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalOutstanding, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">PAR (Overdue %)</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">PAR (Overdue %)</p>
       <p class="font-display text-2xl font-bold {{ $parPercentage > 10 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ number_format($parPercentage, 1) }}%</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Collection Rate</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Collection Rate</p>
       <p class="font-display text-2xl font-bold {{ $collectionRate < 85 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ number_format($collectionRate, 1) }}%</p>
     </div>
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Overdue Exposure</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Overdue Exposure</p>
       <p class="font-display text-xl font-bold text-red-600 mt-1">R {{ number_format($overdueAmount, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">ECL Provision</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">ECL Provision</p>
       <p class="font-display text-xl font-bold text-orange-600 mt-1">R {{ number_format($totalProvision ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Avg Loan Size</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Avg Loan Size</p>
       <p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($averageLoan ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Portfolio Growth (MoM)</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Portfolio Growth (MoM)</p>
       <p class="font-display text-xl font-bold {{ $monthlyGrowth >= 0 ? 'text-emerald-600' : 'text-red-600' }} mt-1">{{ number_format($monthlyGrowth, 1) }}%</p>
       <p class="text-xs text-kc-charcoal/60 mt-0.5">R{{ number_format($newDisbursementsThisMonth ?? 0, 0) }} disbursed this month</p>
     </div>

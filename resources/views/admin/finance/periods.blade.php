@@ -56,7 +56,7 @@
                 <div class="w-16 h-1 bg-kc-silver-light rounded-full overflow-hidden">
                   <div class="h-full bg-kc-gold rounded-full" style="width:{{ $fp->checklistProgress() }}%"></div>
                 </div>
-                <span class="text-xs {{ $fp->checklistComplete() ? 'text-emerald-600 font-semibold' : 'text-kc-charcoal/50' }}">
+                <span class="text-xs {{ $fp->checklistComplete() ? 'text-emerald-600 font-semibold' : 'text-kc-charcoal/60' }}">
                   {{ $fp->checklistProgress() }}%
                 </span>
               </div>
@@ -79,7 +79,7 @@
                 <span class="text-kc-charcoal/60 text-xs">—</span>
               @endif
             </td>
-            <td data-label="Closed" class="text-xs text-kc-charcoal/50">
+            <td data-label="Closed" class="text-xs text-kc-charcoal/60">
               {{ $fp->closed_at?->format('d M Y') ?? '—' }}
             </td>
             <td data-label="">

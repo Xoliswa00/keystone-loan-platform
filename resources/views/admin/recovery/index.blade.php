@@ -7,23 +7,23 @@
   {{-- Summary KPIs --}}
   <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Total Cases</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Total Cases</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">{{ $summary->total_cases ?? 0 }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Written Off</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Written Off</span>
       <p class="font-display text-2xl font-semibold text-red-600 mt-2">R {{ number_format($summary->total_written_off ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Recovered</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Recovered</span>
       <p class="font-display text-2xl font-semibold text-emerald-600 mt-2">R {{ number_format($summary->total_recovered ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Still Outstanding</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Still Outstanding</span>
       <p class="font-display text-2xl font-semibold text-orange-600 mt-2">R {{ number_format($summary->total_outstanding ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">In Legal</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">In Legal</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">{{ $summary->in_legal ?? 0 }}</p>
     </div>
   </div>

@@ -60,11 +60,11 @@
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Risk Score</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Risk Score</p>
           <p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $cloDecision->risk_score }}/100</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Compliance</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Compliance</p>
           <p class="font-display text-xl font-bold {{ $cloDecision->compliance_status === 'PASS' ? 'text-emerald-600' : 'text-red-600' }} mt-1">
             {{ $cloDecision->compliance_status }}
           </p>
@@ -72,7 +72,7 @@
       </div>
       <p class="text-sm text-kc-charcoal/70 mb-2">{{ $cloDecision->reason }}</p>
       @if(!empty($cloDecision->fraud_flags))
-        <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider mb-1">Flags</p>
+        <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider mb-1">Flags</p>
         <div class="flex flex-wrap gap-1.5 mb-2">
           @foreach($cloDecision->fraud_flags as $flag)
             <span class="kc-badge kc-badge-silver text-xs">{{ $flag }}</span>
@@ -80,7 +80,7 @@
         </div>
       @endif
       @if(!empty($cloDecision->required_actions))
-        <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider mb-1">Required Actions</p>
+        <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider mb-1">Required Actions</p>
         <ul class="text-sm list-disc list-inside text-kc-charcoal/70">
           @foreach($cloDecision->required_actions as $action)
             <li>{{ $action }}</li>
@@ -97,19 +97,19 @@
       {{-- Summary cards --}}
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Requested</p>
-          <p class="font-display text-xl font-bold text-kc-gold mt-1">R {{ number_format($application->loan_amount,2) }}</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Requested</p>
+          <p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($application->loan_amount,2) }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Due</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Due</p>
           <p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($application->loanfee?->total_due ?? 0, 2) }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Outstanding</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Outstanding</p>
           <p class="font-display text-xl font-bold text-red-600 mt-1">R {{ number_format($application->user?->customer?->current_balance ?? 0, 2) }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Rejections</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Rejections</p>
           <p class="font-display text-xl font-bold {{ ($application->user?->loanApplications()->where('status','rejected')->count() ?? 0) > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">
             {{ $application->user?->loanApplications()->where('status','rejected')->count() ?? 0 }}
           </p>
@@ -133,7 +133,7 @@
                 ['Payday',      $application->user?->salary_payment_day ? $application->user->salary_payment_day . 'th' : '—'],
               ] as [$k,$v])
               <tr class="border-b border-kc-silver-light/60">
-                <td class="py-2 text-xs text-kc-charcoal/50 pr-3">{{ $k }}</td>
+                <td class="py-2 text-xs text-kc-charcoal/60 pr-3">{{ $k }}</td>
                 <td class="py-2 text-xs font-medium">{{ $v }}</td>
               </tr>
               @endforeach
@@ -156,7 +156,7 @@
                 ['TOTAL DUE',     'R ' . number_format($application->loanfee?->total_due ?? 0, 2)],
               ] as [$k,$v])
               <tr class="border-b border-kc-silver-light/60">
-                <td class="py-2 text-xs text-kc-charcoal/50 pr-3">{{ $k }}</td>
+                <td class="py-2 text-xs text-kc-charcoal/60 pr-3">{{ $k }}</td>
                 <td class="py-2 text-xs font-medium {{ $k === 'TOTAL DUE' ? 'font-bold text-kc-navy' : '' }}">{{ $v }}</td>
               </tr>
               @endforeach
@@ -175,9 +175,9 @@
           </span>
         </h5>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-          <div><p class="text-xs text-kc-charcoal/50">Disposable Income</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_disposable_income ?? 0, 2) }}</p></div>
-          <div><p class="text-xs text-kc-charcoal/50">Max Instalment (30%)</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_max_instalment ?? 0, 2) }}</p></div>
-          <div><p class="text-xs text-kc-charcoal/50">Requested</p>
+          <div><p class="text-xs text-kc-charcoal/60">Disposable Income</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_disposable_income ?? 0, 2) }}</p></div>
+          <div><p class="text-xs text-kc-charcoal/60">Max Instalment (30%)</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_max_instalment ?? 0, 2) }}</p></div>
+          <div><p class="text-xs text-kc-charcoal/60">Requested</p>
             <p class="font-display text-xl font-bold {{ ($application->affordability_instalment_requested ?? 0) <= ($application->affordability_max_instalment ?? 1) ? 'text-emerald-600' : 'text-red-600' }}">
               R {{ number_format($application->affordability_instalment_requested ?? 0, 2) }}
             </p>
@@ -188,17 +188,17 @@
         @php $profile = $application->user?->customerProfile; @endphp
         @if($profile?->bank_analysis_run_at)
         <div class="mt-4 pt-4 border-t border-kc-silver-light grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-          <div><p class="font-display text-lg font-bold {{ ($profile->avg_days_to_zero ?? 99) < 7 ? 'text-red-600' : 'text-kc-navy' }}">{{ $profile->avg_days_to_zero ?? '—' }}</p><p class="text-[10px] text-kc-charcoal/50">Days to R500 after payday</p></div>
-          <div><p class="font-display text-lg font-bold text-kc-navy">R {{ number_format($profile->verified_income_amount ?? 0, 0) }}</p><p class="text-[10px] text-kc-charcoal/50">Verified salary</p></div>
-          <div><p class="font-display text-lg font-bold text-kc-navy">R {{ number_format($profile->detected_regular_debits ?? 0, 0) }}</p><p class="text-[10px] text-kc-charcoal/50">Detected debits</p></div>
+          <div><p class="font-display text-lg font-bold {{ ($profile->avg_days_to_zero ?? 99) < 7 ? 'text-red-600' : 'text-kc-navy' }}">{{ $profile->avg_days_to_zero ?? '—' }}</p><p class="text-[10px] text-kc-charcoal/60">Days to R500 after payday</p></div>
+          <div><p class="font-display text-lg font-bold text-kc-navy">R {{ number_format($profile->verified_income_amount ?? 0, 0) }}</p><p class="text-[10px] text-kc-charcoal/60">Verified salary</p></div>
+          <div><p class="font-display text-lg font-bold text-kc-navy">R {{ number_format($profile->detected_regular_debits ?? 0, 0) }}</p><p class="text-[10px] text-kc-charcoal/60">Detected debits</p></div>
           <div>
             @php $rf=$profile->bank_statement_risk_flag??'low'; $rfCls=['low'=>'kc-badge-green','medium'=>'kc-badge-gold','high'=>'kc-badge-red','very_high'=>'kc-badge-red'][$rf]??'kc-badge-silver'; @endphp
             <span class="kc-badge {{ $rfCls }}">{{ strtoupper(str_replace('_',' ',$rf)) }}</span>
-            <p class="text-[10px] text-kc-charcoal/50 mt-1">Bank risk</p>
+            <p class="text-[10px] text-kc-charcoal/60 mt-1">Bank risk</p>
           </div>
         </div>
         @if($profile->bank_statement_risk_reason)
-          <p class="text-xs text-kc-charcoal/50 mt-2">{{ $profile->bank_statement_risk_reason }}</p>
+          <p class="text-xs text-kc-charcoal/60 mt-2">{{ $profile->bank_statement_risk_reason }}</p>
         @endif
         @endif
       </div>
@@ -242,7 +242,7 @@
                 <td data-label="Ref" class="font-mono text-xs">#{{ str_pad($prev->id,6,'0',STR_PAD_LEFT) }}</td>
                 <td data-label="Amount">R {{ number_format($prev->loan_amount,2) }}</td>
                 <td data-label="Status"><span class="kc-badge {{ $psc }}">{{ ucfirst($prev->status) }}</span></td>
-                <td data-label="Date" class="text-xs text-kc-charcoal/50">{{ $prev->created_at->format('d M Y') }}</td>
+                <td data-label="Date" class="text-xs text-kc-charcoal/60">{{ $prev->created_at->format('d M Y') }}</td>
               </tr>
               @endforeach
             </tbody>
@@ -268,14 +268,14 @@
                 </td>
                 <td data-label="Amount" class="font-semibold">R {{ number_format($adj->outstanding_amount, 2) }}</td>
                 <td data-label="Source Loan" class="font-mono text-xs">#{{ str_pad($adj->source_loan_id, 6, '0', STR_PAD_LEFT) }}</td>
-                <td data-label="Age" class="text-xs text-kc-charcoal/50">{{ $adj->created_at->diffForHumans(null, true) }}</td>
+                <td data-label="Age" class="text-xs text-kc-charcoal/60">{{ $adj->created_at->diffForHumans(null, true) }}</td>
               </tr>
               @endforeach
             </tbody>
           </table>
         </div>
         @if($outstandingAdjustments->where('type', 'shortfall')->sum('outstanding_amount') > 0)
-        <p class="text-xs text-kc-charcoal/50 mt-3">
+        <p class="text-xs text-kc-charcoal/60 mt-3">
           Approving a new application for this client will disclose R{{ number_format($outstandingAdjustments->where('type', 'shortfall')->sum('outstanding_amount'), 2) }} of outstanding shortfall on the new agreement — it will not be added to the new loan's principal or instalments.
         </p>
         @endif
@@ -298,7 +298,7 @@
             <span class="text-kc-gold text-[9px] font-bold">{{ strtoupper(substr($note->admin_name,0,1)) }}</span>
           </div>
           <div>
-            <p class="text-xs text-kc-charcoal/50">{{ $note->admin_name }} · {{ \Carbon\Carbon::parse($note->created_at)->diffForHumans() }}</p>
+            <p class="text-xs text-kc-charcoal/60">{{ $note->admin_name }} · {{ \Carbon\Carbon::parse($note->created_at)->diffForHumans() }}</p>
             <p class="text-sm">{{ $note->note }}</p>
           </div>
         </div>
@@ -363,12 +363,12 @@
       }">
         <h5 class="font-semibold text-kc-navy mb-1">Counter-Offer</h5>
         @if($application->status === 'affordability_review')
-        <p class="text-xs text-kc-charcoal/50 mb-3">
+        <p class="text-xs text-kc-charcoal/60 mb-3">
           Requested R{{ number_format($application->loan_amount, 2) }} exceeds this client's affordability
           (max instalment R{{ number_format($application->affordability_max_instalment ?? 0, 2) }}).
         </p>
         @else
-        <p class="text-xs text-kc-charcoal/50 mb-3">
+        <p class="text-xs text-kc-charcoal/60 mb-3">
           Offer a different amount/term/product than requested. If the client declines,
           their original application (R{{ number_format($application->loan_amount, 2) }}) is unaffected —
           you can still Approve or Reject it normally.
@@ -388,7 +388,7 @@
         @endif
 
         @if(empty($counterOfferSuggestions))
-        <p class="text-xs text-kc-charcoal/50 mb-3">This client doesn't currently qualify for any amount on any available product — a counter-offer isn't possible.</p>
+        <p class="text-xs text-kc-charcoal/60 mb-3">This client doesn't currently qualify for any amount on any available product — a counter-offer isn't possible.</p>
         @else
         <form method="POST" action="{{ route('admin.counter-offers.store', $application) }}" class="space-y-2 mb-3">
           @csrf
@@ -452,7 +452,7 @@
         <div class="flex items-center justify-between py-1.5 border-b border-kc-silver-light/60 last:border-0">
           <span class="text-xs text-kc-charcoal/70">{{ $label }}</span>
           @if($fp)
-            <a href="{{ route('secure-documents.application-file', [$application, $field]) }}" target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
+            <a href="{{ route('secure-documents.application-file', [$application, $field]) }}" target="_blank" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View</a>
           @else
             <span class="text-[10px] text-kc-charcoal/60">Missing</span>
           @endif
@@ -461,7 +461,7 @@
 
         @php $kycDocs = $application->user?->customerDocuments()->get() ?? collect(); @endphp
         @if($kycDocs->isNotEmpty())
-        <p class="text-xs font-semibold text-kc-charcoal/50 mt-3 mb-1 uppercase">KYC</p>
+        <p class="text-xs font-semibold text-kc-charcoal/60 mt-3 mb-1 uppercase">KYC</p>
         @foreach($kycDocs as $kd)
         <div class="flex items-center justify-between py-1">
           <div class="flex items-center gap-1">
@@ -480,7 +480,7 @@
             @endif
           </div>
           <div class="flex items-center gap-1.5">
-            <a href="{{ route('secure-documents.customer-document', $kd) }}" target="_blank" class="text-[10px] text-kc-gold hover:underline">View</a>
+            <a href="{{ route('secure-documents.customer-document', $kd) }}" target="_blank" class="text-[10px] text-kc-navy underline underline-offset-2 hover:underline">View</a>
             @if(!$kd->verified && Auth::user()->hasRole('loan_officer', 'it_admin'))
             <form method="POST" action="{{ route('admin.documents.verify', $kd) }}" class="inline">
               @csrf <input type="hidden" name="verified" value="1">
@@ -506,7 +506,7 @@
           </div>
           <div class="flex items-center gap-1.5">
             @if($ag->accepted_at)<span class="kc-badge kc-badge-green text-[9px]">Signed</span>@endif
-            <a href="{{ route('agreements.download', $ag) }}" class="text-xs text-kc-gold">PDF</a>
+            <a href="{{ route('agreements.download', $ag) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">PDF</a>
           </div>
         </div>
         @endforeach

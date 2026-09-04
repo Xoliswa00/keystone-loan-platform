@@ -54,7 +54,7 @@
             @if($canManage)
             <td data-label="Actions">
               <div class="flex items-center gap-2">
-                <a href="{{ route('loan-products.edit', $product) }}" class="text-xs text-kc-gold hover:underline">Edit</a>
+                <a href="{{ route('loan-products.edit', $product) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Edit</a>
                 <form method="POST" action="{{ route('loan-products.toggle-active', $product) }}">
                   @csrf
                   <button type="submit" class="kc-btn-ghost text-[10px] py-1 px-2"
