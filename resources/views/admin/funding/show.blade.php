@@ -14,20 +14,20 @@
       {{-- KPIs --}}
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Facility Limit</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Facility Limit</p>
           <p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($fundingFacility->facility_limit,2) }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Outstanding</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Outstanding</p>
           <p class="font-display text-xl font-bold text-red-600 mt-1">R {{ number_format($fundingFacility->current_balance,2) }}</p>
           <p class="text-[10px] text-kc-charcoal/60">Balance sheet liability</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Available</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Available</p>
           <p class="font-display text-xl font-bold text-emerald-600 mt-1">R {{ number_format($fundingFacility->availableLimit(),2) }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Accrued Interest</p>
+          <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Accrued Interest</p>
           <p class="font-display text-xl font-bold {{ $fundingFacility->accrued_interest > 0 ? 'text-orange-600' : 'text-kc-navy' }} mt-1">R {{ number_format($fundingFacility->accrued_interest,2) }}</p>
         </div>
       </div>
@@ -36,7 +36,7 @@
       <div class="kc-card">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-semibold text-kc-navy">Utilisation</span>
-          <span class="text-sm font-bold text-kc-gold">{{ $fundingFacility->utilisationRate() }}%</span>
+          <span class="text-sm font-bold text-kc-navy">{{ $fundingFacility->utilisationRate() }}%</span>
         </div>
         <div class="h-2.5 w-full bg-kc-silver-light rounded-full overflow-hidden">
           <div class="h-full {{ $fundingFacility->utilisationRate()>90?'bg-red-500':'bg-kc-gold' }} rounded-full transition-all"
@@ -47,9 +47,9 @@
           <span>R {{ number_format($fundingFacility->facility_limit,0) }}</span>
         </div>
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-xs">
-          <div><p class="text-kc-charcoal/50">Monthly Interest Due</p><p class="font-semibold text-kc-navy">R {{ number_format($monthlyInterest,2) }}</p></div>
-          <div><p class="text-kc-charcoal/50">Rate p.a.</p><p class="font-semibold">{{ round($fundingFacility->interest_rate*100,2) }}%</p></div>
-          <div><p class="text-kc-charcoal/50">Payment Day</p><p class="font-semibold">{{ $fundingFacility->payment_day ? $fundingFacility->payment_day.'th' : '—' }}</p></div>
+          <div><p class="text-kc-charcoal/60">Monthly Interest Due</p><p class="font-semibold text-kc-navy">R {{ number_format($monthlyInterest,2) }}</p></div>
+          <div><p class="text-kc-charcoal/60">Rate p.a.</p><p class="font-semibold">{{ round($fundingFacility->interest_rate*100,2) }}%</p></div>
+          <div><p class="text-kc-charcoal/60">Payment Day</p><p class="font-semibold">{{ $fundingFacility->payment_day ? $fundingFacility->payment_day.'th' : '—' }}</p></div>
         </div>
       </div>
 
@@ -124,7 +124,7 @@
       {{-- Accrue interest --}}
       <div class="kc-card">
         <h5 class="font-semibold text-kc-navy mb-2">Monthly Interest Accrual</h5>
-        <p class="text-xs text-kc-charcoal/50 mb-3">
+        <p class="text-xs text-kc-charcoal/60 mb-3">
           This month's accrual: <strong>R {{ number_format($monthlyInterest,2) }}</strong><br>
           Posts Dr Interest Expense / Cr Accrued Interest to GL.
         </p>
@@ -153,7 +153,7 @@
               ['Collateral',$fundingFacility->collateral_description ? Str::limit($fundingFacility->collateral_description,50) : '—'],
             ] as [$k,$v])
             <tr class="border-b border-kc-silver-light/60">
-              <td class="py-1.5 text-kc-charcoal/50 pr-2">{{ $k }}</td>
+              <td class="py-1.5 text-kc-charcoal/60 pr-2">{{ $k }}</td>
               <td class="py-1.5 font-medium">{{ $v }}</td>
             </tr>
             @endforeach
@@ -162,7 +162,7 @@
 
         @if($fundingFacility->agreement_document_path)
         <a href="{{ route('secure-documents.funding-agreement', $fundingFacility) }}"
-           target="_blank" class="text-xs text-kc-gold hover:underline mt-3 block">
+           target="_blank" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted mt-3 block">
           View Facility Agreement (PDF)
         </a>
         @endif

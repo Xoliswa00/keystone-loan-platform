@@ -7,16 +7,16 @@
   {{-- Org-level KPIs --}}
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Total Outstanding</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Total Outstanding</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">R {{ number_format($totals['total_outstanding'], 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Total Risky Exposure</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Total Risky Exposure</span>
       <p class="font-display text-2xl font-semibold text-red-600 mt-2">R {{ number_format($totals['total_risky'], 2) }}</p>
       <p class="text-xs text-kc-charcoal/60 mt-1">Written-off or 90+ DPD</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Avg Default Rate</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Avg Default Rate</span>
       <p class="font-display text-2xl font-semibold {{ $totals['avg_default_rate'] > 5 ? 'text-red-600' : 'text-emerald-600' }} mt-2">{{ number_format($totals['avg_default_rate'], 2) }}%</p>
     </div>
   </div>
@@ -35,11 +35,11 @@
           @forelse($summary as $row)
           @php $riskClass = $row->default_rate > 10 ? 'text-red-600' : ($row->default_rate > 5 ? 'text-orange-500' : 'text-emerald-600'); @endphp
           <tr>
-            <td class="font-semibold text-kc-navy">{{ $row->reviewer_name }}</td>
-            <td>{{ $row->applications_reviewed }}</td>
-            <td class="text-emerald-600">{{ $row->applications_approved }}</td>
-            <td class="text-red-500">{{ $row->applications_rejected }}</td>
-            <td>
+            <td data-label="Reviewer" class="font-semibold text-kc-navy">{{ $row->reviewer_name }}</td>
+            <td data-label="Reviewed">{{ $row->applications_reviewed }}</td>
+            <td data-label="Approved" class="text-emerald-600">{{ $row->applications_approved }}</td>
+            <td data-label="Rejected" class="text-red-500">{{ $row->applications_rejected }}</td>
+            <td data-label="Approval Rate">
               <div class="flex items-center gap-2">
                 <div class="w-16 h-1.5 bg-kc-silver-light rounded-full overflow-hidden">
                   <div class="h-full bg-kc-gold rounded-full" style="width:{{ min(100, $row->approval_rate) }}%"></div>
@@ -47,12 +47,12 @@
                 <span class="text-xs">{{ $row->approval_rate }}%</span>
               </div>
             </td>
-            <td>R {{ number_format($row->total_disbursed, 2) }}</td>
-            <td>R {{ number_format($row->outstanding, 2) }}</td>
-            <td class="text-red-500 font-semibold">R {{ number_format($row->risky_exposure, 2) }}</td>
-            <td class="{{ $riskClass }} font-bold">{{ $row->default_rate }}%</td>
-            <td>
-              <a href="{{ route('reports.reviewer', $row->id) }}" class="text-xs text-kc-gold hover:text-kc-gold-muted">Detail →</a>
+            <td data-label="Total Disbursed">R {{ number_format($row->total_disbursed, 2) }}</td>
+            <td data-label="Outstanding">R {{ number_format($row->outstanding, 2) }}</td>
+            <td data-label="Risky Exposure" class="text-red-500 font-semibold">R {{ number_format($row->risky_exposure, 2) }}</td>
+            <td data-label="Default Rate" class="{{ $riskClass }} font-bold">{{ $row->default_rate }}%</td>
+            <td data-label="Action">
+              <a href="{{ route('reports.reviewer', $row->id) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Detail →</a>
             </td>
           </tr>
           @empty
@@ -72,8 +72,8 @@
       <tbody>
         @foreach($orgTrend as $t)
         <tr>
-          <td>{{ $t->review_month }}</td>
-          <td>
+          <td data-label="Month">{{ $t->review_month }}</td>
+          <td data-label="Approval Rate">
             <div class="flex items-center gap-2">
               <div class="w-20 h-1.5 bg-kc-silver-light rounded-full overflow-hidden">
                 <div class="h-full bg-emerald-500 rounded-full" style="width:{{ min(100, $t->approval_rate ?? 0) }}%"></div>
@@ -81,7 +81,7 @@
               {{ $t->approval_rate ?? 0 }}%
             </div>
           </td>
-          <td>
+          <td data-label="Default Rate">
             <span class="{{ ($t->default_rate ?? 0) > 5 ? 'text-red-600' : 'text-emerald-600' }} font-semibold">
               {{ $t->default_rate ?? 0 }}%
             </span>

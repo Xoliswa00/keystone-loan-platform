@@ -7,19 +7,19 @@
   {{-- Stats --}}
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Clients</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Clients</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $stats['total'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Active Loans</p>
-      <p class="font-display text-2xl font-bold text-kc-gold mt-1">{{ $stats['active'] }}</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Active Loans</p>
+      <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $stats['active'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">With Balances</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">With Balances</p>
       <p class="font-display text-2xl font-bold {{ $stats['overdue'] > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ $stats['overdue'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Restricted</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Restricted</p>
       <p class="font-display text-2xl font-bold text-orange-500 mt-1">{{ $stats['restricted'] }}</p>
     </div>
   </div>
@@ -80,7 +80,7 @@
             </td>
             <td data-label="Status"><span class="kc-badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
             <td data-label="Actions">
-              <a href="{{ route('customers.show', $c) }}" class="text-xs text-kc-gold hover:underline">View →</a>
+              <a href="{{ route('customers.show', $c) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View →</a>
             </td>
           </tr>
           @empty

@@ -20,24 +20,24 @@
   {{-- Summary KPIs --}}
   <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
     <div class="kc-stat-card">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Facilities</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Facilities</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $summary['total_facilities'] }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Total Limit</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Limit</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($summary['total_limit'],0) }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Outstanding (Liabilities)</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Outstanding (Liabilities)</p>
       <p class="font-display text-2xl font-bold text-red-600 mt-1">R {{ number_format($summary['total_drawn'],2) }}</p>
       <p class="text-xs text-kc-charcoal/60 mt-0.5">On balance sheet</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Accrued Interest</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Accrued Interest</p>
       <p class="font-display text-2xl font-bold text-orange-600 mt-1">R {{ number_format($summary['total_accrued_int'],2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">Active</p>
+      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Active</p>
       <p class="font-display text-2xl font-bold text-emerald-600 mt-1">{{ $summary['active_count'] }}</p>
     </div>
   </div>

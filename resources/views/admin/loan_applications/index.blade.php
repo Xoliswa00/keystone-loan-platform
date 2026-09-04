@@ -62,7 +62,7 @@
           @endphp
           <tr>
             <td><input type="checkbox" class="application-checkbox" value="{{ $app->id }}" aria-label="Select application #{{ $app->id }}"></td>
-            <td data-label="Ref" class="font-mono text-xs text-kc-charcoal/50">#{{ str_pad($app->id,6,'0',STR_PAD_LEFT) }}</td>
+            <td data-label="Ref" class="font-mono text-xs text-kc-charcoal/60">#{{ str_pad($app->id,6,'0',STR_PAD_LEFT) }}</td>
             <td data-label="Client">
               <div class="font-semibold">{{ $app->user?->name }}</div>
               <div class="text-xs text-kc-charcoal/60">{{ $app->user?->customer?->customer_code }}</div>
@@ -76,7 +76,7 @@
                 <span class="kc-badge kc-badge-silver">Pending</span>
               @endif
             </td>
-            <td data-label="Submitted" class="text-xs text-kc-charcoal/50">{{ $app->created_at->format('d M Y') }}</td>
+            <td data-label="Submitted" class="text-xs text-kc-charcoal/60">{{ $app->created_at->format('d M Y') }}</td>
             <td data-label="Status"><span class="kc-badge {{ $sc }}">{{ ucfirst($app->status) }}</span></td>
             <td data-label="Action"><a href="{{ route('Admin.show', $app->id) }}" class="kc-btn-ghost text-xs py-1 px-3">Review</a></td>
           </tr>

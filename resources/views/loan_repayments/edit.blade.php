@@ -7,7 +7,7 @@
         <input type="text" name="payment_reference" value="{{ $loanRepayment->payment_reference }}" class="kc-input"></div>
       <div><label class="kc-label">Notes</label>
         <textarea name="notes" rows="3" class="kc-input">{{ $loanRepayment->notes }}</textarea></div>
-      <p class="text-xs text-kc-charcoal/50">Only reference and notes can be edited. GL entries are immutable.</p>
+      <p class="text-xs text-kc-charcoal/60">Only reference and notes can be edited. GL entries are immutable.</p>
       <div class="flex gap-3"><a href="{{ route('loanrepayments.index') }}" class="kc-btn-ghost">Cancel</a>
         <button type="submit" class="kc-btn-primary">Save</button></div>
     </form>

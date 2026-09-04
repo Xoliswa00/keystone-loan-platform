@@ -22,18 +22,18 @@
               Instalment #{{ $p->repaymentSchedule?->installment_number ?? '—' }}
               — due {{ $p->repaymentSchedule?->due_date ? \Carbon\Carbon::parse($p->repaymentSchedule->due_date)->format('d M Y') : '—' }}
             </td>
-            <td data-label="Amount" class="font-semibold text-kc-gold">R {{ number_format($p->payment_amount, 2) }}</td>
+            <td data-label="Amount" class="font-semibold text-kc-navy">R {{ number_format($p->payment_amount, 2) }}</td>
             <td data-label="Payment Date" class="text-xs">{{ \Carbon\Carbon::parse($p->payment_date)->format('d M Y') }}</td>
-            <td data-label="Reference" class="text-xs text-kc-charcoal/50">{{ $p->payment_reference ?? '—' }}</td>
+            <td data-label="Reference" class="text-xs text-kc-charcoal/60">{{ $p->payment_reference ?? '—' }}</td>
             <td data-label="Proof">
               @if($p->proof_of_payment_path)
               <a href="{{ route('secure-documents.repayment-proof', $p) }}"
-                 target="_blank" class="text-xs text-kc-gold hover:underline">View</a>
+                 target="_blank" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View</a>
               @else
               <span class="text-xs text-kc-charcoal/60">—</span>
               @endif
             </td>
-            <td data-label="Submitted" class="text-xs text-kc-charcoal/50">
+            <td data-label="Submitted" class="text-xs text-kc-charcoal/60">
               {{ $p->submittedBy?->name ?? 'Client' }} · {{ $p->created_at->format('d M Y') }}
             </td>
             <td data-label="Actions">

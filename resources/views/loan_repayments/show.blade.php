@@ -5,28 +5,28 @@
   <div class="kc-card max-w-xl">
     <table class="kc-table">
       <tbody>
-        <tr><td class="text-kc-charcoal/50 text-xs w-32">Loan</td><td>#{{ str_pad($loanRepayment->loan_id ?? 0,6,'0',STR_PAD_LEFT) }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Total</td><td class="font-semibold">R {{ number_format($loanRepayment->payment_amount,2) }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Principal</td><td>R {{ number_format($loanRepayment->principal_amount??0,2) }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Interest</td><td>R {{ number_format($loanRepayment->interest_amount??0,2) }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Fees</td><td>R {{ number_format($loanRepayment->fee_amount??0,2) }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Date</td><td>{{ \Carbon\Carbon::parse($loanRepayment->payment_date)->format('d M Y') }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Method</td><td>{{ ucfirst(str_replace('_',' ',$loanRepayment->payment_method??'—')) }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Status</td><td>
+        <tr><td class="text-kc-charcoal/60 text-xs w-32">Loan</td><td>#{{ str_pad($loanRepayment->loan_id ?? 0,6,'0',STR_PAD_LEFT) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Total</td><td class="font-semibold">R {{ number_format($loanRepayment->payment_amount,2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Principal</td><td>R {{ number_format($loanRepayment->principal_amount??0,2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Interest</td><td>R {{ number_format($loanRepayment->interest_amount??0,2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Fees</td><td>R {{ number_format($loanRepayment->fee_amount??0,2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Date</td><td>{{ \Carbon\Carbon::parse($loanRepayment->payment_date)->format('d M Y') }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Method</td><td>{{ ucfirst(str_replace('_',' ',$loanRepayment->payment_method??'—')) }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Status</td><td>
           @php $rsc = ['paid'=>'kc-badge-green','reversed'=>'kc-badge-red','pending_review'=>'kc-badge-gold','rejected'=>'kc-badge-silver'][$loanRepayment->status] ?? 'kc-badge-red'; @endphp
           <span class="kc-badge {{ $rsc }}">{{ ucfirst(str_replace('_',' ',$loanRepayment->status)) }}</span>
         </td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">GL Ref</td><td class="font-mono text-xs">{{ $loanRepayment->gl_batch_reference??'—' }}</td></tr>
-        <tr><td class="text-kc-charcoal/50 text-xs">Reference</td><td>{{ $loanRepayment->payment_reference??'—' }}</td></tr>
-        @if($loanRepayment->notes)<tr><td class="text-kc-charcoal/50 text-xs">Notes</td><td class="text-xs">{{ $loanRepayment->notes }}</td></tr>@endif
+        <tr><td class="text-kc-charcoal/60 text-xs">GL Ref</td><td class="font-mono text-xs">{{ $loanRepayment->gl_batch_reference??'—' }}</td></tr>
+        <tr><td class="text-kc-charcoal/60 text-xs">Reference</td><td>{{ $loanRepayment->payment_reference??'—' }}</td></tr>
+        @if($loanRepayment->notes)<tr><td class="text-kc-charcoal/60 text-xs">Notes</td><td class="text-xs">{{ $loanRepayment->notes }}</td></tr>@endif
         @if($loanRepayment->reverses_repayment_id)
-        <tr><td class="text-kc-charcoal/50 text-xs">Reverses</td><td class="text-xs">
-          <a href="{{ route('loanrepayments.show', $loanRepayment->reverses_repayment_id) }}" class="text-kc-gold hover:underline">Payment #{{ $loanRepayment->reverses_repayment_id }}</a>
+        <tr><td class="text-kc-charcoal/60 text-xs">Reverses</td><td class="text-xs">
+          <a href="{{ route('loanrepayments.show', $loanRepayment->reverses_repayment_id) }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Payment #{{ $loanRepayment->reverses_repayment_id }}</a>
         </td></tr>
         @endif
         @if($loanRepayment->reversal)
-        <tr><td class="text-kc-charcoal/50 text-xs">Reversed by</td><td class="text-xs">
-          <a href="{{ route('loanrepayments.show', $loanRepayment->reversal->id) }}" class="text-kc-gold hover:underline">Reversal #{{ $loanRepayment->reversal->id }}</a>
+        <tr><td class="text-kc-charcoal/60 text-xs">Reversed by</td><td class="text-xs">
+          <a href="{{ route('loanrepayments.show', $loanRepayment->reversal->id) }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Reversal #{{ $loanRepayment->reversal->id }}</a>
         </td></tr>
         @endif
       </tbody>

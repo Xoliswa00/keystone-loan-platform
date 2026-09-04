@@ -13,14 +13,14 @@
 
     <div class="kc-card">
       <h4 class="font-display font-semibold text-kc-navy mb-2">Change Password</h4>
-      <p class="text-xs text-kc-charcoal/50 mb-4">Min 8 characters — must include at least one letter and one number.</p>
+      <p class="text-xs text-kc-charcoal/60 mb-4">Min 8 characters — must include at least one letter and one number.</p>
       @include('profile.partials.update-password-form')
     </div>
 
     <div class="kc-card flex items-center justify-between">
       <div>
         <h5 class="font-semibold text-kc-navy">Financial Profile</h5>
-        <p class="text-xs text-kc-charcoal/50 mt-0.5">Income, expenses, bank analysis, documents</p>
+        <p class="text-xs text-kc-charcoal/60 mt-0.5">Income, expenses, bank analysis, documents</p>
       </div>
       <a href="{{ route('customer-profile.show') }}" class="kc-btn-ghost text-sm">Manage →</a>
     </div>
@@ -28,16 +28,16 @@
     <div class="kc-card flex items-center justify-between">
       <div>
         <h5 class="font-semibold text-kc-navy">Bank Accounts</h5>
-        <p class="text-xs text-kc-charcoal/50 mt-0.5">Debit order account for repayments</p>
+        <p class="text-xs text-kc-charcoal/60 mt-0.5">Debit order account for repayments</p>
       </div>
       <a href="{{ route('accountdetails.index') }}" class="kc-btn-ghost text-sm">Manage →</a>
     </div>
 
     <div class="kc-card">
       <h4 class="font-display font-semibold text-kc-navy mb-1">Privacy & Consent</h4>
-      <p class="text-xs text-kc-charcoal/50 mb-4">
+      <p class="text-xs text-kc-charcoal/60 mb-4">
         Under POPIA you may view or withdraw consent for how we process your information at any time.
-        Read our <a href="{{ route('privacy') }}" class="text-kc-gold hover:underline" target="_blank">Privacy Policy</a>.
+        Read our <a href="{{ route('privacy') }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted" target="_blank">Privacy Policy</a>.
       </p>
 
       @if ($hasActiveLoan)
@@ -56,7 +56,7 @@
           <div class="flex items-center justify-between gap-3 {{ ! $loop->first ? 'pt-3 border-t border-kc-silver-light' : '' }}">
             <div>
               <p class="text-sm font-medium text-kc-navy">{{ $label }}</p>
-              <p class="text-xs text-kc-charcoal/50">
+              <p class="text-xs text-kc-charcoal/60">
                   Status:
                   <span class="{{ $consents[$type] ? 'text-green-600' : 'text-red-600' }} font-semibold">
                       {{ $consents[$type] ? 'Granted' : 'Withdrawn' }}

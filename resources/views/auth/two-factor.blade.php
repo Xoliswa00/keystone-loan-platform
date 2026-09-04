@@ -8,7 +8,7 @@
       </svg>
     </div>
     <h2 class="font-display text-2xl font-semibold text-kc-navy">Two-Factor Verification</h2>
-    <p class="text-sm text-kc-charcoal/50 mt-2">
+    <p class="text-sm text-kc-charcoal/60 mt-2">
       We sent a 6-digit code to <strong>{{ $email }}</strong>.<br>
       Enter it below to complete sign-in.
     </p>

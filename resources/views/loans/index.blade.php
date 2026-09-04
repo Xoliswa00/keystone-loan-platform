@@ -20,19 +20,19 @@
           <h4 class="font-display font-semibold text-kc-navy">Loan #{{ str_pad($loan->id,6,'0',STR_PAD_LEFT) }}</h4>
           <span class="kc-badge {{ $lsc }}">{{ ucfirst($loan->status) }}</span>
         </div>
-        <p class="text-xs text-kc-charcoal/50">{{ ucfirst($loan->loan_type) }} · Approved {{ $loan->approved_at ? \Carbon\Carbon::parse($loan->approved_at)->format('d M Y') : '—' }}</p>
+        <p class="text-xs text-kc-charcoal/60">{{ ucfirst($loan->loan_type) }} · Approved {{ $loan->approved_at ? \Carbon\Carbon::parse($loan->approved_at)->format('d M Y') : '—' }}</p>
       </div>
       <div class="text-right">
         <p class="font-display text-2xl font-bold text-kc-navy">R {{ number_format($loan->remaining_balance ?? 0, 2) }}</p>
-        <p class="text-xs text-kc-charcoal/50">Remaining balance</p>
+        <p class="text-xs text-kc-charcoal/60">Remaining balance</p>
       </div>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-      <div><p class="text-xs text-kc-charcoal/50">Principal</p><p class="font-semibold">R {{ number_format($loan->loan_amount,2) }}</p></div>
-      <div><p class="text-xs text-kc-charcoal/50">Total Due</p><p class="font-semibold">R {{ number_format($loan->total_amount_due ?? $loan->loan_amount,2) }}</p></div>
-      <div><p class="text-xs text-kc-charcoal/50">Term</p><p class="font-semibold">{{ $loan->loan_term_months ?? 1 }} month(s)</p></div>
+      <div><p class="text-xs text-kc-charcoal/60">Principal</p><p class="font-semibold">R {{ number_format($loan->loan_amount,2) }}</p></div>
+      <div><p class="text-xs text-kc-charcoal/60">Total Due</p><p class="font-semibold">R {{ number_format($loan->total_amount_due ?? $loan->loan_amount,2) }}</p></div>
+      <div><p class="text-xs text-kc-charcoal/60">Term</p><p class="font-semibold">{{ $loan->loan_term_months ?? 1 }} month(s)</p></div>
       <div>
-        <p class="text-xs text-kc-charcoal/50">Next Payment</p>
+        <p class="text-xs text-kc-charcoal/60">Next Payment</p>
         <p class="font-semibold {{ $loan->next_payment_date && \Carbon\Carbon::parse($loan->next_payment_date)->isPast() ? 'text-red-600' : '' }}">
           {{ $loan->next_payment_date ? \Carbon\Carbon::parse($loan->next_payment_date)->format('d M Y') : '—' }}
         </p>
@@ -41,7 +41,7 @@
   </div>
   @empty
   <div class="kc-card text-center py-12">
-    <p class="text-kc-charcoal/50 mb-4">No loans yet.</p>
+    <p class="text-kc-charcoal/60 mb-4">No loans yet.</p>
     <a href="{{ route('loanapplications.create') }}" class="kc-btn-primary">Apply for a Loan</a>
   </div>
   @endforelse
@@ -61,8 +61,8 @@
             <td data-label="Amount" class="font-semibold">R {{ number_format($app->loan_amount,2) }}</td>
             <td data-label="Type">{{ ucfirst($app->loan_type) }}</td>
             <td data-label="Status"><span class="kc-badge {{ $asc }}">{{ ucfirst($app->status) }}</span></td>
-            <td data-label="Date" class="text-xs text-kc-charcoal/50">{{ $app->created_at->format('d M Y') }}</td>
-            <td data-label="Action"><a href="{{ route('loanapplications.show', $app->id) }}" class="text-xs text-kc-gold hover:underline">View</a></td>
+            <td data-label="Date" class="text-xs text-kc-charcoal/60">{{ $app->created_at->format('d M Y') }}</td>
+            <td data-label="Action"><a href="{{ route('loanapplications.show', $app->id) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View</a></td>
           </tr>
           @endforeach
         </tbody>

@@ -13,7 +13,7 @@
           </div>
           <div>
             <p class="font-semibold text-kc-navy">Keystone Capital Partners</p>
-            <p class="text-xs text-kc-charcoal/50">Registered Credit Provider · National Credit Act 34 of 2005</p>
+            <p class="text-xs text-kc-charcoal/60">Registered Credit Provider · National Credit Act 34 of 2005</p>
           </div>
         </div>
 

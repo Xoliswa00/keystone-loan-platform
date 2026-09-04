@@ -52,11 +52,11 @@
       <div class="flex items-center justify-between p-3 rounded-lg border border-kc-silver-light mb-2">
         <div>
           <p class="text-sm font-semibold font-mono">{{ $batch->import_ref }}</p>
-          <p class="text-xs text-kc-charcoal/50">{{ $meta['bank_name'] ?? '' }} · {{ $meta['period'] ?? '' }} · {{ $batch->row_count }} rows</p>
+          <p class="text-xs text-kc-charcoal/60">{{ $meta['bank_name'] ?? '' }} · {{ $meta['period'] ?? '' }} · {{ $batch->row_count }} rows</p>
         </div>
         <div class="flex items-center gap-2">
           <span class="kc-badge {{ $bsc }}">{{ $batch->status }}</span>
-          <a href="{{ route('admin.finance.business-bank.show', $batch->id) }}" class="text-xs text-kc-gold hover:underline">View</a>
+          <a href="{{ route('admin.finance.business-bank.show', $batch->id) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View</a>
         </div>
       </div>
       @empty

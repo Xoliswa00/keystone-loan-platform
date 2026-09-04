@@ -6,11 +6,11 @@
 
   {{-- Summary --}}
   <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/50 uppercase">Total</p><p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $summary->total }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/50 uppercase">Credits</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">R {{ number_format($summary->total_credits,2) }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/50 uppercase">Debits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_debits,2) }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/50 uppercase">Matched</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">{{ $summary->matched }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/50 uppercase">Exceptions</p><p class="font-display text-xl font-bold {{ $summary->exceptions > 0 ? 'text-red-600' : 'text-kc-navy' }} mt-1">{{ $summary->exceptions }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Total</p><p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $summary->total }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Credits</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">R {{ number_format($summary->total_credits,2) }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Debits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_debits,2) }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Matched</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">{{ $summary->matched }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Exceptions</p><p class="font-display text-xl font-bold {{ $summary->exceptions > 0 ? 'text-red-600' : 'text-kc-navy' }} mt-1">{{ $summary->exceptions }}</p></div>
   </div>
 
   <div class="flex justify-end mb-4">

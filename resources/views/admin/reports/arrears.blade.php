@@ -14,7 +14,7 @@
     @foreach(['1-29 DPD','30-59 DPD','60-89 DPD','90-179 DPD','180+ DPD'] as $bucket)
     @php $b = $summary[$bucket] ?? null; @endphp
     <div class="kc-stat-card text-center">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50 mb-1">{{ $bucket }}</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60 mb-1">{{ $bucket }}</p>
       <p class="font-display text-lg font-bold text-kc-navy">{{ $b ? $b['count'] : 0 }}</p>
       <p class="text-xs text-red-600 font-semibold">R {{ number_format($b['total'] ?? 0, 2) }}</p>
     </div>

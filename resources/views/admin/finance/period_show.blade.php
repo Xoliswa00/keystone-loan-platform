@@ -43,7 +43,7 @@
       <div class="kc-card">
         <div class="flex items-center justify-between mb-4">
           <h4 class="font-display font-semibold text-kc-navy">Pre-Close Checklist</h4>
-          <span class="text-sm font-semibold {{ $period->checklistComplete() ? 'text-emerald-600' : 'text-kc-charcoal/50' }}">
+          <span class="text-sm font-semibold {{ $period->checklistComplete() ? 'text-emerald-600' : 'text-kc-charcoal/60' }}">
             {{ $period->checklistProgress() }}% complete
           </span>
         </div>
@@ -65,7 +65,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">IFRS 9 Provisioning</p>
-                <p class="text-xs text-kc-charcoal/50">Run ECL provision for all active loans</p>
+                <p class="text-xs text-kc-charcoal/60">Run ECL provision for all active loans</p>
               </div>
             </div>
             @if(!$period->provisioning_complete && $period->canPost())
@@ -88,7 +88,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">Funding Facility Interest Accrual</p>
-                <p class="text-xs text-kc-charcoal/50">Accrue interest on all active funding facilities</p>
+                <p class="text-xs text-kc-charcoal/60">Accrue interest on all active funding facilities</p>
               </div>
             </div>
             @if(!$period->facility_interest_accrued && $period->canPost())
@@ -111,7 +111,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">Bank Reconciliation</p>
-                <p class="text-xs text-kc-charcoal/50">
+                <p class="text-xs text-kc-charcoal/60">
                   @if($period->bank_recon_no_activity)
                     Confirmed no bank activity for this period
                   @else
@@ -121,7 +121,7 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <a href="{{ route('admin.finance.business-bank.upload') }}" class="text-xs text-kc-gold hover:underline">Bank Recon →</a>
+              <a href="{{ route('admin.finance.business-bank.upload') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Bank Recon →</a>
               @if(!$period->bank_recon_complete && $period->canPost())
               <form method="POST" action="{{ route('admin.periods.bank-recon', $period) }}">
                 @csrf
@@ -148,7 +148,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">Trial Balance &amp; P&amp;L Snapshot</p>
-                <p class="text-xs text-kc-charcoal/50">Capture GL account balances at period-end</p>
+                <p class="text-xs text-kc-charcoal/60">Capture GL account balances at period-end</p>
               </div>
             </div>
             @if(!$period->trial_balance_generated && $period->canPost())
@@ -200,7 +200,7 @@
             Start Period-End Close
           </button>
         </form>
-        <p class="text-xs text-kc-charcoal/50">Moves period to 'Closing'. You can still post adjusting entries.</p>
+        <p class="text-xs text-kc-charcoal/60">Moves period to 'Closing'. You can still post adjusting entries.</p>
         @endif
 
         @if($period->isClosing())
@@ -285,7 +285,7 @@
               ['Notes',       Str::limit($period->notes ?? '—', 80)],
             ] as [$k,$v])
             <tr class="border-b border-kc-silver-light/60">
-              <td class="py-1.5 text-kc-charcoal/50 pr-2">{{ $k }}</td>
+              <td class="py-1.5 text-kc-charcoal/60 pr-2">{{ $k }}</td>
               <td class="py-1.5 font-medium">{{ $v }}</td>
             </tr>
             @endforeach

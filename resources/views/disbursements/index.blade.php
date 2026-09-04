@@ -40,9 +40,9 @@
               <div class="text-xs text-kc-charcoal/60">{{ $disb->payment_reference }}</div>
             </td>
             <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($disb->loan_id,6,'0',STR_PAD_LEFT) }}</td>
-            <td data-label="Amount" class="font-semibold text-kc-gold">R {{ number_format($disb->disbursed_amount,2) }}</td>
+            <td data-label="Amount" class="font-semibold text-kc-navy">R {{ number_format($disb->disbursed_amount,2) }}</td>
             <td data-label="Status"><span class="kc-badge {{ $sc }}">{{ ucfirst(str_replace('_',' ',$disb->status)) }}</span></td>
-            <td data-label="Date" class="text-xs text-kc-charcoal/50">
+            <td data-label="Date" class="text-xs text-kc-charcoal/60">
               {{ $disb->disbursement_date ? \Carbon\Carbon::parse($disb->disbursement_date)->format('d M Y') : $disb->created_at->format('d M Y') }}
             </td>
             <td data-label="Actions">

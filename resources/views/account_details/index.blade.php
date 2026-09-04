@@ -11,7 +11,7 @@
   <div class="kc-card">
     @if($accountDetails->isEmpty())
     <div class="text-center py-10">
-      <p class="text-kc-charcoal/50 mb-4">No bank accounts on file. Add one to enable debit order repayments.</p>
+      <p class="text-kc-charcoal/60 mb-4">No bank accounts on file. Add one to enable debit order repayments.</p>
       <a href="{{ route('accountdetails.create') }}" class="kc-btn-primary">Add Bank Account</a>
     </div>
     @else
@@ -32,7 +32,7 @@
             </td>
             <td data-label="Actions">
               <div class="flex gap-3">
-                <a href="{{ route('accountdetails.edit', $acct) }}" class="text-xs text-kc-gold hover:underline">Edit</a>
+                <a href="{{ route('accountdetails.edit', $acct) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Edit</a>
                 <form method="POST" action="{{ route('accountdetails.destroy', $acct) }}" class="inline">
                   @csrf @method('DELETE')
                   <button type="submit" class="text-xs text-red-500 hover:underline"

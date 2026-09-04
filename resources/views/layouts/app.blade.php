@@ -181,7 +181,7 @@
                             <span class="text-kc-gold text-xs font-bold">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
                         </div>
                         <span class="hidden sm:block">{{ explode(' ', Auth::user()->name)[0] }}</span>
-                        <svg class="w-3.5 h-3.5 text-kc-charcoal/50" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 text-kc-charcoal/60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>

@@ -27,7 +27,7 @@
       {{-- Balance reconciliation --}}
       <div class="text-right">
         @if($closingBalance !== null)
-        <p class="text-xs text-kc-charcoal/50 mb-0.5">GL Bank Balance vs Statement</p>
+        <p class="text-xs text-kc-charcoal/60 mb-0.5">GL Bank Balance vs Statement</p>
         <p class="font-display text-lg font-bold {{ $status['balance_reconciled'] ? 'text-emerald-600' : 'text-red-600' }}">
           R {{ number_format($status['gl_bank_balance'], 2) }}
           @if($status['balance_reconciled'])
@@ -92,9 +92,9 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       @foreach($status['by_category'] as $cat => $data)
       <div class="text-center p-3 rounded-lg bg-kc-silver-light/50">
-        <p class="text-xs text-kc-charcoal/50 uppercase tracking-wider">{{ ucfirst(str_replace('_',' ',$cat)) }}</p>
+        <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">{{ ucfirst(str_replace('_',' ',$cat)) }}</p>
         <p class="font-semibold text-kc-navy">{{ $data->count }}</p>
-        <p class="text-xs text-kc-charcoal/50">R {{ number_format($data->total, 2) }}</p>
+        <p class="text-xs text-kc-charcoal/60">R {{ number_format($data->total, 2) }}</p>
       </div>
       @endforeach
     </div>
@@ -183,7 +183,7 @@
             <td data-label="Description" class="text-xs max-w-xs">{{ Str::limit($line->description, 50) }}</td>
             <td data-label="Debit" class="text-red-600 font-semibold">{{ $line->debit_amount > 0 ? 'R '.number_format($line->debit_amount,2) : '' }}</td>
             <td data-label="Credit" class="text-emerald-600 font-semibold">{{ $line->credit_amount > 0 ? 'R '.number_format($line->credit_amount,2) : '' }}</td>
-            <td data-label="Balance" class="text-xs text-kc-charcoal/50">{{ $line->running_balance ? 'R '.number_format($line->running_balance,2) : '—' }}</td>
+            <td data-label="Balance" class="text-xs text-kc-charcoal/60">{{ $line->running_balance ? 'R '.number_format($line->running_balance,2) : '—' }}</td>
             <td data-label="Allocate">
               <div x-data="{open:false}" class="relative">
                 <button @click="open=!open" class="kc-btn-ghost text-xs py-1 px-3">Allocate</button>

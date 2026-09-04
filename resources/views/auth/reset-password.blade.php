@@ -3,7 +3,7 @@
 <x-guest-layout>
   <div class="mb-6">
     <h2 class="font-display text-2xl font-semibold text-kc-navy">New Password</h2>
-    <p class="text-sm text-kc-charcoal/50 mt-1">Choose a strong password for your account.</p>
+    <p class="text-sm text-kc-charcoal/60 mt-1">Choose a strong password for your account.</p>
   </div>
 
   <form method="POST" action="{{ route('password.store') }}" class="space-y-5" x-data="{show:false}">

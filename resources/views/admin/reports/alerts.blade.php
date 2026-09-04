@@ -30,7 +30,7 @@
           @if(isset($alert->dpd) && $alert->dpd > 0) · {{ $alert->dpd }} days overdue @endif
         </p>
       </div>
-      <a href="{{ route('admin.collections') }}" class="text-xs text-kc-gold hover:underline flex-shrink-0">Action →</a>
+      <a href="{{ route('admin.collections') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted flex-shrink-0">Action →</a>
     </div>
     @empty
     <div class="kc-card text-center py-12">

@@ -47,7 +47,7 @@
                 <td data-label="Ref" class="font-mono text-xs">#{{ str_pad($row->application_id,6,'0',STR_PAD_LEFT) }}</td>
                 <td data-label="Customer">{{ $row->customer_code??'—' }}</td>
                 <td data-label="Balance">R {{ number_format($row->remaining_balance??0,2) }}</td>
-                <td data-label="Date" class="text-xs text-kc-charcoal/50">{{ \Carbon\Carbon::parse($row->created_at)->format('d M Y') }}</td>
+                <td data-label="Date" class="text-xs text-kc-charcoal/60">{{ \Carbon\Carbon::parse($row->created_at)->format('d M Y') }}</td>
               </tr>
               @endforeach
             </tbody>
@@ -62,7 +62,7 @@
       @forelse($defaults as $d)
       <div class="p-3 rounded-lg border border-red-200 bg-red-50 mb-2">
         <p class="font-semibold text-sm">{{ $d->name }}</p>
-        <p class="text-xs text-kc-charcoal/50">{{ $d->customer_code??'—' }}</p>
+        <p class="text-xs text-kc-charcoal/60">{{ $d->customer_code??'—' }}</p>
         <p class="text-xs font-semibold text-red-600 mt-1">R {{ number_format($d->remaining_balance??0,2) }}</p>
       </div>
       @empty

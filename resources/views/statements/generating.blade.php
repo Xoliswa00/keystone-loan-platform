@@ -15,7 +15,7 @@
       <div x-show="!ready" class="mb-6">
         <div class="w-16 h-16 rounded-full border-4 border-kc-silver-light border-t-kc-gold mx-auto animate-spin mb-4"></div>
         <h3 class="font-display text-xl font-semibold text-kc-navy">Generating your statement</h3>
-        <p class="text-sm text-kc-charcoal/50 mt-2">
+        <p class="text-sm text-kc-charcoal/60 mt-2">
           This usually takes 10–30 seconds depending on your loan history.
           <br>You can stay on this page or come back in a moment.
         </p>
@@ -29,7 +29,7 @@
           </svg>
         </div>
         <h3 class="font-display text-xl font-semibold text-kc-navy">Statement ready!</h3>
-        <p class="text-sm text-kc-charcoal/50 mt-2">Your statement for {{ $period_label }} has been generated.</p>
+        <p class="text-sm text-kc-charcoal/60 mt-2">Your statement for {{ $period_label }} has been generated.</p>
       </div>
 
       {{-- Error --}}
@@ -40,7 +40,7 @@
           </svg>
         </div>
         <h3 class="font-display text-xl font-semibold text-red-600">Generation failed</h3>
-        <p class="text-sm text-kc-charcoal/50 mt-2" x-text="errorMessage"></p>
+        <p class="text-sm text-kc-charcoal/60 mt-2" x-text="errorMessage"></p>
       </div>
 
       {{-- Actions --}}

@@ -12,15 +12,15 @@
       {{-- Stats --}}
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="kc-stat-card">
-          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Written Off</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Written Off</span>
           <p class="font-display text-xl font-semibold text-red-600 mt-1">R {{ number_format($recovery->original_write_off_amount, 2) }}</p>
         </div>
         <div class="kc-stat-card">
-          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Recovered</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Recovered</span>
           <p class="font-display text-xl font-semibold text-emerald-600 mt-1">R {{ number_format($recovery->total_recovered, 2) }}</p>
         </div>
         <div class="kc-stat-card">
-          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50">Still Owed</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Still Owed</span>
           <p class="font-display text-xl font-semibold text-orange-600 mt-1">R {{ number_format($recovery->outstanding_recovery, 2) }}</p>
         </div>
       </div>
@@ -62,11 +62,11 @@
           <tbody>
             @foreach($recovery->payments as $p)
             <tr>
-              <td>{{ $p->payment_date->format('d M Y') }}</td>
-              <td class="font-semibold text-emerald-600">R {{ number_format($p->amount, 2) }}</td>
-              <td>{{ ucfirst(str_replace('_', ' ', $p->payment_method)) }}</td>
-              <td class="text-xs font-mono">{{ $p->payment_reference ?? '—' }}</td>
-              <td class="text-xs">{{ $p->receivedBy?->name ?? '—' }}</td>
+              <td data-label="Date">{{ $p->payment_date->format('d M Y') }}</td>
+              <td data-label="Amount" class="font-semibold text-emerald-600">R {{ number_format($p->amount, 2) }}</td>
+              <td data-label="Method">{{ ucfirst(str_replace('_', ' ', $p->payment_method)) }}</td>
+              <td data-label="Reference" class="text-xs font-mono">{{ $p->payment_reference ?? '—' }}</td>
+              <td data-label="Received By" class="text-xs">{{ $p->receivedBy?->name ?? '—' }}</td>
             </tr>
             @endforeach
           </tbody>

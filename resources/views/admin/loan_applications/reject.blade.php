@@ -6,8 +6,8 @@
     <div class="kc-card">
       <div class="kc-alert-warning mb-4 text-xs">Client will be notified. NCR waiting period: {{ config("lending.rejection_cooldown_days", 30) }} days before reapplying.</div>
       <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
-        <div><span class="text-kc-charcoal/50">Client</span><p class="font-semibold">{{ $application->user?->name }}</p></div>
-        <div><span class="text-kc-charcoal/50">Amount</span><p class="font-semibold">R {{ number_format($application->loan_amount, 2) }}</p></div>
+        <div><span class="text-kc-charcoal/60">Client</span><p class="font-semibold">{{ $application->user?->name }}</p></div>
+        <div><span class="text-kc-charcoal/60">Amount</span><p class="font-semibold">R {{ number_format($application->loan_amount, 2) }}</p></div>
       </div>
       <form method="POST" action="{{ route('loans.reject', $application->id) }}">
         @csrf

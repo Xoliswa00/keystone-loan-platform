@@ -16,7 +16,7 @@
 
   <div class="kc-card max-w-2xl">
     <h3 class="font-display text-lg font-semibold text-kc-navy mb-1">Keystone Capital Partners</h3>
-    <p class="text-xs text-kc-charcoal/50 mb-6">Balance Sheet — As at {{ \Carbon\Carbon::parse($asAt)->format('d F Y') }}</p>
+    <p class="text-xs text-kc-charcoal/60 mb-6">Balance Sheet — As at {{ \Carbon\Carbon::parse($asAt)->format('d F Y') }}</p>
 
     <table class="w-full text-sm">
       {{-- ASSETS --}}
@@ -93,7 +93,7 @@
       <tbody>
         @forelse($liabilityGroups as $groupName => $lines)
         <tr>
-          <td class="pt-3 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/50" colspan="2">{{ $groupName }}</td>
+          <td class="pt-3 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60" colspan="2">{{ $groupName }}</td>
         </tr>
         @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
@@ -101,7 +101,7 @@
           <td class="text-right py-2">{{ number_format($line->balance, 2) }}</td>
         </tr>
         @endforeach
-        <tr class="text-xs text-kc-charcoal/50">
+        <tr class="text-xs text-kc-charcoal/60">
           <td class="py-1 pl-6">Subtotal</td>
           <td class="text-right py-1">{{ number_format($lines->sum('balance'), 2) }}</td>
         </tr>
