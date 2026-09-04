@@ -35,7 +35,7 @@
         {{-- ── LEFT PANEL — brand ────────────────────────────────────────────
              Sticky full-height so a long form on the right scrolls past a
              fixed brand panel rather than dragging it up the screen. ── --}}
-        <div class="hidden lg:flex lg:w-1/2 lg:sticky lg:top-0 lg:h-screen relative flex-col justify-between p-12 overflow-hidden bg-kc-navy">
+        <div class="hidden lg:flex lg:w-1/2 lg:sticky lg:top-0 lg:h-screen relative flex-col justify-between p-12 overflow-hidden bg-kc-navy-light">
 
             {{-- Sunburst fan — the brand mark's gold ornament, as a watermark.
                  Anchored bottom-right: centred (as it was) it collided with the

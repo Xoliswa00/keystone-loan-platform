@@ -1,21 +1,22 @@
 @section('title', 'About Keystone Capital Partners')
-@section('description', 'Keystone Capital Partners is an NCR-registered South African credit provider, founded by three partners on structured terms and full disclosure.')
+@section('description', 'Keystone Capital Partners is an NCR-registered South African credit provider, founded by three partners on clear terms and full disclosure.')
 
 <x-marketing-layout>
 
     {{-- ── Hero ── --}}
-    <section class="kc-section-dark">
-        <div class="max-w-3xl mx-auto animate-fadeIn">
+    <section class="kc-section-dark py-24 sm:py-32 2xl:py-40">
+        <div class="kc-container animate-fadeIn">
             <div class="kc-arch-mark mb-8" aria-hidden="true"></div>
 
             <h1 class="kc-display-1 text-white [text-wrap:balance]">
-                Built on strong <span class="text-kc-gold">foundations.</span>
+                Three partners.
+                <span class="text-kc-gold lg:block">One name that means it.</span>
             </h1>
 
             <p class="mt-6 text-white/75 text-base sm:text-lg leading-relaxed max-w-xl">
                 Keystone Capital Partners is a South African credit provider. We lend
-                our own capital, on structured terms, to people and businesses that
-                intend to repay.
+                our own capital to people and businesses that intend to repay,
+                and we write that intention into terms you can actually check.
             </p>
         </div>
     </section>
@@ -24,15 +25,15 @@
          The sunburst mark is placed as a companion to this passage at a size
          that reads, rather than dropped alone into whitespace. ── --}}
     <section class="kc-section-light">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             <div class="lg:col-span-7">
-                <h2 class="kc-display-2">Three founders. One foundation.</h2>
-                <p class="mt-5 text-kc-navy/80 leading-relaxed">
+                <h2 class="kc-display-2">Why "Keystone."</h2>
+                <p class="mt-5 text-kc-navy/80 leading-relaxed kc-prose">
                     A keystone is the single wedge at the top of an arch. Every other
                     stone leans on it, and it is the piece that turns a pile of masonry
                     into a structure that carries weight.
                 </p>
-                <p class="mt-4 text-kc-navy/80 leading-relaxed">
+                <p class="mt-4 text-kc-navy/80 leading-relaxed kc-prose">
                     That is the working arrangement between our three founding partners.
                     Each is individually accountable for their own part, and the whole
                     thing is built to hold under load. It is also how we write a loan
@@ -61,8 +62,8 @@
          The value words were kc-gold-muted on cream (3.52:1, fails AA for
          text this size) — they are kc-navy now (15.82:1), with the gold kept
          as a non-text rule beside them. ── --}}
-    <section class="kc-section-plain">
-        <div class="max-w-5xl mx-auto">
+    <section class="kc-section-tint">
+        <div class="kc-container">
             <h2 class="kc-display-2">What holds us together.</h2>
             <p class="mt-5 text-kc-charcoal/70 leading-relaxed max-w-xl">
                 We measure a decision against one question: does it strengthen the
@@ -76,7 +77,7 @@
                     ['Trust', 'Every agreement honoured in full, on the terms as written.'],
                     ['Growth', 'Measured in years, not quarters.'],
                 ] as [$word, $line])
-                    <div class="flex gap-4 border-t border-kc-silver-light py-5">
+                    <div class="flex gap-4 border-t border-kc-silver py-5">
                         <span class="mt-2 h-8 w-0.5 shrink-0 rounded bg-kc-gold" aria-hidden="true"></span>
                         <div>
                             <dt class="font-display text-lg font-semibold text-kc-navy">{{ $word }}</dt>
@@ -94,15 +95,24 @@
          the registration obliges us to do, rather than a decorative kicker
          above a headline. ── --}}
     <section class="kc-section-dark">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
             <div class="lg:col-span-5">
                 <div class="kc-arch-mark mb-7" aria-hidden="true"></div>
                 <h2 class="kc-display-2 !text-white">How we are regulated.</h2>
-                <p class="mt-5 text-white/75 leading-relaxed">
+                <p class="mt-5 text-white/75 leading-relaxed kc-prose">
                     Keystone Lending (Pty) Ltd is a registered credit provider with the
                     National Credit Regulator. That registration is not a badge, it is a
                     set of obligations we are held to.
                 </p>
+                {{-- The registration claim above is meaningless without the number a
+                     visitor can actually check on the NCR's public register
+                     (ncr.org.za) — it appeared nowhere on the site before this.
+                     TODO(client): confirm the live NCRCP number and registered
+                     address before this goes live; both are placeholders. --}}
+                <dl class="mt-6 space-y-1.5 text-sm kc-figure text-white/90">
+                    <div class="flex gap-2"><dt class="text-white/60">NCRCP</dt><dd>NCRCP#####</dd></div>
+                    <div class="flex gap-2"><dt class="text-white/60">Registered address</dt><dd class="font-sans">[Registered physical address, Suburb, City, Postal Code]</dd></div>
+                </dl>
             </div>
 
             <dl class="lg:col-span-7">
@@ -118,14 +128,21 @@
                     <dt>POPIA</dt>
                     <dd>Your personal information is processed for credit assessment and account administration only, with consent you can withdraw.</dd>
                 </div>
+                {{-- TODO(client): confirm current NCR / Credit Ombud contact
+                     details before publishing — do not guess these on a live
+                     regulatory disclosure. --}}
                 <div class="kc-spec kc-spec-dark">
                     <dt>Complaints</dt>
-                    <dd>Unresolved disputes can be taken to the National Credit Regulator or the Credit Ombud.</dd>
+                    <dd>
+                        Unresolved disputes can be taken to the National Credit Regulator
+                        (<span class="kc-figure">[NCR phone / ncr.org.za]</span>) or the Credit Ombud
+                        (<span class="kc-figure">[Ombud phone / creditombud.org.za]</span>).
+                    </dd>
                 </div>
             </dl>
 
             <div class="lg:col-span-12">
-                <p class="text-sm text-white/75">
+                <p class="text-sm text-white/75 kc-prose">
                     Read the full <a href="{{ route('terms') }}" class="kc-link-light">terms and conditions</a>
                     and our <a href="{{ route('privacy') }}" class="kc-link-light">privacy policy</a>.
                 </p>
@@ -135,7 +152,7 @@
 
     {{-- ── Closing ── --}}
     <section class="kc-section-light">
-        <div class="max-w-3xl mx-auto text-center">
+        <div class="kc-container text-center">
             <div class="kc-arch-mark kc-arch-mark-ink mx-auto mb-7" aria-hidden="true"></div>
             <h2 class="kc-display-2">Talk to us before you apply.</h2>
             <p class="mt-4 text-kc-navy/80 max-w-lg mx-auto leading-relaxed">

@@ -27,6 +27,11 @@ export default {
             fontFamily: {
                 sans:    ['Source Sans 3', ...defaultTheme.fontFamily.sans],
                 display: ['Bespoke Sans', 'Source Sans 3', ...defaultTheme.fontFamily.sans],
+                // Pinned, not left to the OS. Reference codes and rand figures
+                // are a Keystone signature (.kc-figure) — without a named face
+                // they rendered as Consolas on Windows, SF Mono on macOS and
+                // Roboto Mono on Android, i.e. a different signature per device.
+                mono:    ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
             },
             animation: {
                 fadeIn:    'fadeIn 0.5s ease-out forwards',
