@@ -74,24 +74,34 @@ class ReportErrorsToXquisite extends Command
             'fingerprint' => $slug.'-'.$row->id,
         ])->all();
 
+        $target = rtrim($base, '/').'/ingest/logs';
+
         try {
             $response = Http::withToken($token)
                 ->timeout(10)
                 ->acceptJson()
-                ->post(rtrim($base, '/').'/ingest/logs', ['events' => $events]);
+                ->post($target, ['events' => $events]);
         } catch (\Throwable $e) {
             Log::warning('Xquisite error-forward failed to send: '.$e->getMessage());
-            $this->warn('Send failed — will retry next run.');
+            $this->warn("Send to {$target} failed ({$e->getMessage()}) — will retry next run.");
+            $this->line('  Check MONITORING_URL host/DNS/TLS. Run `php artisan monitoring:ping` to diagnose.');
 
             return self::SUCCESS;
         }
 
         if (! $response->successful()) {
             Log::warning('Xquisite error-forward rejected by hub.', [
+                'target' => $target,
                 'status' => $response->status(),
                 'body' => Str::limit($response->body(), 500),
             ]);
-            $this->warn("Hub returned {$response->status()} — will retry next run.");
+            $this->warn("Hub returned {$response->status()} for {$target} — will retry next run.");
+            $this->line('  '.match ($response->status()) {
+                401 => 'MONITORING_TOKEN does not match this instance on the hub, or the instance is inactive.',
+                404 => 'MONITORING_URL likely still has a path (must be scheme+host only), or the hub route is not deployed.',
+                429 => 'Rate limited — batches are too frequent; the scheduler will catch up.',
+                default => 'Run `php artisan monitoring:ping` to diagnose.',
+            });
 
             return self::SUCCESS;
         }

@@ -20,15 +20,12 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-RewriteCond %{HTTP_REFERER} !^http://keystonecapital.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^http://keystonecapital.co.za$      [NC]
-RewriteCond %{HTTP_REFERER} !^http://www.keystonecapital.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^http://www.keystonecapital.co.za$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://lkeystonecapital.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://keystonecapital.co.za$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://www.keystonecapital.co.za/.*$      [NC]
-RewriteCond %{HTTP_REFERER} !^https://www.keystonecapital.co.za$      [NC]
-RewriteRule .*\.(jpg|jpeg|gif|png|bmp)$ - [F,NC]
+# Image hotlink protection — allow direct requests (no Referer) and requests
+# from this site's own domain. The live host is keystonecapitalpartners.co.za
+# (197.242.159.146); keystonecapital.co.za is a different, unrelated server.
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?keystonecapitalpartners\.co\.za(/.*)?$      [NC]
+RewriteRule \.(jpe?g|gif|png|bmp|webp|svg)$ - [F,NC]
 
 # php -- BEGIN cPanel-generated handler, do not edit
 # Set the “ea-php83” package as the default “PHP” programming language.
