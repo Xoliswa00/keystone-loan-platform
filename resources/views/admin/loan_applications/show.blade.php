@@ -168,24 +168,151 @@
       {{-- Affordability --}}
       @if($application->affordability_checked)
       <div class="kc-card">
-        <h5 class="font-semibold text-kc-navy mb-3 flex items-center gap-2">
+        @php
+          $profile = $application->user?->customerProfile;
+
+          // Ratio actually applied to THIS assessment. Snapshotted at submission
+          // so a later change in admin/settings/lending can't silently rewrite
+          // what a historical application claims it was measured against;
+          // applications submitted before the snapshot existed fall back to the
+          // current setting and are labelled as such.
+          $snapRatio    = $application->affordability_dti_ratio !== null
+                          ? (float) $application->affordability_dti_ratio : null;
+          $ratio        = $snapRatio ?? (float) \App\Models\LendingSetting::current()->affordability_ratio;
+          $ratioPct     = rtrim(rtrim(number_format($ratio * 100, 1), '0'), '.');
+
+          $snapDisp     = (float) ($application->affordability_disposable_income ?? 0);
+          $snapMax      = (float) ($application->affordability_max_instalment ?? 0);
+          $requested    = (float) ($application->affordability_instalment_requested ?? 0);
+          $passes       = $snapMax > 0 && $requested <= $snapMax;
+          $headroom     = $snapMax - $requested;
+
+          // $affordResult is recomputed live from the current profile. If it no
+          // longer reproduces the snapshot, the client edited their figures
+          // after we assessed — material for a s.81 decision, so it's surfaced
+          // rather than silently overwritten.
+          $liveDisp     = (float) ($affordResult['disposable_income'] ?? 0);
+          $liveMax      = (float) ($affordResult['max_instalment'] ?? 0);
+          $drift        = abs($liveDisp - $snapDisp) >= 0.01 || abs($liveMax - $snapMax) >= 0.01;
+
+          $incomeRows   = [
+            'Net monthly income' => $affordResult['net_income'] ?? 0,
+            'Other income'       => $affordResult['other_income'] ?? 0,
+          ];
+          $expenseRows  = [
+            'Housing'                  => $affordResult['expense_housing'] ?? 0,
+            'Transport'                => $affordResult['expense_transport'] ?? 0,
+            'Existing debt repayments' => $affordResult['expense_debt'] ?? 0,
+            'Insurance'                => $affordResult['expense_insurance'] ?? 0,
+            'Living expenses'          => $affordResult['expense_living'] ?? 0,
+          ];
+
+          // Declared vs what the bank statement actually shows landing.
+          $declared = (float) ($profile->net_monthly_income ?? 0);
+          $verified = (float) ($profile->verified_income_amount ?? 0);
+          $incomeVariancePct = ($verified > 0 && $declared > 0)
+              ? round((($declared - $verified) / $verified) * 100, 1) : null;
+        @endphp
+
+        <h5 class="font-semibold text-kc-navy mb-3 flex flex-wrap items-center gap-2">
           Affordability Assessment (NCA s.81)
-          <span class="kc-badge {{ ($application->affordability_instalment_requested ?? 0) <= ($application->affordability_max_instalment ?? 1) ? 'kc-badge-green' : 'kc-badge-red' }}">
-            {{ ($application->affordability_instalment_requested ?? 0) <= ($application->affordability_max_instalment ?? 1) ? 'PASSES' : 'FAILS' }}
-          </span>
+          <span class="kc-badge {{ $passes ? 'kc-badge-green' : 'kc-badge-red' }}">{{ $passes ? 'PASSES' : 'FAILS' }}</span>
+          @if($drift)<span class="kc-badge kc-badge-gold">PROFILE CHANGED</span>@endif
         </h5>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-          <div><p class="text-xs text-kc-charcoal/60">Disposable Income</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_disposable_income ?? 0, 2) }}</p></div>
-          <div><p class="text-xs text-kc-charcoal/60">Max Instalment (30%)</p><p class="font-display text-xl font-bold text-kc-navy">R {{ number_format($application->affordability_max_instalment ?? 0, 2) }}</p></div>
-          <div><p class="text-xs text-kc-charcoal/60">Requested</p>
-            <p class="font-display text-xl font-bold {{ ($application->affordability_instalment_requested ?? 0) <= ($application->affordability_max_instalment ?? 1) ? 'text-emerald-600' : 'text-red-600' }}">
-              R {{ number_format($application->affordability_instalment_requested ?? 0, 2) }}
-            </p>
+
+        @if($drift)
+        <div class="kc-alert-warning mb-4">
+          <strong>Profile changed since assessment.</strong>
+          The client's current figures no longer reproduce the stored snapshot —
+          disposable income was <span class="font-mono">R {{ number_format($snapDisp, 2) }}</span> at submission,
+          recalculates to <span class="font-mono">R {{ number_format($liveDisp, 2) }}</span> now
+          (max instalment <span class="font-mono">R {{ number_format($snapMax, 2) }}</span> →
+          <span class="font-mono">R {{ number_format($liveMax, 2) }}</span>).
+          The breakdown below is the <em>current</em> profile. Approve against the snapshot, or send back for reassessment.
+        </div>
+        @endif
+
+        {{-- How the number was reached. A reviewer signing off a s.81 assessment
+             needs the working, not just the result. --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-y-6 lg:gap-x-12">
+          <div class="lg:pr-6">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-kc-charcoal/70 mb-1">Income</p>
+            <dl class="text-sm">
+              @foreach($incomeRows as $label => $amt)
+              <div class="flex justify-between py-1">
+                <dt class="text-kc-charcoal/70 pr-3">{{ $label }}</dt>
+                <dd class="font-mono text-kc-navy whitespace-nowrap">R {{ number_format($amt, 2) }}</dd>
+              </div>
+              @endforeach
+              <div class="flex justify-between py-1 border-t border-kc-silver-light font-semibold">
+                <dt class="text-kc-navy">Total income</dt>
+                <dd class="font-mono text-kc-navy whitespace-nowrap">R {{ number_format($affordResult['total_income'] ?? 0, 2) }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="lg:pl-12 lg:border-l lg:border-kc-silver-light">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-kc-charcoal/70 mb-1">Monthly expenses (declared)</p>
+            <dl class="text-sm">
+              @foreach($expenseRows as $label => $amt)
+              <div class="flex justify-between py-1">
+                <dt class="text-kc-charcoal/70 pr-3">{{ $label }}</dt>
+                <dd class="font-mono text-kc-navy whitespace-nowrap">R {{ number_format($amt, 2) }}</dd>
+              </div>
+              @endforeach
+              <div class="flex justify-between py-1 border-t border-kc-silver-light font-semibold">
+                <dt class="text-kc-navy">Total expenses</dt>
+                <dd class="font-mono text-kc-navy whitespace-nowrap">R {{ number_format($affordResult['total_expenses'] ?? 0, 2) }}</dd>
+              </div>
+            </dl>
           </div>
         </div>
 
+        {{-- The arithmetic, spelled out --}}
+        <dl class="mt-4 pt-4 border-t-2 border-kc-navy/15 text-sm space-y-1">
+          <div class="flex justify-between">
+            <dt class="text-kc-charcoal/70">Disposable income <span class="text-kc-charcoal/70">(income − expenses)</span></dt>
+            <dd class="font-mono font-semibold text-kc-navy whitespace-nowrap">R {{ number_format($liveDisp, 2) }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-kc-charcoal/70">
+              × affordability ratio {{ $ratioPct }}%
+              @if($snapRatio === null)<span class="kc-badge kc-badge-silver ml-1 text-[10px]">current setting</span>@endif
+            </dt>
+            <dd class="font-mono text-kc-charcoal/70 whitespace-nowrap">×&nbsp;{{ number_format($ratio, 2) }}</dd>
+          </div>
+          <div class="flex justify-between border-t border-kc-silver-light pt-1">
+            <dt class="font-semibold text-kc-navy">Maximum instalment</dt>
+            <dd class="font-mono font-semibold text-kc-navy whitespace-nowrap">R {{ number_format($liveMax, 2) }}</dd>
+          </div>
+          <div class="flex justify-between pt-2">
+            <dt class="text-kc-charcoal/70">Requested instalment</dt>
+            <dd class="font-mono text-kc-navy whitespace-nowrap">R {{ number_format($requested, 2) }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="font-semibold {{ $passes ? 'text-emerald-700' : 'text-red-700' }}">
+              {{ $passes ? 'Headroom' : 'Shortfall' }}
+            </dt>
+            <dd class="font-mono font-semibold {{ $passes ? 'text-emerald-700' : 'text-red-700' }}">
+              R {{ number_format(abs($headroom), 2) }}
+            </dd>
+          </div>
+        </dl>
+
+        @if($incomeVariancePct !== null)
+        <div class="mt-4 pt-4 border-t border-kc-silver-light flex flex-wrap items-baseline justify-between gap-2 text-sm">
+          <span class="text-kc-charcoal/70">Declared income vs bank-verified</span>
+          <span class="font-mono">
+            R {{ number_format($declared, 2) }} declared ·
+            R {{ number_format($verified, 2) }} verified ·
+            <span class="{{ abs($incomeVariancePct) >= 15 ? 'text-red-700 font-semibold' : 'text-kc-charcoal/70' }}">
+              {{ $incomeVariancePct > 0 ? '+' : '' }}{{ $incomeVariancePct }}%
+            </span>
+          </span>
+        </div>
+        @endif
+
         {{-- Bank analysis --}}
-        @php $profile = $application->user?->customerProfile; @endphp
         @if($profile?->bank_analysis_run_at)
         <div class="mt-4 pt-4 border-t border-kc-silver-light grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div><p class="font-display text-lg font-bold {{ ($profile->avg_days_to_zero ?? 99) < 7 ? 'text-red-600' : 'text-kc-navy' }}">{{ $profile->avg_days_to_zero ?? '—' }}</p><p class="text-[10px] text-kc-charcoal/60">Days to R500 after payday</p></div>

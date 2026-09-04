@@ -110,13 +110,18 @@ class AdminController extends Controller
         $counterOfferSuggestions = [];
         $counterOffers = collect();
 
+        // Recomputed fresh rather than trusting anything stored at submission —
+        // the client's declared income/expenses could have been updated since.
+        // Computed for every status (not just the reviewable ones) because the
+        // review screen shows the full derivation so an approver can see HOW
+        // disposable income was reached, and can spot the case where the live
+        // profile no longer reproduces the stored snapshot.
+        $affordResult = $affordability->calculate($application->user);
+
         if (in_array($application->status, ['pending', 'under_review', 'affordability_review'], true)) {
-            // Recomputed fresh here rather than trusting anything stored at
-            // submission — the client's declared income/expenses could have
-            // been updated since, and this is what actually bounds what
-            // staff are allowed to offer (LoanCounterOfferController::store()
-            // re-validates against the same calculation, not this list).
-            $affordResult = $affordability->calculate($application->user);
+            // This is what actually bounds what staff are allowed to offer
+            // (LoanCounterOfferController::store() re-validates against the same
+            // calculation, not this list).
             $requestedMonths = $application->loan_term_months ?? 1;
 
             $counterOfferSuggestions = LoanProduct::availableFor($application->user)->get()
@@ -148,7 +153,7 @@ class AdminController extends Controller
         }
 
         return view('admin.loan_applications.show', compact(
-            'application', 'previousLoans', 'cloDecision', 'counterOfferSuggestions', 'counterOffers', 'outstandingAdjustments'
+            'application', 'previousLoans', 'cloDecision', 'counterOfferSuggestions', 'counterOffers', 'outstandingAdjustments', 'affordResult'
         ));
     }
 
