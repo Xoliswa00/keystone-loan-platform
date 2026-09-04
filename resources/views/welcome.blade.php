@@ -12,13 +12,13 @@
          Motion is CSS-only (animate-fadeIn) so copy is never left invisible
          if scripting fails, and app.css already neutralises it under
          prefers-reduced-motion. ── --}}
-    <section class="kc-section-dark overflow-hidden">
-        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+    <section class="kc-section-dark overflow-hidden py-24 sm:py-32 2xl:py-40">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
             <div class="lg:col-span-7 animate-fadeIn">
                 <div class="kc-arch-mark mb-8" aria-hidden="true"></div>
 
-                <h1 class="kc-display-1 xl:text-5xl text-white [text-wrap:balance]">
+                <h1 class="kc-display-1 text-white [text-wrap:balance]">
                     Fast, structured loans for people and businesses
                     {{-- Own line from lg so the gold clause never starts mid-line;
                          below lg it wraps naturally rather than being forced by
@@ -80,7 +80,7 @@
     {{-- ── What we offer — two products, compared on the terms that actually
          differ, rather than two prose blocks that say the same thing twice. ── --}}
     <section class="kc-section-light">
-        <div class="max-w-5xl mx-auto">
+        <div class="kc-container">
             <h2 class="kc-display-2">Two loans. One standard.</h2>
             <p class="mt-4 text-kc-navy/80 max-w-xl leading-relaxed">
                 Personal or business, both are affordability checked before an offer
@@ -140,7 +140,7 @@
          computed: kc-gold labels 6.75:1, white/80 values 11.31:1, white
          heading 17.28:1 — all on kc-navy. ── --}}
     <section class="kc-section-dark">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
             <div class="lg:col-span-5">
                 <div class="kc-arch-mark mb-7" aria-hidden="true"></div>
                 <h2 class="kc-display-2 !text-white">Nothing you haven't already seen.</h2>
@@ -178,7 +178,7 @@
 
     {{-- ── How it works — four courses of the same arch, numbered. ── --}}
     <section class="kc-section-plain">
-        <div class="max-w-5xl mx-auto">
+        <div class="kc-container">
             <h2 class="kc-display-2">From application to payout.</h2>
 
             <ol class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -200,7 +200,7 @@
 
     {{-- ── Closing CTA ── --}}
     <section class="kc-section-light">
-        <div class="max-w-3xl mx-auto text-center">
+        <div class="kc-container text-center">
             <div class="kc-arch-mark kc-arch-mark-ink mx-auto mb-7" aria-hidden="true"></div>
             <h2 class="kc-display-2">Find out what you qualify for.</h2>
             <p class="mt-4 text-kc-navy/80 max-w-lg mx-auto leading-relaxed">

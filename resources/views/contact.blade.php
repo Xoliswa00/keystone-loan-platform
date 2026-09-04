@@ -7,8 +7,8 @@
          The contact details themselves live in the hero rather than a band
          below it: someone on this page wants a phone number, not a paragraph
          about how much we value hearing from them. ── --}}
-    <section class="kc-section-dark">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 animate-fadeIn">
+    <section class="kc-section-dark py-24 sm:py-32 2xl:py-40">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 animate-fadeIn">
             <div class="lg:col-span-5">
                 <div class="kc-arch-mark mb-8" aria-hidden="true"></div>
                 <h1 class="kc-display-1 text-white">Let's talk.</h1>
@@ -44,7 +44,7 @@
 
     {{-- ── WhatsApp + query form ── --}}
     <section class="kc-section-light">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-8">
 
             <div class="lg:col-span-5">
                 <div class="kc-card !p-8 h-full flex flex-col">

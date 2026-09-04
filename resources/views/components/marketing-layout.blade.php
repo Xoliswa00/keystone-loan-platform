@@ -22,18 +22,18 @@
 </head>
 <body class="font-sans antialiased bg-kc-white text-kc-charcoal" x-data="{ mobileOpen: false }">
 
-    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:kc-btn-primary">
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:inline-flex focus:items-center focus:px-5 focus:py-2.5 focus:rounded-lg focus:bg-kc-gold focus:text-kc-navy focus:font-semibold focus:text-sm focus:shadow-kc-gold focus:outline-none focus:ring-2 focus:ring-kc-navy/40">
         Skip to content
     </a>
 
     {{-- ── Nav — single line, capped height, sticky ── --}}
-    <header class="sticky top-0 z-40 bg-kc-white/95 backdrop-blur-sm border-b border-kc-silver-light">
-        <nav class="max-w-6xl mx-auto px-6 h-[72px] flex items-center justify-between">
+    <header class="sticky top-0 z-40 px-6 bg-kc-white/95 backdrop-blur-sm border-b border-kc-silver-light">
+        <nav class="kc-container h-[72px] flex items-center justify-between">
             <a href="{{ url('/') }}" class="flex items-center gap-2.5 shrink-0">
                 <div class="w-9 h-9 rounded-lg bg-kc-navy flex items-center justify-center">
                     <span class="font-display font-bold text-kc-gold text-sm">KC</span>
                 </div>
-                <div class="hidden sm:block leading-tight">
+                <div class="leading-tight">
                     <p class="font-display font-semibold text-kc-navy text-sm">Keystone</p>
                     <p class="text-kc-gold text-[9px] font-medium tracking-[0.2em] uppercase">Capital Partners</p>
                 </div>
@@ -90,8 +90,8 @@
     </main>
 
     {{-- ── Footer ── --}}
-    <footer class="bg-kc-navy text-white/70">
-        <div class="max-w-6xl mx-auto px-6 py-12 flex flex-col sm:flex-row items-center justify-between gap-6">
+    <footer class="bg-kc-navy text-white/70 px-6">
+        <div class="kc-container py-12 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded bg-kc-gold/15 border border-kc-gold/30 flex items-center justify-center">
                     <span class="font-display font-bold text-kc-gold text-xs">KC</span>
@@ -111,8 +111,8 @@
         {{-- Regulatory disclosure. Required to be visible on every public page;
              kept as a plain footer compliance strip rather than dressed up as
              a headline kicker. white/75 on kc-navy = 10.05:1. --}}
-        <div class="border-t border-white/10">
-            <div class="max-w-6xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/75">
+        <div class="border-t border-white/10 -mx-6 px-6">
+            <div class="kc-container py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/75">
                 <p>Keystone Lending (Pty) Ltd &nbsp;·&nbsp; NCR Registered Credit Provider</p>
                 <p>&copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.</p>
             </div>

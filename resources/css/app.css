@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
 @import url('https://api.fontshare.com/v2/css?f[]=bespoke-sans@1,2,300,301,400,401,500,501,700,701&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -77,10 +78,11 @@
 
     /* ── Buttons ── */
     .kc-btn-primary {
-        /* NOTE: white-on-gold measures ~2.56:1 contrast (fails WCAG AA's 4.5:1
-           for text); navy-on-gold measures ~6.76:1. Trying white per explicit
-           request — revisit if it reads as hard to see in practice. */
-        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-gold text-white font-semibold text-sm shadow-kc-gold hover:bg-kc-gold-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-gold/50;
+        /* Navy on gold: 6.75:1 — passes AA. White on gold was 2.56:1, which
+           fails even the 3:1 large-text floor, and the label read as a pale
+           smudge on the rendered page. This now matches .kc-step-no below,
+           which already stated the rule; the two disagreed for a while. */
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-gold text-kc-navy font-semibold text-sm shadow-kc-gold hover:bg-kc-gold-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-navy/40;
     }
     .kc-btn-secondary {
         @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-kc-navy text-white font-semibold text-sm shadow-kc-navy hover:bg-kc-navy-light transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-kc-navy/40;
@@ -167,8 +169,27 @@
     /* ── Marketing section wrappers — structured layout, strong whitespace ──
        Full-bleed background band; wrap content in its own max-w-* container
        so the color spans the viewport while text stays readable-width. */
+    /* One container, one gutter, used on EVERY section of every marketing/auth
+       page. Width variation belongs to the columns inside it, never to swapping
+       max-w-* per section — that's what produced four different left edges on a
+       single page (nav 88px, hero 64px, sections 128px, CTA 256px at 1280).
+       The 2xl step exists because at 1920 the old cap left 40% of the viewport
+       as empty margin. */
+    .kc-container {
+        @apply w-full max-w-6xl 2xl:max-w-[88rem] mx-auto;
+    }
+
+    /* Vertical rhythm is a decision, not one value. Every section used to be
+       py-16 sm:py-20 — the hero got the same air as the closing CTA, so nothing
+       on the page was granted importance by space. */
     .kc-section {
-        @apply px-6 py-16 sm:py-20 relative;
+        @apply px-6 py-16 sm:py-20 relative;   /* argument sections */
+    }
+    .kc-section-hero {
+        @apply px-6 py-24 sm:py-32 2xl:py-40 relative;
+    }
+    .kc-section-tight {
+        @apply px-6 py-10 sm:py-14 relative;   /* connective tissue */
     }
     .kc-section-dark {
         @apply kc-section bg-kc-navy text-white shadow-[0_-12px_28px_-18px_rgba(0,0,0,0.35)];
@@ -192,17 +213,22 @@
        either side. Drawn as one element with hard gradient stops so the motif
        can't drift out of proportion between pages.
        Decorative only (aria-hidden), so it carries no text-contrast duty. */
+    /* Stops are percentages, not pixels, so the motif keeps its proportions at
+       any width — it was hard-coded to 124px and used identically above the
+       hero, section 3 and the CTA, i.e. punctuation with only one mark. */
     .kc-arch-mark {
         height: 2px;
-        width: 124px;
+        width: clamp(6rem, 9vw, 11rem);
         border-radius: 1px;
         background-image: linear-gradient(90deg,
-            rgba(200, 155, 60, 0.25) 0 10px,  transparent 10px 16px,
-            rgba(200, 155, 60, 0.55) 16px 36px, transparent 36px 42px,
-            #C89B3C                  42px 82px, transparent 82px 88px,
-            rgba(200, 155, 60, 0.55) 88px 108px, transparent 108px 114px,
-            rgba(200, 155, 60, 0.25) 114px 124px);
+            rgba(200, 155, 60, 0.25) 0 8.06%,      transparent 8.06% 12.90%,
+            rgba(200, 155, 60, 0.55) 12.90% 29.03%, transparent 29.03% 33.87%,
+            #C89B3C                  33.87% 66.13%, transparent 66.13% 70.97%,
+            rgba(200, 155, 60, 0.55) 70.97% 87.10%, transparent 87.10% 91.94%,
+            rgba(200, 155, 60, 0.25) 91.94% 100%);
     }
+    .kc-arch-mark-lg { width: clamp(10rem, 16vw, 20rem); height: 3px; }
+    .kc-arch-mark-sm { width: clamp(4rem, 6vw, 7rem); }
     /* On cream/white the light gold steps disappear; darken the whole ramp. */
     .kc-arch-mark-ink {
         background-image: linear-gradient(90deg,

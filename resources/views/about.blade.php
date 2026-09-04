@@ -4,8 +4,8 @@
 <x-marketing-layout>
 
     {{-- ── Hero ── --}}
-    <section class="kc-section-dark">
-        <div class="max-w-3xl mx-auto animate-fadeIn">
+    <section class="kc-section-dark py-24 sm:py-32 2xl:py-40">
+        <div class="kc-container animate-fadeIn">
             <div class="kc-arch-mark mb-8" aria-hidden="true"></div>
 
             <h1 class="kc-display-1 text-white [text-wrap:balance]">
@@ -24,7 +24,7 @@
          The sunburst mark is placed as a companion to this passage at a size
          that reads, rather than dropped alone into whitespace. ── --}}
     <section class="kc-section-light">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             <div class="lg:col-span-7">
                 <h2 class="kc-display-2">Three founders. One foundation.</h2>
                 <p class="mt-5 text-kc-navy/80 leading-relaxed">
@@ -62,7 +62,7 @@
          text this size) — they are kc-navy now (15.82:1), with the gold kept
          as a non-text rule beside them. ── --}}
     <section class="kc-section-plain">
-        <div class="max-w-5xl mx-auto">
+        <div class="kc-container">
             <h2 class="kc-display-2">What holds us together.</h2>
             <p class="mt-5 text-kc-charcoal/70 leading-relaxed max-w-xl">
                 We measure a decision against one question: does it strengthen the
@@ -94,7 +94,7 @@
          the registration obliges us to do, rather than a decorative kicker
          above a headline. ── --}}
     <section class="kc-section-dark">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
             <div class="lg:col-span-5">
                 <div class="kc-arch-mark mb-7" aria-hidden="true"></div>
                 <h2 class="kc-display-2 !text-white">How we are regulated.</h2>
@@ -135,7 +135,7 @@
 
     {{-- ── Closing ── --}}
     <section class="kc-section-light">
-        <div class="max-w-3xl mx-auto text-center">
+        <div class="kc-container text-center">
             <div class="kc-arch-mark kc-arch-mark-ink mx-auto mb-7" aria-hidden="true"></div>
             <h2 class="kc-display-2">Talk to us before you apply.</h2>
             <p class="mt-4 text-kc-navy/80 max-w-lg mx-auto leading-relaxed">
