@@ -1,4 +1,4 @@
-@section('title', 'Keystone Capital Partners — Capital. Partnership. Growth.')
+@section('title', 'Personal & Business Loans — Keystone Capital Partners')
 @section('description', 'NCR-registered personal and business loans. Affordability checked, fully costed, and repaid on your salary date. Keystone Capital Partners.')
 
 <x-marketing-layout>
@@ -12,24 +12,26 @@
          Motion is CSS-only (animate-fadeIn) so copy is never left invisible
          if scripting fails, and app.css already neutralises it under
          prefers-reduced-motion. ── --}}
-    <section class="kc-section-dark overflow-hidden">
-        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+    <section class="kc-section-dark overflow-hidden py-24 sm:py-32 2xl:py-40">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
             <div class="lg:col-span-7 animate-fadeIn">
                 <div class="kc-arch-mark mb-8" aria-hidden="true"></div>
 
-                <h1 class="kc-display-1 xl:text-5xl text-white [text-wrap:balance]">
-                    Fast, structured loans for people and businesses
-                    {{-- Own line from lg so the gold clause never starts mid-line;
-                         below lg it wraps naturally rather than being forced by
-                         hard <br>s, which produced very ragged lines at 390px. --}}
-                    <span class="text-kc-gold lg:block">building something real.</span>
+                <h1 class="kc-display-1 text-white [text-wrap:balance]">
+                    Personal and business loans, decided in days.
+                    {{-- The gold clause carries the actual differentiator (cost
+                         disclosed up front), not a mood word — own line from lg so
+                         it never starts mid-line; below lg it wraps naturally
+                         rather than being forced by hard <br>s, which produced
+                         very ragged lines at 390px. --}}
+                    <span class="text-kc-gold lg:block">Every cost fixed before you sign.</span>
                 </h1>
 
                 <p class="mt-6 text-white/75 text-base sm:text-lg leading-relaxed max-w-xl">
-                    Keystone lends on clear terms, decides quickly, and sets every
-                    repayment against your salary date so the schedule never catches
-                    you out.
+                    Keystone assesses what you can actually afford, quotes the full
+                    cost in writing, and sets every repayment against your salary
+                    date so it never catches you out.
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-3 mt-9">
@@ -66,13 +68,12 @@
                         <rect x="18" y="252" width="304" height="4" fill-opacity="0.55"/>
                     </g>
                 </svg>
-
-                {{-- Sentence-case caption for the figure. Deliberately not a
-                     tracked-out uppercase gold line, which would read as the
-                     kicker/eyebrow pattern even sitting below the graphic. --}}
-                <p class="mt-5 text-center text-sm text-white/75 max-w-[260px]">
-                    The keystone is the one piece the rest of the arch depends on.
-                </p>
+                {{-- No caption. If the graphic needs a sentence explaining what it
+                     is, that's a reason to fix the graphic, not to add a line under
+                     it — and the same arch reappears below as the "How it works"
+                     step numbering, so it's read twice as a system rather than
+                     once as an illustration. aria-label above carries the meaning
+                     for anyone not seeing it. --}}
             </div>
         </div>
     </section>
@@ -80,7 +81,7 @@
     {{-- ── What we offer — two products, compared on the terms that actually
          differ, rather than two prose blocks that say the same thing twice. ── --}}
     <section class="kc-section-light">
-        <div class="max-w-5xl mx-auto">
+        <div class="kc-container">
             <h2 class="kc-display-2">Two loans. One standard.</h2>
             <p class="mt-4 text-kc-navy/80 max-w-xl leading-relaxed">
                 Personal or business, both are affordability checked before an offer
@@ -140,15 +141,49 @@
          computed: kc-gold labels 6.75:1, white/80 values 11.31:1, white
          heading 17.28:1 — all on kc-navy. ── --}}
     <section class="kc-section-dark">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+        <div class="kc-container grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
             <div class="lg:col-span-5">
                 <div class="kc-arch-mark mb-7" aria-hidden="true"></div>
-                <h2 class="kc-display-2 !text-white">Nothing you haven't already seen.</h2>
-                <p class="mt-5 text-white/75 leading-relaxed">
+                <h2 class="kc-display-2 !text-white">Every number, before you sign.</h2>
+                <p class="mt-5 text-white/75 leading-relaxed kc-prose">
                     A loan goes wrong when the cost shows up after the signature.
                     Every Keystone agreement puts the whole picture in front of you
                     first, in writing, with the numbers spelled out.
                 </p>
+
+                {{-- Worked example — the disclosure list opposite is categories;
+                     this is what it actually looks like in Rand, so the page's
+                     central claim isn't made entirely in prose. kc-navy-mid panel
+                     on the kc-navy band gives the dark section real depth instead
+                     of one flat navy value; white on kc-navy-mid is 15.96:1,
+                     kc-gold-light on kc-navy-mid is 6.8:1. --}}
+                <div class="mt-8 rounded-xl bg-kc-navy-mid p-5">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-kc-gold-light">
+                        Representative example
+                    </p>
+                    <dl class="mt-3 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <dt class="text-white/75">Amount advanced</dt>
+                            <dd class="kc-figure text-white">R 2,000.00</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-white/75">Cost of credit (1 month)</dt>
+                            <dd class="kc-figure text-white">R 412.00</dd>
+                        </div>
+                        <div class="flex justify-between border-t border-white/15 pt-2 font-semibold">
+                            <dt class="text-white">Total repayable</dt>
+                            <dd class="kc-figure text-kc-gold-light">R 2,412.00</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-white/75">Due</dt>
+                            <dd class="kc-figure text-white">25th, on your payday</dd>
+                        </div>
+                    </dl>
+                    <p class="mt-3 text-[11px] text-white/75 leading-relaxed">
+                        Illustrative only — your actual cost depends on the amount, term and your
+                        affordability assessment, and is confirmed in writing before you accept.
+                    </p>
+                </div>
             </div>
 
             <dl class="lg:col-span-7">
@@ -176,10 +211,21 @@
         </div>
     </section>
 
-    {{-- ── How it works — four courses of the same arch, numbered. ── --}}
+    {{-- ── How it works — the arch's own stones, not a redrawn number. ──
+         Same wedge silhouette and 0.38/0.58/0.78/solid opacity ramp as the
+         hero voussoirs and .kc-arch-mark, so the motif carries through
+         instead of being reinvented as a rounded gold square. Step 4
+         (Payout) is the keystone: full solid gold. ── --}}
     <section class="kc-section-plain">
-        <div class="max-w-5xl mx-auto">
-            <h2 class="kc-display-2">From application to payout.</h2>
+        <div class="kc-container">
+            <div class="flex items-end gap-1.5" aria-hidden="true">
+                @for ($n = 0; $n < 4; $n++)
+                    <svg viewBox="0 0 44 44" class="w-9 h-9 sm:w-10 sm:h-10">
+                        <path d="M5,7 L39,7 L30,37 L14,37 Z" fill="#C89B3C" fill-opacity="{{ [0.38, 0.58, 0.78, 1][$n] }}"/>
+                    </svg>
+                @endfor
+            </div>
+            <h2 class="kc-display-2 mt-5">From application to payout.</h2>
 
             <ol class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 @foreach([
@@ -189,7 +235,10 @@
                     ['Payout', 'Accept the agreement and the funds are released to your account.'],
                 ] as $i => [$stepTitle, $stepBody])
                     <li>
-                        <span class="kc-step-no">{{ $i + 1 }}</span>
+                        <svg viewBox="0 0 44 44" class="w-11 h-11" role="img" aria-label="Step {{ $i + 1 }}">
+                            <path d="M4,8 L40,8 L30,38 L14,38 Z" fill="#C89B3C" fill-opacity="{{ [0.38, 0.58, 0.78, 1][$i] }}"/>
+                            <text x="22" y="27" text-anchor="middle" font-size="15" fill="#071B34" class="font-mono font-bold">{{ $i + 1 }}</text>
+                        </svg>
                         <h3 class="font-display text-lg font-semibold text-kc-navy mt-4">{{ $stepTitle }}</h3>
                         <p class="text-sm text-kc-charcoal/70 mt-2 leading-relaxed">{{ $stepBody }}</p>
                     </li>
@@ -200,7 +249,7 @@
 
     {{-- ── Closing CTA ── --}}
     <section class="kc-section-light">
-        <div class="max-w-3xl mx-auto text-center">
+        <div class="kc-container text-center">
             <div class="kc-arch-mark kc-arch-mark-ink mx-auto mb-7" aria-hidden="true"></div>
             <h2 class="kc-display-2">Find out what you qualify for.</h2>
             <p class="mt-4 text-kc-navy/80 max-w-lg mx-auto leading-relaxed">

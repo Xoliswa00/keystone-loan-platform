@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 // ──────────────────────────────────────────────────────────────────────────────
 
-Route::get('/', fn () => view('welcome'));
+Route::get('/', fn () => view('welcome'))->name('home');
 Route::view('/about', 'about')->name('about');
 Route::view('/contact', 'contact')->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])
