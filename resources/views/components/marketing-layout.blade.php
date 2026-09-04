@@ -90,25 +90,31 @@
     </main>
 
     {{-- ── Footer ── --}}
-    <footer class="bg-kc-navy text-white/60">
+    <footer class="bg-kc-navy text-white/70">
         <div class="max-w-6xl mx-auto px-6 py-12 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded bg-kc-gold/15 border border-kc-gold/30 flex items-center justify-center">
                     <span class="font-display font-bold text-kc-gold text-xs">KC</span>
                 </div>
-                <p class="text-white/70 text-sm font-display font-medium">Keystone Capital Partners</p>
+                <p class="text-white text-sm font-display font-medium">Keystone Capital Partners</p>
             </div>
 
-            <div class="flex items-center gap-6 text-sm">
+            <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
                 <a href="{{ route('about') }}" class="hover:text-white transition-colors">About</a>
                 <a href="{{ route('contact') }}" class="hover:text-white transition-colors">Contact</a>
+                <a href="{{ route('terms') }}" class="hover:text-white transition-colors">Terms</a>
+                <a href="{{ route('privacy') }}" class="hover:text-white transition-colors">Privacy</a>
                 <a href="{{ route('login') }}" class="hover:text-white transition-colors">Sign In</a>
             </div>
         </div>
+
+        {{-- Regulatory disclosure. Required to be visible on every public page;
+             kept as a plain footer compliance strip rather than dressed up as
+             a headline kicker. white/75 on kc-navy = 10.05:1. --}}
         <div class="border-t border-white/10">
-            <div class="max-w-6xl mx-auto px-6 py-5 text-center text-xs text-white/55">
-                &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
-                &nbsp;·&nbsp; NCR Registered Credit Provider &nbsp;·&nbsp; Keystone Lending (Pty) Ltd
+            <div class="max-w-6xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/75">
+                <p>Keystone Lending (Pty) Ltd &nbsp;·&nbsp; NCR Registered Credit Provider</p>
+                <p>&copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.</p>
             </div>
         </div>
     </footer>

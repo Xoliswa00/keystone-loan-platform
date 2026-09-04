@@ -178,6 +178,99 @@
            read as distinct layers instead of one endless flow. */
         @apply kc-section bg-kc-white text-kc-charcoal shadow-[0_-12px_28px_-18px_rgba(7,27,52,0.12)];
     }
+    /* Alternating band. Pure white against kc-white cream (#F5F5F2) is a real
+       but quiet step, so two adjacent light sections read as separate courses
+       without inventing a colour outside the token set. */
+    .kc-section-plain {
+        @apply kc-section bg-white text-kc-charcoal;
+    }
+
+    /* ── Keystone arch mark ────────────────────────────────────────────────
+       The existing 3-segment descending tick (w-10 / w-5 / w-2.5) is half an
+       arch profile. This is the whole thing: five stepped segments rising to
+       a solid centre — the keystone at the apex, the voussoirs falling away
+       either side. Drawn as one element with hard gradient stops so the motif
+       can't drift out of proportion between pages.
+       Decorative only (aria-hidden), so it carries no text-contrast duty. */
+    .kc-arch-mark {
+        height: 2px;
+        width: 124px;
+        border-radius: 1px;
+        background-image: linear-gradient(90deg,
+            rgba(200, 155, 60, 0.25) 0 10px,  transparent 10px 16px,
+            rgba(200, 155, 60, 0.55) 16px 36px, transparent 36px 42px,
+            #C89B3C                  42px 82px, transparent 82px 88px,
+            rgba(200, 155, 60, 0.55) 88px 108px, transparent 108px 114px,
+            rgba(200, 155, 60, 0.25) 114px 124px);
+    }
+    /* On cream/white the light gold steps disappear; darken the whole ramp. */
+    .kc-arch-mark-ink {
+        background-image: linear-gradient(90deg,
+            rgba(160, 125, 46, 0.35) 0 10px,  transparent 10px 16px,
+            rgba(160, 125, 46, 0.65) 16px 36px, transparent 36px 42px,
+            #A07D2E                  42px 82px, transparent 82px 88px,
+            rgba(160, 125, 46, 0.65) 88px 108px, transparent 108px 114px,
+            rgba(160, 125, 46, 0.35) 114px 124px);
+    }
+
+    /* ── Figures — the monospace signature, for money, dates, reference codes.
+       tabular-nums keeps columns of numerals aligned. ── */
+    .kc-figure {
+        @apply font-mono tabular-nums tracking-tight;
+    }
+
+    /* ── Links ─────────────────────────────────────────────────────────────
+       Measured: kc-gold on kc-white is 2.34:1 and kc-gold-muted 3.52:1 —
+       both fail AA for body-size text. So gold carries the underline (a
+       non-text accent) and kc-navy carries the glyphs at 15.82:1. Hover
+       shifts BOTH the text and the decoration so it is unmistakably distinct
+       from rest, not a same-colour no-op. */
+    .kc-link {
+        @apply font-medium text-kc-navy underline decoration-kc-gold decoration-2 underline-offset-4
+               hover:text-kc-navy-light hover:decoration-kc-gold-muted transition-colors;
+    }
+    /* White on kc-navy is 17.28:1. */
+    .kc-link-light {
+        @apply font-medium text-white underline decoration-kc-gold decoration-2 underline-offset-4
+               hover:decoration-white transition-colors;
+    }
+
+    /* Outline button for navy sections — replaces the pile of !important
+       overrides that were being hung on .kc-btn-ghost to force it light. */
+    .kc-btn-outline-light {
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/35 bg-white/5
+               text-white font-semibold text-sm hover:bg-white/15 hover:border-white/60
+               transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-white/50;
+    }
+
+    /* ── Spec list — label/value rows for the loan comparison and the
+       pre-agreement disclosure. Stacks on mobile, columns from sm. ── */
+    .kc-spec {
+        @apply flex flex-col gap-1 border-t border-kc-silver-light py-3.5
+               sm:flex-row sm:items-baseline sm:gap-6;
+    }
+    .kc-spec dt {
+        @apply text-[11px] font-semibold uppercase tracking-wider text-kc-charcoal/70 sm:w-44 sm:shrink-0;
+    }
+    .kc-spec dd {
+        @apply text-sm leading-relaxed text-kc-navy;
+    }
+    /* Inside a card the column is far too narrow for a 176px label gutter —
+       the value ends up wrapping to three lines against a mostly-empty label
+       column. Keep label-over-value at every width there. */
+    .kc-spec.kc-spec-stack        { @apply sm:flex-col sm:items-start sm:gap-1; }
+    .kc-spec.kc-spec-stack dt     { @apply sm:w-auto; }
+    /* Doubled class keeps specificity above .kc-spec dt/dd regardless of order. */
+    .kc-spec.kc-spec-dark        { @apply border-white/15; }
+    .kc-spec.kc-spec-dark dt     { @apply text-kc-gold; }        /* 6.75:1 on kc-navy */
+    .kc-spec.kc-spec-dark dd     { @apply text-white/80; }       /* 11.31:1 on kc-navy */
+
+    /* Numbered step marker. Navy on gold is 6.75:1 — the right way round for
+       any NEW gold surface (white on gold would be 2.56:1). */
+    .kc-step-no {
+        @apply kc-figure inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg
+               bg-kc-gold text-kc-navy text-sm font-bold;
+    }
 
     /* ── Alert boxes ── */
     .kc-alert-error {

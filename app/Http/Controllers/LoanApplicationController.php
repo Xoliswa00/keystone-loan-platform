@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\LendingSetting;
 use App\Models\LoanApplication;
 use App\Models\LoanFee;
 use App\Models\LoanProduct;
@@ -229,6 +230,11 @@ class LoanApplicationController extends Controller
                 'affordability_disposable_income' => $affordResult['disposable_income'],
                 'affordability_max_instalment' => $affordResult['max_instalment'],
                 'affordability_instalment_requested' => $repayment['base_instalment'],
+                // The ratio is admin-configurable (admin/settings/lending), so it
+                // has to be snapshotted with the rest — otherwise a later change
+                // silently rewrites what every historical assessment claims it
+                // was measured against. Reviewers see this on the review screen.
+                'affordability_dti_ratio' => (float) LendingSetting::current()->affordability_ratio,
             ];
 
             $documentPaths = [

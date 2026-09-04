@@ -32,6 +32,7 @@ class LoanApplication extends Model
         'affordability_disposable_income',
         'affordability_max_instalment',
         'affordability_instalment_requested',
+        'affordability_dti_ratio',
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class LoanApplication extends Model
         'affordability_disposable_income' => 'decimal:2',
         'affordability_max_instalment' => 'decimal:2',
         'affordability_instalment_requested' => 'decimal:2',
+        'affordability_dti_ratio' => 'decimal:2',
         'loan_amount' => 'decimal:2',
         'approval_date' => 'datetime',
     ];
