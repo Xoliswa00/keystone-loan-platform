@@ -26,12 +26,12 @@
             <td data-label="ID" class="font-mono text-xs">#{{ str_pad($disb->id,6,'0',STR_PAD_LEFT) }}</td>
             <td data-label="Client">
               <div class="font-semibold">{{ $disb->loan?->user?->name ?? '—' }}</div>
-              <div class="text-xs text-kc-charcoal/60">{{ $disb->payment_reference }}</div>
+              <div class="text-xs text-kc-charcoal/70">{{ $disb->payment_reference }}</div>
             </td>
             <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($disb->loan_id,6,'0',STR_PAD_LEFT) }}</td>
             <td data-label="Amount" class="font-semibold text-kc-navy">R {{ number_format($disb->disbursed_amount,2) }}</td>
             <td data-label="Status"><span class="kc-badge kc-badge-gold">{{ ucfirst(str_replace('_',' ',$disb->status)) }}</span></td>
-            <td data-label="Created" class="text-xs text-kc-charcoal/60">{{ $disb->created_at->format('d M Y') }}</td>
+            <td data-label="Created" class="text-xs text-kc-charcoal/70">{{ $disb->created_at->format('d M Y') }}</td>
             <td data-label="Actions">
               <div class="flex gap-2 flex-wrap">
                 <form method="POST" action="{{ route('disbursements.approve', $disb->id) }}" class="inline">
@@ -49,7 +49,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/60">No pending disbursements.</td></tr>
+          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/70">No pending disbursements.</td></tr>
           @endforelse
         </tbody>
       </table>

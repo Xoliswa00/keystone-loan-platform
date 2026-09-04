@@ -118,7 +118,7 @@
                 class="sr-only peer" {{ $loop->first ? 'checked' : '' }}>
               <div class="p-4 rounded-xl border-2 border-kc-silver-light peer-checked:border-kc-gold peer-checked:bg-kc-gold/5 transition">
                 <p class="font-semibold text-kc-navy">{{ $product->name }}</p>
-                <p class="text-xs text-kc-charcoal/60 mt-1">
+                <p class="text-xs text-kc-charcoal/70 mt-1">
                   R{{ number_format($product->min_amount,0) }}–R{{ number_format($product->max_amount,0) }} ·
                   {{ $product->min_months }}–{{ $product->max_months }} month{{ $product->max_months > 1 ? 's' : '' }} ·
                   {{ round($product->monthly_interest_rate*100,1) }}% p/m
@@ -149,7 +149,7 @@
               <input type="range" name="loan_amount" :min="minAmount" :max="maxAmount" step="50"
                 x-model.number="amount" @input="recalculate()"
                 class="w-full h-1.5 appearance-none bg-kc-silver-light rounded-full accent-kc-gold cursor-pointer">
-              <div class="flex justify-between text-[10px] text-kc-charcoal/60 mt-0.5">
+              <div class="flex justify-between text-[10px] text-kc-charcoal/70 mt-0.5">
                 <span>R <span x-text="minAmount.toLocaleString()"></span></span>
                 <span>R <span x-text="maxAmount.toLocaleString()"></span></span>
               </div>
@@ -182,7 +182,7 @@
         {{-- Documents --}}
         <div class="kc-card">
           <h4 class="font-display font-semibold text-kc-navy mb-4">Required Documents</h4>
-          <p class="text-xs text-kc-charcoal/60 mb-4">Required under NCA s.81 for affordability assessment. PDF, JPG, PNG — max 5MB each.</p>
+          <p class="text-xs text-kc-charcoal/70 mb-4">Required under NCA s.81 for affordability assessment. PDF, JPG, PNG — max 5MB each.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="kc-label" for="payslips">
@@ -196,7 +196,7 @@
               @endif
               <input id="payslips" type="file" name="payslips" accept=".pdf,.jpg,.jpeg,.png"
                 {{ $existingPayslip ? '' : 'required' }} class="kc-input py-2 cursor-pointer @error('payslips') border-red-400 @enderror">
-              <p class="text-[10px] text-kc-charcoal/60 mt-0.5">
+              <p class="text-[10px] text-kc-charcoal/70 mt-0.5">
                 {{ $existingPayslip ? 'Only attach a new one if yours is outdated.' : '' }}
               </p>
               @error('payslips')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
@@ -213,7 +213,7 @@
               @endif
               <input id="bank_statement" type="file" name="bank_statement" accept=".pdf,.jpg,.jpeg,.png,.csv"
                 {{ $existingBankStatement ? '' : 'required' }} class="kc-input py-2 cursor-pointer @error('bank_statement') border-red-400 @enderror">
-              <p class="text-[10px] text-kc-charcoal/60 mt-0.5">
+              <p class="text-[10px] text-kc-charcoal/70 mt-0.5">
                 {{ $existingBankStatement ? 'Only attach a new one if yours is outdated. CSV re-enables automatic affordability analysis.' : 'CSV format enables automatic affordability analysis' }}
               </p>
               @error('bank_statement')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
@@ -241,10 +241,10 @@
           <h4 class="font-display font-semibold text-kc-navy mb-4">Repayment Summary</h4>
 
           <div class="space-y-3 text-sm">
-            <div class="flex justify-between"><span class="text-kc-charcoal/60">Principal</span><span class="font-semibold">R <span x-text="amount.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
-            <div class="flex justify-between"><span class="text-kc-charcoal/60">Initiation Fee (incl. VAT)</span><span>R <span x-text="initFee.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
-            <div class="flex justify-between"><span class="text-kc-charcoal/60">Service Fee (incl. VAT)</span><span>R <span x-text="serviceFee.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
-            <div class="flex justify-between"><span class="text-kc-charcoal/60">Total Interest (<span x-text="monthlyRate"></span>% p/m)</span><span>R <span x-text="totalInterest.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="flex justify-between"><span class="text-kc-charcoal/70">Principal</span><span class="font-semibold">R <span x-text="amount.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="flex justify-between"><span class="text-kc-charcoal/70">Initiation Fee (incl. VAT)</span><span>R <span x-text="initFee.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="flex justify-between"><span class="text-kc-charcoal/70">Service Fee (incl. VAT)</span><span>R <span x-text="serviceFee.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
+            <div class="flex justify-between"><span class="text-kc-charcoal/70">Total Interest (<span x-text="monthlyRate"></span>% p/m)</span><span>R <span x-text="totalInterest.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span></div>
             <div class="border-t border-kc-silver-light pt-3 flex justify-between font-bold">
               <span>Total Repayable</span>
               <span class="text-kc-gold font-display text-base">R <span x-text="totalDue.toLocaleString('en-ZA',{minimumFractionDigits:2})"></span></span>

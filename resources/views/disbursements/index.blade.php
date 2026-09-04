@@ -37,12 +37,12 @@
             <td data-label="ID" class="font-mono text-xs">#{{ str_pad($disb->id,6,'0',STR_PAD_LEFT) }}</td>
             <td data-label="Client">
               <div class="font-semibold">{{ $disb->loan?->user?->name ?? '—' }}</div>
-              <div class="text-xs text-kc-charcoal/60">{{ $disb->payment_reference }}</div>
+              <div class="text-xs text-kc-charcoal/70">{{ $disb->payment_reference }}</div>
             </td>
             <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($disb->loan_id,6,'0',STR_PAD_LEFT) }}</td>
             <td data-label="Amount" class="font-semibold text-kc-navy">R {{ number_format($disb->disbursed_amount,2) }}</td>
             <td data-label="Status"><span class="kc-badge {{ $sc }}">{{ ucfirst(str_replace('_',' ',$disb->status)) }}</span></td>
-            <td data-label="Date" class="text-xs text-kc-charcoal/60">
+            <td data-label="Date" class="text-xs text-kc-charcoal/70">
               {{ $disb->disbursement_date ? \Carbon\Carbon::parse($disb->disbursement_date)->format('d M Y') : $disb->created_at->format('d M Y') }}
             </td>
             <td data-label="Actions">
@@ -68,12 +68,12 @@
                 <button type="submit" class="kc-btn-ghost text-xs py-1 px-3">Release</button>
               </form>
               @else
-              <span class="text-xs text-kc-charcoal/60">{{ ucfirst($disb->status) }}</span>
+              <span class="text-xs text-kc-charcoal/70">{{ ucfirst($disb->status) }}</span>
               @endif
             </td>
           </tr>
           @empty
-          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/60">No disbursements found.</td></tr>
+          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/70">No disbursements found.</td></tr>
           @endforelse
         </tbody>
       </table>

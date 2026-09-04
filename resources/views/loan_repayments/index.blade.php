@@ -12,19 +12,19 @@
   @endphp
   <div class="grid grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Pending</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Pending</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $pending->count() }}</p>
-      <p class="text-xs text-kc-charcoal/60">R {{ number_format($pending->sum('emi_amount'),2) }}</p>
+      <p class="text-xs text-kc-charcoal/70">R {{ number_format($pending->sum('emi_amount'),2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Failed</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Failed</p>
       <p class="font-display text-2xl font-bold text-red-600 mt-1">{{ $overdue->count() }}</p>
-      <p class="text-xs text-kc-charcoal/60">R {{ number_format($overdue->sum('emi_amount'),2) }}</p>
+      <p class="text-xs text-kc-charcoal/70">R {{ number_format($overdue->sum('emi_amount'),2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Paid</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Paid</p>
       <p class="font-display text-2xl font-bold text-emerald-600 mt-1">{{ $paid->count() }}</p>
-      <p class="text-xs text-kc-charcoal/60">R {{ number_format($paid->sum('emi_amount'),2) }}</p>
+      <p class="text-xs text-kc-charcoal/70">R {{ number_format($paid->sum('emi_amount'),2) }}</p>
     </div>
   </div>
 
@@ -55,7 +55,7 @@
             <td data-label="Interest">R {{ number_format($s->interest_amount??0,2) }}</td>
             <td data-label="Fees">R {{ number_format($s->fee_amount??0,2) }}</td>
             <td data-label="Status"><span class="kc-badge {{ $ssc }}">{{ ucfirst(str_replace('_',' ',$s->status)) }}</span></td>
-            <td data-label="Paid At" class="text-xs text-kc-charcoal/60">
+            <td data-label="Paid At" class="text-xs text-kc-charcoal/70">
               {{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}
             </td>
             @if(Auth::user()->hasRole('loan_officer', 'finance', 'it_admin'))
@@ -67,7 +67,7 @@
             @endif
           </tr>
           @empty
-          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/60">No repayment schedule yet.</td></tr>
+          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/70">No repayment schedule yet.</td></tr>
           @endforelse
         </tbody>
       </table>

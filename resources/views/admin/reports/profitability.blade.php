@@ -14,23 +14,23 @@
   {{-- KPI cards --}}
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Principal Deployed</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Principal Deployed</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">R {{ number_format($totalPrincipalDisbursed, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Gross Income</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Gross Income</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">R {{ number_format($totalGrossIncome, 2) }}</p>
-      <p class="text-xs text-kc-charcoal/60 mt-1">Interest + Fees recognised (GL), excl. VAT</p>
+      <p class="text-xs text-kc-charcoal/70 mt-1">Interest + Fees recognised (GL), excl. VAT</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Collected</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Collected</span>
       <p class="font-display text-2xl font-semibold text-emerald-600 mt-2">R {{ number_format($totalCollected, 2) }}</p>
-      <p class="text-xs text-kc-charcoal/60 mt-1">Cash received in period</p>
+      <p class="text-xs text-kc-charcoal/70 mt-1">Cash received in period</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Net Revenue</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Net Revenue</span>
       <p class="font-display text-2xl font-semibold {{ $netRevenue >= 0 ? 'text-kc-navy' : 'text-red-600' }} mt-2">R {{ number_format($netRevenue, 2) }}</p>
-      <p class="text-xs text-kc-charcoal/60 mt-1">Collected − ECL − Bank charges</p>
+      <p class="text-xs text-kc-charcoal/70 mt-1">Collected − ECL − Bank charges</p>
     </div>
   </div>
 
@@ -39,12 +39,12 @@
     {{-- Income breakdown --}}
     <div class="kc-card">
       <h4 class="font-display font-semibold text-kc-navy mb-4">Income Breakdown</h4>
-      <p class="text-xs text-kc-charcoal/60 mb-3">Recognised (GL), matches the Income Statement for this period.</p>
+      <p class="text-xs text-kc-charcoal/70 mb-3">Recognised (GL), matches the Income Statement for this period.</p>
       <table class="kc-table">
         <tbody>
           <tr><td>Interest Income <span class="kc-badge kc-badge-silver text-[10px] ml-1">VAT exempt</span></td><td class="text-right font-semibold">R {{ number_format($interestIncome, 2) }}</td></tr>
           <tr><td>Fee Income (excl. VAT)</td><td class="text-right font-semibold">R {{ number_format($feeIncome, 2) }}</td></tr>
-          <tr><td>VAT on Fees</td><td class="text-right text-kc-charcoal/60">R {{ number_format($vatOnFees, 2) }}</td></tr>
+          <tr><td>VAT on Fees</td><td class="text-right text-kc-charcoal/70">R {{ number_format($vatOnFees, 2) }}</td></tr>
           <tr class="border-t-2 border-kc-gold/30 font-semibold"><td>Total Gross Income</td><td class="text-right text-kc-navy font-semibold">R {{ number_format($totalGrossIncome, 2) }}</td></tr>
         </tbody>
       </table>
@@ -70,10 +70,10 @@
   <div class="kc-card mb-6">
     <h4 class="font-semibold text-kc-navy mb-3">Deferred Income (Balance Sheet Liabilities)</h4>
     <div class="grid grid-cols-2 gap-4">
-      <div><p class="text-xs text-kc-charcoal/60">Deferred Interest</p><p class="font-display text-lg font-semibold">R {{ number_format($totalDeferredInterest, 2) }}</p></div>
-      <div><p class="text-xs text-kc-charcoal/60">Deferred Fees</p><p class="font-display text-lg font-semibold">R {{ number_format($totalDeferredFees, 2) }}</p></div>
+      <div><p class="text-xs text-kc-charcoal/70">Deferred Interest</p><p class="font-display text-lg font-semibold">R {{ number_format($totalDeferredInterest, 2) }}</p></div>
+      <div><p class="text-xs text-kc-charcoal/70">Deferred Fees</p><p class="font-display text-lg font-semibold">R {{ number_format($totalDeferredFees, 2) }}</p></div>
     </div>
-    <p class="text-xs text-kc-charcoal/60 mt-2">Carried on balance sheet — recognised as instalments are collected on multi-month loans.</p>
+    <p class="text-xs text-kc-charcoal/70 mt-2">Carried on balance sheet — recognised as instalments are collected on multi-month loans.</p>
   </div>
   @endif
 
@@ -92,7 +92,7 @@
           <td data-label="Total Revenue" class="font-semibold">R {{ number_format($row->total_revenue, 2) }}</td>
         </tr>
         @empty
-        <tr><td colspan="5" class="text-center text-kc-charcoal/60 py-6">No payment data in this period.</td></tr>
+        <tr><td colspan="5" class="text-center text-kc-charcoal/70 py-6">No payment data in this period.</td></tr>
         @endforelse
       </tbody>
     </table>

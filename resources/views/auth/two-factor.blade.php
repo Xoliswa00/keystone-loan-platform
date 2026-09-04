@@ -8,7 +8,7 @@
       </svg>
     </div>
     <h2 class="font-display text-2xl font-semibold text-kc-navy">Two-Factor Verification</h2>
-    <p class="text-sm text-kc-charcoal/60 mt-2">
+    <p class="text-sm text-kc-charcoal/70 mt-2">
       We sent a 6-digit code to <strong>{{ $email }}</strong>.<br>
       Enter it below to complete sign-in.
     </p>
@@ -55,13 +55,13 @@
           Resend code
         </button>
       </form>
-      <span class="text-xs text-kc-charcoal/60 mx-2">·</span>
+      <span class="text-xs text-kc-charcoal/70 mx-2">·</span>
       <form method="POST" action="{{ route('logout') }}" class="inline">
         @csrf
-        <button type="submit" class="text-xs text-kc-charcoal/60 hover:underline">Cancel</button>
+        <button type="submit" class="text-xs text-kc-charcoal/70 hover:underline">Cancel</button>
       </form>
     </div>
 
-    <p class="text-center text-xs text-kc-charcoal/60">Code expires in 10 minutes</p>
+    <p class="text-center text-xs text-kc-charcoal/70">Code expires in 10 minutes</p>
   </form>
 </x-guest-layout>

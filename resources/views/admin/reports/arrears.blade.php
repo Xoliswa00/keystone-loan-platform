@@ -14,7 +14,7 @@
     @foreach(['1-29 DPD','30-59 DPD','60-89 DPD','90-179 DPD','180+ DPD'] as $bucket)
     @php $b = $summary[$bucket] ?? null; @endphp
     <div class="kc-stat-card text-center">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60 mb-1">{{ $bucket }}</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70 mb-1">{{ $bucket }}</p>
       <p class="font-display text-lg font-bold text-kc-navy">{{ $b ? $b['count'] : 0 }}</p>
       <p class="text-xs text-red-600 font-semibold">R {{ number_format($b['total'] ?? 0, 2) }}</p>
     </div>
@@ -32,7 +32,7 @@
           <tr>
             <td data-label="Client">
               <div class="font-semibold">{{ $row->client_name }}</div>
-              <div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/70">{{ $row->customer_code }}</div>
             </td>
             <td data-label="Bucket">
               @php $cls = str_contains($row->dpd_bucket,'180') || str_contains($row->dpd_bucket,'90') ? 'kc-badge-red' : (str_contains($row->dpd_bucket,'60') ? 'kc-badge-gold' : 'kc-badge-silver'); @endphp
@@ -46,7 +46,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/60">No overdue accounts.</td></tr>
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/70">No overdue accounts.</td></tr>
           @endforelse
         </tbody>
       </table>

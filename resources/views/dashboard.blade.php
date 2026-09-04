@@ -51,7 +51,7 @@
     {{-- Outstanding balance --}}
     <div class="kc-stat-card animate-fadeIn" style="animation-delay:0.05s">
         <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Outstanding</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Outstanding</span>
             <div class="w-8 h-8 rounded-lg bg-kc-navy/8 flex items-center justify-center">
                 <svg class="w-4 h-4 text-kc-navy" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
@@ -59,13 +59,13 @@
             </div>
         </div>
         <p class="font-display text-2xl font-semibold text-kc-navy">R{{ number_format($balance, 2) }}</p>
-        <p class="text-xs text-kc-charcoal/60 mt-1">Total outstanding balance</p>
+        <p class="text-xs text-kc-charcoal/70 mt-1">Total outstanding balance</p>
     </div>
 
     {{-- Next instalment --}}
     <div class="kc-stat-card animate-fadeIn" style="animation-delay:0.1s">
         <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Next Instalment</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Next Instalment</span>
             <div class="w-8 h-8 rounded-lg bg-kc-gold/10 flex items-center justify-center">
                 <svg class="w-4 h-4 text-kc-gold-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -73,13 +73,13 @@
             </div>
         </div>
         <p class="font-display text-2xl font-semibold text-kc-navy">R{{ number_format($next->emi_amount ?? 0, 2) }}</p>
-        <p class="text-xs text-kc-charcoal/60 mt-1">Scheduled instalment</p>
+        <p class="text-xs text-kc-charcoal/70 mt-1">Scheduled instalment</p>
     </div>
 
     {{-- Due date --}}
     <div class="kc-stat-card animate-fadeIn" style="animation-delay:0.15s">
         <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Due Date</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Due Date</span>
             <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
                 <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -93,7 +93,7 @@
                 <span class="text-kc-silver">—</span>
             @endif
         </p>
-        <p class="text-xs text-kc-charcoal/60 mt-1">
+        <p class="text-xs text-kc-charcoal/70 mt-1">
             @if($next)
                 {{ \Carbon\Carbon::parse($next->due_date)->format('Y') }} &nbsp;·&nbsp;
                 @if(\Carbon\Carbon::parse($next->due_date)->isPast())
@@ -110,9 +110,9 @@
     {{-- Account status --}}
     <div class="kc-stat-card animate-fadeIn" style="animation-delay:0.2s">
         <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Status</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Status</span>
             <div class="w-8 h-8 rounded-lg bg-kc-silver-light flex items-center justify-center">
-                <svg class="w-4 h-4 text-kc-charcoal/60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-kc-charcoal/70" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                 </svg>
             </div>
@@ -127,7 +127,7 @@
             };
         @endphp
         <p class="mt-1"><span class="kc-badge {{ $statusClass }} text-sm px-3 py-1">{{ ucfirst($status) }}</span></p>
-        <p class="text-xs text-kc-charcoal/60 mt-2">Account standing</p>
+        <p class="text-xs text-kc-charcoal/70 mt-2">Account standing</p>
     </div>
 </div>
 
@@ -169,7 +169,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Profile</p>
-            <p class="text-xs text-kc-charcoal/60">Personal details</p>
+            <p class="text-xs text-kc-charcoal/70">Personal details</p>
         </div>
     </a>
 
@@ -184,7 +184,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Enquiries</p>
-            <p class="text-xs text-kc-charcoal/60">Chat with us</p>
+            <p class="text-xs text-kc-charcoal/70">Chat with us</p>
         </div>
     </a>
 
@@ -196,7 +196,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Statements</p>
-            <p class="text-xs text-kc-charcoal/60">Account statements</p>
+            <p class="text-xs text-kc-charcoal/70">Account statements</p>
         </div>
     </a>
 
@@ -210,7 +210,7 @@
         </div>
         <div>
             <p class="text-sm font-semibold text-kc-navy">Support</p>
-            <p class="text-xs text-kc-charcoal/60">Get assistance</p>
+            <p class="text-xs text-kc-charcoal/70">Get assistance</p>
         </div>
     </a>
 </div>
@@ -220,7 +220,7 @@
     <div class="flex items-center justify-between mb-5">
         <div>
             <h3 class="font-display text-base font-semibold text-kc-navy">My Loans</h3>
-            <p class="text-xs text-kc-charcoal/60 mt-0.5">Your active and recent loan agreements</p>
+            <p class="text-xs text-kc-charcoal/70 mt-0.5">Your active and recent loan agreements</p>
         </div>
         <a href="{{ route('loan.index') }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted transition font-medium">
             View all
@@ -238,8 +238,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </div>
-            <p class="text-sm font-medium text-kc-charcoal/60">No loans yet</p>
-            <p class="text-xs text-kc-charcoal/60 mt-1">Your loan applications will appear here</p>
+            <p class="text-sm font-medium text-kc-charcoal/70">No loans yet</p>
+            <p class="text-xs text-kc-charcoal/70 mt-1">Your loan applications will appear here</p>
             <a href="{{ route('loanapplications.create') }}" class="kc-btn-primary mt-4 text-xs">
                 Apply for a Loan
             </a>
@@ -268,13 +268,13 @@
                         };
                     @endphp
                     <tr>
-                        <td data-label="Reference" class="font-mono text-xs text-kc-charcoal/60">
+                        <td data-label="Reference" class="font-mono text-xs text-kc-charcoal/70">
                             #{{ str_pad($la->id, 6, '0', STR_PAD_LEFT) }}
                         </td>
                         <td data-label="Amount" class="font-semibold">R{{ number_format($la->loan_amount, 2) }}</td>
                         <td data-label="Type" class="capitalize">{{ $la->loan_type ?? '—' }}</td>
                         <td data-label="Status"><span class="kc-badge {{ $badgeClass }}">{{ ucfirst($la->status) }}</span></td>
-                        <td data-label="Applied" class="text-kc-charcoal/60">{{ \Carbon\Carbon::parse($la->created_at)->format('d M Y') }}</td>
+                        <td data-label="Applied" class="text-kc-charcoal/70">{{ \Carbon\Carbon::parse($la->created_at)->format('d M Y') }}</td>
                         <td data-label="Action">
                             <a href="{{ route('loanapplications.show', $la->id) }}"
                                 class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted transition font-medium">
@@ -298,7 +298,7 @@
     </div>
     <div>
         <p class="text-xs font-semibold text-kc-gold-muted uppercase tracking-wide">Tip</p>
-        <p class="text-xs text-kc-charcoal/60 mt-0.5">
+        <p class="text-xs text-kc-charcoal/70 mt-0.5">
             Keep your debit order active and ensure sufficient funds before your due date to maintain a healthy credit profile.
         </p>
     </div>

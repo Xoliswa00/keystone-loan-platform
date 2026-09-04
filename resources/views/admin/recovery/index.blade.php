@@ -7,23 +7,23 @@
   {{-- Summary KPIs --}}
   <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Total Cases</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Total Cases</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">{{ $summary->total_cases ?? 0 }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Written Off</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Written Off</span>
       <p class="font-display text-2xl font-semibold text-red-600 mt-2">R {{ number_format($summary->total_written_off ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Recovered</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Recovered</span>
       <p class="font-display text-2xl font-semibold text-emerald-600 mt-2">R {{ number_format($summary->total_recovered ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Still Outstanding</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Still Outstanding</span>
       <p class="font-display text-2xl font-semibold text-orange-600 mt-2">R {{ number_format($summary->total_outstanding ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">In Legal</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">In Legal</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">{{ $summary->in_legal ?? 0 }}</p>
     </div>
   </div>
@@ -55,7 +55,7 @@
           <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($case->loan_id, 6, '0', STR_PAD_LEFT) }}</td>
           <td data-label="Client">
             <div class="font-semibold">{{ $case->user?->name }}</div>
-            <div class="text-xs text-kc-charcoal/60">{{ $case->user?->customer?->customer_code }}</div>
+            <div class="text-xs text-kc-charcoal/70">{{ $case->user?->customer?->customer_code }}</div>
           </td>
           <td data-label="Opened" class="text-xs">{{ $case->opened_at->format('d M Y') }}</td>
           <td data-label="Written Off" class="font-semibold text-red-600">R {{ number_format($case->original_write_off_amount, 2) }}</td>
@@ -69,14 +69,14 @@
             </div>
           </td>
           <td data-label="Status"><span class="kc-badge {{ $statusInfo['class'] }}">{{ $statusInfo['label'] }}</span></td>
-          <td data-label="Next Action" class="text-xs {{ $isOverdue ? 'text-red-600 font-semibold' : 'text-kc-charcoal/60' }}">
+          <td data-label="Next Action" class="text-xs {{ $isOverdue ? 'text-red-600 font-semibold' : 'text-kc-charcoal/70' }}">
             {{ $case->next_action_date?->format('d M Y') ?? '—' }}
           </td>
           <td data-label="Assigned" class="text-xs">{{ $case->assignedTo?->name ?? '—' }}</td>
           <td data-label="Action"><a href="{{ route('admin.recovery.show', $case) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Manage →</a></td>
         </tr>
         @empty
-        <tr><td colspan="10" class="text-center text-kc-charcoal/60 py-8">No recovery cases.</td></tr>
+        <tr><td colspan="10" class="text-center text-kc-charcoal/70 py-8">No recovery cases.</td></tr>
         @endforelse
       </tbody>
     </table>

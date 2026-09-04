@@ -16,7 +16,7 @@
           <span class="kc-badge {{ str_contains(strtolower($type),'success') ? 'kc-badge-green' : (str_contains(strtolower($type),'fail') ? 'kc-badge-red' : 'kc-badge-silver') }}">
             {{ $type }}
           </span>
-          <span class="text-xs text-kc-charcoal/60 ml-1">{{ $data['count'] }} txn</span>
+          <span class="text-xs text-kc-charcoal/70 ml-1">{{ $data['count'] }} txn</span>
         </div>
         <span class="text-sm font-semibold">R {{ number_format($data['total_amount'],2) }}</span>
       </div>
@@ -30,7 +30,7 @@
   @if($batch->status === 'CAPTURED')
   <div class="flex justify-end items-center gap-3 mb-4">
     @if($trackingPendingCount > 0)
-    <span class="text-xs text-kc-charcoal/60">{{ $trackingPendingCount }} row(s) still 'tracking' — not yet resolved, won't be posted.</span>
+    <span class="text-xs text-kc-charcoal/70">{{ $trackingPendingCount }} row(s) still 'tracking' — not yet resolved, won't be posted.</span>
     @endif
     @if($postableCount > 0)
     <form method="POST" action="{{ route('nu-pay.import.post', $batch->import_ref) }}">
@@ -76,7 +76,7 @@
               @if(!$txn->posted_at)
               <button type="button" @click="open=!open" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted" x-text="open ? 'Cancel' : 'Edit'"></button>
               @else
-              <span class="text-xs text-kc-charcoal/60">—</span>
+              <span class="text-xs text-kc-charcoal/70">—</span>
               @endif
             </td>
           </tr>
@@ -133,7 +133,7 @@
         </tbody>
         @empty
         <tbody>
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">No transactions staged.</td></tr>
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/70">No transactions staged.</td></tr>
         </tbody>
         @endforelse
       </table>

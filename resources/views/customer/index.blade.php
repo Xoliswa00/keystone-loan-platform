@@ -7,19 +7,19 @@
   {{-- Stats --}}
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Clients</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Total Clients</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $stats['total'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Active Loans</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Active Loans</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $stats['active'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">With Balances</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">With Balances</p>
       <p class="font-display text-2xl font-bold {{ $stats['overdue'] > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ $stats['overdue'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Restricted</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Restricted</p>
       <p class="font-display text-2xl font-bold text-orange-500 mt-1">{{ $stats['restricted'] }}</p>
     </div>
   </div>
@@ -61,10 +61,10 @@
               : ucfirst($c->user_status ?? 'active'));
           @endphp
           <tr class="{{ $hasRestriction ? 'bg-amber-50/50' : '' }}">
-            <td data-label="Code" class="font-mono text-xs text-kc-charcoal/60">{{ $c->customer_code }}</td>
+            <td data-label="Code" class="font-mono text-xs text-kc-charcoal/70">{{ $c->customer_code }}</td>
             <td data-label="Name">
               <div class="font-semibold">{{ $c->name }}</div>
-              <div class="text-xs text-kc-charcoal/60">{{ $c->email }}</div>
+              <div class="text-xs text-kc-charcoal/70">{{ $c->email }}</div>
             </td>
             <td data-label="ID" class="font-mono text-xs">{{ $c->ID_Number }}</td>
             <td data-label="Phone" class="text-xs">{{ $c->phone }}</td>
@@ -72,10 +72,10 @@
               @if($c->active_loans_count > 0)
                 <span class="kc-badge kc-badge-gold">{{ $c->active_loans_count }}</span>
               @else
-                <span class="text-kc-charcoal/60 text-xs">—</span>
+                <span class="text-kc-charcoal/70 text-xs">—</span>
               @endif
             </td>
-            <td data-label="Outstanding" class="{{ $c->current_balance > 0 ? 'font-semibold text-kc-navy' : 'text-kc-charcoal/60' }}">
+            <td data-label="Outstanding" class="{{ $c->current_balance > 0 ? 'font-semibold text-kc-navy' : 'text-kc-charcoal/70' }}">
               {{ $c->current_balance > 0 ? 'R '.number_format($c->current_balance,2) : '—' }}
             </td>
             <td data-label="Status"><span class="kc-badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
@@ -84,7 +84,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/70">
             @if(request('search')) No clients match "{{ request('search') }}" @else No clients yet. @endif
           </td></tr>
           @endforelse

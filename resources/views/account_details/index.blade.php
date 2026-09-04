@@ -11,7 +11,7 @@
   <div class="kc-card">
     @if($accountDetails->isEmpty())
     <div class="text-center py-10">
-      <p class="text-kc-charcoal/60 mb-4">No bank accounts on file. Add one to enable debit order repayments.</p>
+      <p class="text-kc-charcoal/70 mb-4">No bank accounts on file. Add one to enable debit order repayments.</p>
       <a href="{{ route('accountdetails.create') }}" class="kc-btn-primary">Add Bank Account</a>
     </div>
     @else
@@ -48,7 +48,7 @@
     @endif
   </div>
 
-  <div class="mt-4 p-4 rounded-xl border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/60">
+  <div class="mt-4 p-4 rounded-xl border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/70">
     <strong>Important:</strong> Ensure your account has sufficient funds before your instalment due date. Dishonoured debit orders incur a fee and may affect your credit record.
   </div>
 </x-app-layout>

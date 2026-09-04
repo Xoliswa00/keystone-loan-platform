@@ -26,10 +26,10 @@
             <td data-label="Interest">R {{ number_format($s->interest_amount??0,2) }}</td>
             <td data-label="Fees">R {{ number_format($s->fee_amount??0,2) }}</td>
             <td data-label="Status"><span class="kc-badge {{ $ssc }}">{{ ucfirst(str_replace('_',' ',$s->status)) }}</span></td>
-            <td data-label="Paid" class="text-xs text-kc-charcoal/60">{{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}</td>
+            <td data-label="Paid" class="text-xs text-kc-charcoal/70">{{ $s->paid_at ? \Carbon\Carbon::parse($s->paid_at)->format('d M Y') : '—' }}</td>
           </tr>
           @empty
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">No schedule yet.</td></tr>
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/70">No schedule yet.</td></tr>
           @endforelse
         </tbody>
       </table>

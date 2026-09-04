@@ -24,7 +24,7 @@
           @endif
         </div>
         <p class="text-sm font-semibold text-kc-charcoal">{{ $alert->client }}</p>
-        <p class="text-xs text-kc-charcoal/60">
+        <p class="text-xs text-kc-charcoal/70">
           Loan #{{ str_pad($alert->loan_id, 6, '0', STR_PAD_LEFT) }} ·
           R {{ number_format($alert->amount, 2) }}
           @if(isset($alert->dpd) && $alert->dpd > 0) · {{ $alert->dpd }} days overdue @endif
@@ -37,8 +37,8 @@
       <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
         <svg class="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
       </div>
-      <p class="font-semibold text-kc-charcoal/60">No active alerts</p>
-      <p class="text-xs text-kc-charcoal/60 mt-1">All accounts are in good standing</p>
+      <p class="font-semibold text-kc-charcoal/70">No active alerts</p>
+      <p class="text-xs text-kc-charcoal/70 mt-1">All accounts are in good standing</p>
     </div>
     @endforelse
   </div>

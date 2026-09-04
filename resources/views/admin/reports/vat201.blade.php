@@ -38,7 +38,7 @@
           </tr>
         </tbody>
       </table>
-      <p class="text-xs text-kc-charcoal/60 mt-3">Interest income of R{{ number_format($interestIncome, 2) }} is VAT-exempt under the financial services exemption (VAT Act s.2(1)(f)).</p>
+      <p class="text-xs text-kc-charcoal/70 mt-3">Interest income of R{{ number_format($interestIncome, 2) }} is VAT-exempt under the financial services exemption (VAT Act s.2(1)(f)).</p>
     </div>
 
     {{-- Input VAT --}}
@@ -67,7 +67,7 @@
   </div>
 
   <div class="kc-card mt-6">
-    <p class="text-xs text-kc-charcoal/60">
+    <p class="text-xs text-kc-charcoal/70">
       <strong>Note:</strong> This extract is for reference only. Verify against your accounting records before submitting VAT 201 to SARS.
       Submit via SARS eFiling at <strong>www.sarsefiling.co.za</strong>. VAT period: {{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}.
     </p>

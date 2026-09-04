@@ -11,7 +11,7 @@
   </form>
 
   <div class="kc-card mb-4">
-    <p class="text-sm text-kc-charcoal/60">Total written off: <span class="font-display text-xl font-semibold text-red-600">R {{ number_format($totalWrittenOff, 2) }}</span></p>
+    <p class="text-sm text-kc-charcoal/70">Total written off: <span class="font-display text-xl font-semibold text-red-600">R {{ number_format($totalWrittenOff, 2) }}</span></p>
   </div>
 
   <div class="kc-card">
@@ -23,14 +23,14 @@
         @forelse($writeOffs as $loan)
         <tr>
           <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($loan->id, 6, '0', STR_PAD_LEFT) }}</td>
-          <td data-label="Client">{{ $loan->user?->name ?? '—' }}<br><span class="text-xs text-kc-charcoal/60">{{ $loan->user?->customer?->customer_code }}</span></td>
+          <td data-label="Client">{{ $loan->user?->name ?? '—' }}<br><span class="text-xs text-kc-charcoal/70">{{ $loan->user?->customer?->customer_code }}</span></td>
           <td data-label="Write-Off Date">{{ \Carbon\Carbon::parse($loan->written_off_date)->format('d M Y') }}</td>
           <td data-label="Amount" class="text-red-600 font-semibold">R {{ number_format($loan->write_off_amount, 2) }}</td>
           <td data-label="Reason" class="text-xs">{{ $loan->write_off_reason ?? '—' }}</td>
           <td data-label="By" class="text-xs">{{ $loan->writtenOffBy?->name ?? '—' }}</td>
         </tr>
         @empty
-        <tr><td colspan="6" class="text-center text-kc-charcoal/60 py-8">No write-offs in this period.</td></tr>
+        <tr><td colspan="6" class="text-center text-kc-charcoal/70 py-8">No write-offs in this period.</td></tr>
         @endforelse
       </tbody>
     </table>

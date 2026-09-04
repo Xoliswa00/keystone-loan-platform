@@ -16,7 +16,7 @@
             {{ $status['completion_pct'] }}% matched
           </span>
         </div>
-        <div class="flex flex-wrap gap-4 text-xs text-kc-charcoal/60">
+        <div class="flex flex-wrap gap-4 text-xs text-kc-charcoal/70">
           <span>{{ $status['total_lines'] }} total lines</span>
           <span class="text-emerald-600">{{ $status['matched_lines'] }} matched</span>
           <span class="{{ $status['unmatched_lines'] > 0 ? 'text-red-600 font-semibold' : '' }}">{{ $status['unmatched_lines'] }} unmatched</span>
@@ -27,7 +27,7 @@
       {{-- Balance reconciliation --}}
       <div class="text-right">
         @if($closingBalance !== null)
-        <p class="text-xs text-kc-charcoal/60 mb-0.5">GL Bank Balance vs Statement</p>
+        <p class="text-xs text-kc-charcoal/70 mb-0.5">GL Bank Balance vs Statement</p>
         <p class="font-display text-lg font-bold {{ $status['balance_reconciled'] ? 'text-emerald-600' : 'text-red-600' }}">
           R {{ number_format($status['gl_bank_balance'], 2) }}
           @if($status['balance_reconciled'])
@@ -92,9 +92,9 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       @foreach($status['by_category'] as $cat => $data)
       <div class="text-center p-3 rounded-lg bg-kc-silver-light/50">
-        <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">{{ ucfirst(str_replace('_',' ',$cat)) }}</p>
+        <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">{{ ucfirst(str_replace('_',' ',$cat)) }}</p>
         <p class="font-semibold text-kc-navy">{{ $data->count }}</p>
-        <p class="text-xs text-kc-charcoal/60">R {{ number_format($data->total, 2) }}</p>
+        <p class="text-xs text-kc-charcoal/70">R {{ number_format($data->total, 2) }}</p>
       </div>
       @endforeach
     </div>
@@ -183,7 +183,7 @@
             <td data-label="Description" class="text-xs max-w-xs">{{ Str::limit($line->description, 50) }}</td>
             <td data-label="Debit" class="text-red-600 font-semibold">{{ $line->debit_amount > 0 ? 'R '.number_format($line->debit_amount,2) : '' }}</td>
             <td data-label="Credit" class="text-emerald-600 font-semibold">{{ $line->credit_amount > 0 ? 'R '.number_format($line->credit_amount,2) : '' }}</td>
-            <td data-label="Balance" class="text-xs text-kc-charcoal/60">{{ $line->running_balance ? 'R '.number_format($line->running_balance,2) : '—' }}</td>
+            <td data-label="Balance" class="text-xs text-kc-charcoal/70">{{ $line->running_balance ? 'R '.number_format($line->running_balance,2) : '—' }}</td>
             <td data-label="Allocate">
               <div x-data="{open:false}" class="relative">
                 <button @click="open=!open" class="kc-btn-ghost text-xs py-1 px-3">Allocate</button>
@@ -272,7 +272,7 @@
             <td data-label="Debit" class="text-red-600">{{ $line->debit_amount > 0 ? 'R '.number_format($line->debit_amount,2) : '' }}</td>
             <td data-label="Credit" class="text-emerald-600">{{ $line->credit_amount > 0 ? 'R '.number_format($line->credit_amount,2) : '' }}</td>
             <td data-label="Category"><span class="kc-badge {{ $catClass }} text-[10px]">{{ ucfirst(str_replace('_',' ',$line->match_category ?? 'matched')) }}</span></td>
-            <td data-label="GL Ref" class="font-mono text-[10px] text-kc-charcoal/60">{{ $line->allocation_gl_batch_ref ?? $line->match_note ? Str::limit($line->match_note,30) : '—' }}</td>
+            <td data-label="GL Ref" class="font-mono text-[10px] text-kc-charcoal/70">{{ $line->allocation_gl_batch_ref ?? $line->match_note ? Str::limit($line->match_note,30) : '—' }}</td>
             <td data-label="Action">
               @if(!$status['all_lines_matched'] || $batch->status !== 'RECONCILED')
               <form method="POST" action="{{ route('admin.finance.recon.unallocate', $batch->id) }}"

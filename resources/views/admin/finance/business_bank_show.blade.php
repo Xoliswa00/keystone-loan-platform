@@ -10,10 +10,10 @@
     <h4 class="font-display font-semibold text-kc-navy mb-4">3-Way Reconciliation</h4>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <div>
-        <h5 class="text-xs font-semibold text-kc-charcoal/60 uppercase tracking-wider mb-3">Collections (Credits)</h5>
+        <h5 class="text-xs font-semibold text-kc-charcoal/70 uppercase tracking-wider mb-3">Collections (Credits)</h5>
         <table class="w-full text-sm">
-          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/60">Bank Credits</td><td class="text-right font-semibold">R {{ number_format($reconciliation['bank_credits'],2) }}</td></tr>
-          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/60">Nu-Pay Remitted</td><td class="text-right font-semibold">R {{ number_format($reconciliation['nupay_total'],2) }}</td></tr>
+          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/70">Bank Credits</td><td class="text-right font-semibold">R {{ number_format($reconciliation['bank_credits'],2) }}</td></tr>
+          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/70">Nu-Pay Remitted</td><td class="text-right font-semibold">R {{ number_format($reconciliation['nupay_total'],2) }}</td></tr>
           <tr class="{{ abs($reconciliation['collections_variance']) > 1 ? 'bg-red-50' : '' }}">
             <td class="py-2 font-semibold">Variance</td>
             <td class="text-right font-bold {{ abs($reconciliation['collections_variance']) > 1 ? 'text-red-600' : 'text-emerald-600' }}">
@@ -24,10 +24,10 @@
         </table>
       </div>
       <div>
-        <h5 class="text-xs font-semibold text-kc-charcoal/60 uppercase tracking-wider mb-3">Disbursements (Debits)</h5>
+        <h5 class="text-xs font-semibold text-kc-charcoal/70 uppercase tracking-wider mb-3">Disbursements (Debits)</h5>
         <table class="w-full text-sm">
-          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/60">Bank Debits</td><td class="text-right font-semibold">R {{ number_format($reconciliation['bank_debits'],2) }}</td></tr>
-          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/60">System Disbursements</td><td class="text-right font-semibold">R {{ number_format($reconciliation['disb_total'],2) }}</td></tr>
+          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/70">Bank Debits</td><td class="text-right font-semibold">R {{ number_format($reconciliation['bank_debits'],2) }}</td></tr>
+          <tr class="border-b border-kc-silver-light"><td class="py-2 text-kc-charcoal/70">System Disbursements</td><td class="text-right font-semibold">R {{ number_format($reconciliation['disb_total'],2) }}</td></tr>
           <tr class="{{ abs($reconciliation['disbursement_variance']) > 1 ? 'bg-red-50' : '' }}">
             <td class="py-2 font-semibold">Variance</td>
             <td class="text-right font-bold {{ abs($reconciliation['disbursement_variance']) > 1 ? 'text-red-600' : 'text-emerald-600' }}">
@@ -43,11 +43,11 @@
 
   {{-- Match stats + action --}}
   <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Total</p><p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $summary->total }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Credits</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">R {{ number_format($summary->total_credits,2) }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Debits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_debits,2) }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Matched</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">{{ $summary->matched }}</p></div>
-    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/60 uppercase">Exceptions</p><p class="font-display text-xl font-bold {{ $summary->exceptions > 0 ? 'text-red-600' : 'text-kc-navy' }} mt-1">{{ $summary->exceptions }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/70 uppercase">Total</p><p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $summary->total }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/70 uppercase">Credits</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">R {{ number_format($summary->total_credits,2) }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/70 uppercase">Debits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_debits,2) }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/70 uppercase">Matched</p><p class="font-display text-xl font-bold text-emerald-600 mt-1">{{ $summary->matched }}</p></div>
+    <div class="kc-stat-card text-center"><p class="text-xs text-kc-charcoal/70 uppercase">Exceptions</p><p class="font-display text-xl font-bold {{ $summary->exceptions > 0 ? 'text-red-600' : 'text-kc-navy' }} mt-1">{{ $summary->exceptions }}</p></div>
   </div>
 
   <div class="flex gap-3 justify-end mb-4">
@@ -74,7 +74,7 @@
             <td data-label="Credit" class="text-emerald-600">{{ $line->credit_amount > 0 ? 'R '.number_format($line->credit_amount,2) : '—' }}</td>
             <td data-label="Balance" class="text-xs">{{ $line->running_balance ? 'R '.number_format($line->running_balance,2) : '—' }}</td>
             <td data-label="Match"><span class="kc-badge {{ $msc }}">{{ ucfirst($line->match_status) }}</span></td>
-            <td data-label="Note" class="text-xs text-kc-charcoal/60">{{ Str::limit($line->match_note ?? '',50) }}</td>
+            <td data-label="Note" class="text-xs text-kc-charcoal/70">{{ Str::limit($line->match_note ?? '',50) }}</td>
           </tr>
           @endforeach
         </tbody>

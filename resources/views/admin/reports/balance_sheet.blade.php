@@ -16,14 +16,14 @@
 
   <div class="kc-card max-w-2xl">
     <h3 class="font-display text-lg font-semibold text-kc-navy mb-1">Keystone Capital Partners</h3>
-    <p class="text-xs text-kc-charcoal/60 mb-6">Balance Sheet — As at {{ \Carbon\Carbon::parse($asAt)->format('d F Y') }}</p>
+    <p class="text-xs text-kc-charcoal/70 mb-6">Balance Sheet — As at {{ \Carbon\Carbon::parse($asAt)->format('d F Y') }}</p>
 
     <table class="w-full text-sm">
       {{-- ASSETS --}}
       <thead>
         <tr class="border-b border-kc-gold/30">
-          <th class="text-left py-2 font-semibold text-kc-charcoal/60">ASSETS</th>
-          <th class="text-right py-2 font-semibold text-kc-charcoal/60">R</th>
+          <th class="text-left py-2 font-semibold text-kc-charcoal/70">ASSETS</th>
+          <th class="text-right py-2 font-semibold text-kc-charcoal/70">R</th>
         </tr>
       </thead>
       <tbody>
@@ -52,7 +52,7 @@
       {{-- EQUITY --}}
       <thead>
         <tr class="border-b border-kc-gold/30 mt-4">
-          <th class="text-left py-3 font-semibold text-kc-charcoal/60">EQUITY</th>
+          <th class="text-left py-3 font-semibold text-kc-charcoal/70">EQUITY</th>
           <th class="text-right py-3"></th>
         </tr>
       </thead>
@@ -66,14 +66,14 @@
           @endforeach
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No equity accounts configured.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/70" colspan="2">No equity accounts configured.</td>
         </tr>
         @endforelse
         {{-- Unclosed net income sitting in Income/Expense accounts — only
              swept into Retained Earnings at a formal year-end close, so an
              interim statement needs this to actually balance. --}}
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4">Current Period Earnings <span class="text-xs text-kc-charcoal/60">(unaudited, pre-close)</span></td>
+          <td class="py-2 pl-4">Current Period Earnings <span class="text-xs text-kc-charcoal/70">(unaudited, pre-close)</span></td>
           <td class="text-right py-2">{{ number_format($currentPeriodEarnings, 2) }}</td>
         </tr>
         <tr class="bg-kc-silver-light font-semibold">
@@ -86,14 +86,14 @@
            Long-term Liability, Shareholder Loans, ...) per IFRS presentation --}}
       <thead>
         <tr class="border-b border-kc-gold/30 mt-4">
-          <th class="text-left py-3 font-semibold text-kc-charcoal/60">LIABILITIES</th>
+          <th class="text-left py-3 font-semibold text-kc-charcoal/70">LIABILITIES</th>
           <th class="text-right py-3"></th>
         </tr>
       </thead>
       <tbody>
         @forelse($liabilityGroups as $groupName => $lines)
         <tr>
-          <td class="pt-3 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60" colspan="2">{{ $groupName }}</td>
+          <td class="pt-3 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70" colspan="2">{{ $groupName }}</td>
         </tr>
         @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
@@ -101,13 +101,13 @@
           <td class="text-right py-2">{{ number_format($line->balance, 2) }}</td>
         </tr>
         @endforeach
-        <tr class="text-xs text-kc-charcoal/60">
+        <tr class="text-xs text-kc-charcoal/70">
           <td class="py-1 pl-6">Subtotal</td>
           <td class="text-right py-1">{{ number_format($lines->sum('balance'), 2) }}</td>
         </tr>
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No liability accounts configured.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/70" colspan="2">No liability accounts configured.</td>
         </tr>
         @endforelse
         <tr class="bg-kc-silver-light font-semibold">
@@ -134,7 +134,7 @@
       </tfoot>
     </table>
 
-    <div class="mt-4 text-xs text-kc-charcoal/60">
+    <div class="mt-4 text-xs text-kc-charcoal/70">
       Prepared in accordance with IFRS 9 (Financial Instruments). ECL provisions based on Days Past Due staging.
     </div>
   </div>

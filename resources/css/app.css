@@ -155,7 +155,7 @@
         @apply font-display text-2xl font-semibold text-kc-navy truncate;
     }
     .kc-page-subtitle {
-        @apply text-sm text-kc-charcoal/60 mt-0.5 truncate;
+        @apply text-sm text-kc-charcoal/70 mt-0.5 truncate;
     }
 
     /* ── Marketing typography (public-facing pages) ──────────────────────────

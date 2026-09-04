@@ -34,7 +34,7 @@
           @forelse($products as $product)
           <tr>
             <td data-label="Name" class="font-semibold">{{ $product->name }}</td>
-            <td data-label="Code" class="text-xs font-mono text-kc-charcoal/60">{{ $product->code }}</td>
+            <td data-label="Code" class="text-xs font-mono text-kc-charcoal/70">{{ $product->code }}</td>
             <td data-label="Amount Range" class="text-xs">R{{ number_format($product->min_amount, 0) }} – R{{ number_format($product->max_amount, 0) }}</td>
             <td data-label="Term" class="text-xs">
               {{ $product->min_months }}–{{ $product->max_months }}
@@ -67,13 +67,13 @@
             @endif
           </tr>
           @empty
-          <tr><td colspan="{{ $canManage ? 8 : 7 }}" class="text-center py-8 text-kc-charcoal/60">No loan products configured yet.</td></tr>
+          <tr><td colspan="{{ $canManage ? 8 : 7 }}" class="text-center py-8 text-kc-charcoal/70">No loan products configured yet.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
 
-    <p class="text-[11px] text-kc-charcoal/60 mt-3">
+    <p class="text-[11px] text-kc-charcoal/70 mt-3">
       "Active" products are offered to every client. To open a multi-month product to one
       specific client without activating it for everyone, grant that override from the client's
       profile page instead ("Extended Terms Eligible").
