@@ -24,7 +24,7 @@
               @forelse($staff as $member)
               <tr>
                 <td data-label="Name" class="font-semibold">{{ $member->name }}</td>
-                <td data-label="Email" class="text-xs text-kc-charcoal/60">{{ $member->email }}</td>
+                <td data-label="Email" class="text-xs text-kc-charcoal/70">{{ $member->email }}</td>
                 <td data-label="Role">
                   <form method="POST" action="{{ route('admin.staff.update-role', $member) }}" class="flex items-center gap-2">
                     @csrf @method('PUT')
@@ -40,12 +40,12 @@
                     </select>
                   </form>
                 </td>
-                <td data-label="Action" class="text-xs text-kc-charcoal/60">
+                <td data-label="Action" class="text-xs text-kc-charcoal/70">
                   {{ $member->id === Auth::id() ? 'You' : '' }}
                 </td>
               </tr>
               @empty
-              <tr><td colspan="4" class="text-center py-8 text-kc-charcoal/60">No staff accounts yet.</td></tr>
+              <tr><td colspan="4" class="text-center py-8 text-kc-charcoal/70">No staff accounts yet.</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -78,7 +78,7 @@
             </select>
             @error('system_role')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
           </div>
-          <p class="text-[11px] text-kc-charcoal/60">They'll receive an email with a link to set their own password.</p>
+          <p class="text-[11px] text-kc-charcoal/70">They'll receive an email with a link to set their own password.</p>
           <button type="submit" class="kc-btn-primary w-full justify-center">Send Invite</button>
         </form>
       </div>
@@ -95,7 +95,7 @@
           <div class="flex items-center justify-between py-2 border-b border-kc-silver-light/60 last:border-0">
             <div class="min-w-0">
               <p class="text-xs font-semibold text-kc-navy truncate">{{ $client->name }}</p>
-              <p class="text-[11px] text-kc-charcoal/60 truncate">{{ $client->email }}</p>
+              <p class="text-[11px] text-kc-charcoal/70 truncate">{{ $client->email }}</p>
             </div>
             <form method="POST" action="{{ route('admin.staff.update-role', $client) }}" class="flex items-center gap-1 flex-shrink-0">
               @csrf @method('PUT')
@@ -108,7 +108,7 @@
             </form>
           </div>
           @empty
-          <p class="text-xs text-kc-charcoal/60">No matching clients found.</p>
+          <p class="text-xs text-kc-charcoal/70">No matching clients found.</p>
           @endforelse
         @endif
       </div>

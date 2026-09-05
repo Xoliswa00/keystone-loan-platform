@@ -12,15 +12,15 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Debits</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Total Debits</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalDebits ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Credits</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Total Credits</p>
       <p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totalCredits ?? 0, 2) }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Balanced</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Balanced</p>
       <p class="font-display text-2xl font-bold {{ ($balanced ?? true) ? 'text-emerald-600' : 'text-red-600' }} mt-1">
         {{ ($balanced ?? true) ? 'Yes' : 'No' }}
       </p>
@@ -38,7 +38,7 @@
           <tr>
             <td data-label="Code" class="font-mono font-semibold">{{ $acct->account_code }}</td>
             <td data-label="Type" class="text-xs"><span class="kc-badge kc-badge-silver">{{ ucfirst($acct->account_type) }}</span></td>
-            <td data-label="Category" class="text-xs text-kc-charcoal/60">{{ ucfirst($acct->account_category) }}</td>
+            <td data-label="Category" class="text-xs text-kc-charcoal/70">{{ ucfirst($acct->account_category) }}</td>
             <td data-label="Debit">R {{ number_format($acct->total_debit, 2) }}</td>
             <td data-label="Credit">R {{ number_format($acct->total_credit, 2) }}</td>
             <td data-label="Net" class="font-semibold {{ $acct->net_balance > 0 ? 'text-kc-navy' : 'text-red-600' }}">
@@ -46,7 +46,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/60">No GL entries in this period.</td></tr>
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/70">No GL entries in this period.</td></tr>
           @endforelse
         </tbody>
       </table>

@@ -47,7 +47,7 @@
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h4 class="font-display font-semibold text-kc-navy">{{ $facility->facility_code }} — {{ $facility->facility_name }}</h4>
-                    <p class="text-xs text-kc-charcoal/60">{{ \App\Models\FundingFacility::FUNDER_TYPES[$facility->funder_type] ?? '' }}</p>
+                    <p class="text-xs text-kc-charcoal/70">{{ \App\Models\FundingFacility::FUNDER_TYPES[$facility->funder_type] ?? '' }}</p>
                 </div>
                 <span class="kc-badge {{ $sc }}">{{ ucfirst(str_replace('_', ' ', $facility->status)) }}</span>
             </div>
@@ -55,19 +55,19 @@
             {{-- KPIs --}}
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
                 <div class="kc-stat-card text-center">
-                    <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Facility Limit</p>
+                    <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Facility Limit</p>
                     <p class="font-display text-lg font-bold text-kc-navy mt-1">R {{ number_format($facility->facility_limit, 2) }}</p>
                 </div>
                 <div class="kc-stat-card text-center">
-                    <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Outstanding</p>
+                    <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Outstanding</p>
                     <p class="font-display text-lg font-bold text-kc-navy mt-1">R {{ number_format($facility->current_balance, 2) }}</p>
                 </div>
                 <div class="kc-stat-card text-center">
-                    <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Available</p>
+                    <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Available</p>
                     <p class="font-display text-lg font-bold text-emerald-600 mt-1">R {{ number_format($facility->availableLimit(), 2) }}</p>
                 </div>
                 <div class="kc-stat-card text-center">
-                    <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Accrued Interest</p>
+                    <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Accrued Interest</p>
                     <p class="font-display text-lg font-bold {{ $facility->accrued_interest > 0 ? 'text-orange-600' : 'text-kc-navy' }} mt-1">R {{ number_format($facility->accrued_interest, 2) }}</p>
                 </div>
             </div>
@@ -83,9 +83,9 @@
                          style="width:{{ min(100, $facility->utilisationRate()) }}%"></div>
                 </div>
                 <div class="mt-3 grid grid-cols-3 gap-3 text-center text-xs">
-                    <div><p class="text-kc-charcoal/60">Monthly Interest Due</p><p class="font-semibold text-kc-navy">R {{ number_format($facility->monthlyInterestDue(), 2) }}</p></div>
-                    <div><p class="text-kc-charcoal/60">Rate p.a.</p><p class="font-semibold">{{ round($facility->interest_rate * 100, 2) }}%</p></div>
-                    <div><p class="text-kc-charcoal/60">Maturity</p><p class="font-semibold">{{ $facility->maturity_date?->format('d M Y') ?? 'Revolving' }}</p></div>
+                    <div><p class="text-kc-charcoal/70">Monthly Interest Due</p><p class="font-semibold text-kc-navy">R {{ number_format($facility->monthlyInterestDue(), 2) }}</p></div>
+                    <div><p class="text-kc-charcoal/70">Rate p.a.</p><p class="font-semibold">{{ round($facility->interest_rate * 100, 2) }}%</p></div>
+                    <div><p class="text-kc-charcoal/70">Maturity</p><p class="font-semibold">{{ $facility->maturity_date?->format('d M Y') ?? 'Revolving' }}</p></div>
                 </div>
             </div>
 
@@ -107,7 +107,7 @@
                                 <td data-label="Ref" class="text-xs">{{ $txn->reference ?? '—' }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="text-center py-6 text-kc-charcoal/60">No transactions yet.</td></tr>
+                            <tr><td colspan="4" class="text-center py-6 text-kc-charcoal/70">No transactions yet.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -115,12 +115,12 @@
             </div>
         </div>
         @empty
-        <div class="kc-card text-center py-10 text-kc-charcoal/60">
+        <div class="kc-card text-center py-10 text-kc-charcoal/70">
             No facilities found on your account.
         </div>
         @endforelse
 
-        <p class="text-center text-xs text-kc-charcoal/60 pb-6">
+        <p class="text-center text-xs text-kc-charcoal/70 pb-6">
             &copy; {{ date('Y') }} Keystone Capital Partners. All rights reserved.
         </p>
     </div>

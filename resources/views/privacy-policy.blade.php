@@ -13,7 +13,7 @@
           </div>
           <div>
             <p class="font-semibold text-kc-navy">Keystone Capital Partners</p>
-            <p class="text-xs text-kc-charcoal/60">Registered Credit Provider · Protection of Personal Information Act 4 of 2013</p>
+            <p class="text-xs text-kc-charcoal/70">Registered Credit Provider · Protection of Personal Information Act 4 of 2013</p>
           </div>
         </div>
 
@@ -37,7 +37,7 @@
           @endforeach
         </div>
 
-        <div class="mt-5 pt-4 border-t border-kc-silver-light text-xs text-kc-charcoal/60">
+        <div class="mt-5 pt-4 border-t border-kc-silver-light text-xs text-kc-charcoal/70">
           NCR Registration: {{ \App\Models\Company::settings()?->ncr_number ?? 'Contact us for details' }} · <em>Capital. Partnership. Growth.</em>
         </div>
       </div>

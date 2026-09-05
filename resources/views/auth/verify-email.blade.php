@@ -8,7 +8,7 @@
       </svg>
     </div>
     <h2 class="font-display text-2xl font-semibold text-kc-navy">Verify Your Email</h2>
-    <p class="text-sm text-kc-charcoal/60 mt-2">
+    <p class="text-sm text-kc-charcoal/70 mt-2">
       We sent a verification link to your email.<br>Click it to activate your account.
     </p>
   </div>

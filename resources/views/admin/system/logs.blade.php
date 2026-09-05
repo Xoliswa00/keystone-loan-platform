@@ -22,7 +22,7 @@
       ['Current Period',  $health['current_period_status'], match($health['current_period_status']??'open') {'Locked'=>'kc-badge-silver','Closed'=>'kc-badge-navy','Closing'=>'kc-badge-gold',default=>'kc-badge-green'}],
     ] as [$label, $value, $cls])
     <div class="kc-stat-card text-center">
-      <p class="text-[10px] text-kc-charcoal/60 uppercase tracking-wider">{{ $label }}</p>
+      <p class="text-[10px] text-kc-charcoal/70 uppercase tracking-wider">{{ $label }}</p>
       <p class="font-semibold text-sm text-kc-navy mt-1">{{ $value }}</p>
     </div>
     @endforeach
@@ -31,16 +31,16 @@
   {{-- Error count cards --}}
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card text-center {{ $counts['error'] > 0 ? 'border border-red-200' : '' }}">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Errors Today</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Errors Today</p>
       <p class="font-display text-2xl font-bold {{ $counts['error'] > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ $counts['error'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Warnings Today</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Warnings Today</p>
       <p class="font-display text-2xl font-bold text-orange-500 mt-1">{{ $counts['warning'] }}</p>
     </div>
     <div class="kc-stat-card text-center">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Info Today</p>
-      <p class="font-display text-2xl font-bold text-kc-charcoal/60 mt-1">{{ $counts['info'] }}</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Info Today</p>
+      <p class="font-display text-2xl font-bold text-kc-charcoal/70 mt-1">{{ $counts['info'] }}</p>
     </div>
   </div>
 
@@ -52,7 +52,7 @@
       <div class="flex items-center justify-between p-3 rounded-lg border border-kc-silver-light">
         <div>
           <p class="text-sm font-semibold">Escalate Arrears</p>
-          <p class="text-xs text-kc-charcoal/60">Sends overdue-account escalation emails by DPD tier. Runs daily at 09:00 via cron.</p>
+          <p class="text-xs text-kc-charcoal/70">Sends overdue-account escalation emails by DPD tier. Runs daily at 09:00 via cron.</p>
         </div>
         <form method="POST" action="{{ route('admin.system.jobs.run') }}"
           onsubmit="return confirm('This sends real escalation emails to every overdue client right now. Continue?')">
@@ -64,7 +64,7 @@
       <div class="flex items-center justify-between p-3 rounded-lg border border-kc-silver-light">
         <div>
           <p class="text-sm font-semibold">Send Payment Reminders</p>
-          <p class="text-xs text-kc-charcoal/60">Sends reminder emails for instalments due soon (per Lending Settings). Runs daily at 08:00 via cron.</p>
+          <p class="text-xs text-kc-charcoal/70">Sends reminder emails for instalments due soon (per Lending Settings). Runs daily at 08:00 via cron.</p>
         </div>
         <form method="POST" action="{{ route('admin.system.jobs.run') }}"
           onsubmit="return confirm('This sends real reminder emails to clients right now. Continue?')">
@@ -129,8 +129,8 @@
           @foreach($failedJobs as $job)
           <tr>
             <td data-label="Job" class="font-mono text-xs">{{ $job['display_name'] }}</td>
-            <td data-label="Queue" class="text-xs text-kc-charcoal/60">{{ $job['queue'] }}</td>
-            <td data-label="Failed" class="text-xs text-kc-charcoal/60">{{ \Carbon\Carbon::parse($job['failed_at'])->format('d M Y H:i') }}</td>
+            <td data-label="Queue" class="text-xs text-kc-charcoal/70">{{ $job['queue'] }}</td>
+            <td data-label="Failed" class="text-xs text-kc-charcoal/70">{{ \Carbon\Carbon::parse($job['failed_at'])->format('d M Y H:i') }}</td>
             <td data-label="Error" class="text-xs text-red-600 max-w-xs truncate">{{ $job['exception'] }}</td>
             <td data-label="Action">
               <form method="POST" action="{{ route('admin.system.logs.retry') }}" class="inline">
@@ -151,11 +151,11 @@
   <div class="kc-card">
     <div class="flex items-center justify-between mb-4">
       <h4 class="font-display font-semibold text-kc-navy">Log Entries (most recent first)</h4>
-      <span class="text-xs text-kc-charcoal/60">Showing up to 500 lines from today</span>
+      <span class="text-xs text-kc-charcoal/70">Showing up to 500 lines from today</span>
     </div>
 
     @if(empty($entries))
-    <p class="text-center text-kc-charcoal/60 py-8">
+    <p class="text-center text-kc-charcoal/70 py-8">
       @if($level !== 'all' || $search)
         No entries match your filter.
       @else
@@ -187,31 +187,31 @@
             <p class="text-xs font-mono text-kc-charcoal/70 flex-shrink-0 mr-2">{{ $entry['timestamp'] }}</p>
             <p class="text-sm text-kc-charcoal truncate">{{ $entry['message'] }}</p>
           </div>
-          <svg :class="open?'rotate-90':''" class="w-4 h-4 text-kc-charcoal/60 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg :class="open?'rotate-90':''" class="w-4 h-4 text-kc-charcoal/70 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
           </svg>
         </button>
 
         <div x-show="open" x-transition class="border-t border-kc-silver-light p-3 bg-white max-w-full overflow-hidden">
           <div class="mb-2">
-            <p class="text-xs font-semibold text-kc-charcoal/60 mb-1">Full message:</p>
+            <p class="text-xs font-semibold text-kc-charcoal/70 mb-1">Full message:</p>
             <p class="text-xs text-kc-charcoal break-words whitespace-pre-wrap">{{ $entry['message'] }}</p>
           </div>
           @if($entry['sql'] ?? null)
           <div class="mb-2">
-            <p class="text-xs font-semibold text-kc-charcoal/60 mb-1">SQL query:</p>
+            <p class="text-xs font-semibold text-kc-charcoal/70 mb-1">SQL query:</p>
             <pre class="text-xs bg-kc-charcoal text-kc-gold p-2 rounded max-w-full whitespace-pre-wrap break-words">{{ $entry['sql'] }}</pre>
           </div>
           @endif
           @if($entry['context'])
           <div class="mb-2">
-            <p class="text-xs font-semibold text-kc-charcoal/60 mb-1">Context:</p>
+            <p class="text-xs font-semibold text-kc-charcoal/70 mb-1">Context:</p>
             <pre class="text-xs bg-kc-charcoal text-emerald-400 p-2 rounded max-w-full whitespace-pre-wrap break-words">{{ json_encode($entry['context'], JSON_PRETTY_PRINT) }}</pre>
           </div>
           @endif
           @if(!empty($entry['extra']))
           <div>
-            <p class="text-xs font-semibold text-kc-charcoal/60 mb-1">Stack trace:</p>
+            <p class="text-xs font-semibold text-kc-charcoal/70 mb-1">Stack trace:</p>
             <pre class="text-xs bg-kc-charcoal text-white/60 p-2 rounded max-w-full max-h-48 overflow-y-auto whitespace-pre-wrap break-words">{{ implode("\n", array_slice($entry['extra'], 0, 20)) }}</pre>
           </div>
           @endif

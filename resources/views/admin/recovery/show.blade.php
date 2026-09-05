@@ -12,15 +12,15 @@
       {{-- Stats --}}
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="kc-stat-card">
-          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Written Off</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Written Off</span>
           <p class="font-display text-xl font-semibold text-red-600 mt-1">R {{ number_format($recovery->original_write_off_amount, 2) }}</p>
         </div>
         <div class="kc-stat-card">
-          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Recovered</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Recovered</span>
           <p class="font-display text-xl font-semibold text-emerald-600 mt-1">R {{ number_format($recovery->total_recovered, 2) }}</p>
         </div>
         <div class="kc-stat-card">
-          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Still Owed</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Still Owed</span>
           <p class="font-display text-xl font-semibold text-orange-600 mt-1">R {{ number_format($recovery->outstanding_recovery, 2) }}</p>
         </div>
       </div>
@@ -81,7 +81,7 @@
         <div class="space-y-3">
           @foreach($notes as $note)
           <div class="border-l-2 border-kc-gold/40 pl-3">
-            <p class="text-xs text-kc-charcoal/60">{{ \Carbon\Carbon::parse($note->created_at)->format('d M Y H:i') }}</p>
+            <p class="text-xs text-kc-charcoal/70">{{ \Carbon\Carbon::parse($note->created_at)->format('d M Y H:i') }}</p>
             <p class="text-sm">{{ $note->note }}</p>
           </div>
           @endforeach

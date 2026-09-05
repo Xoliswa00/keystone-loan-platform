@@ -14,7 +14,7 @@
         <tr>
           <td data-label="Client">
             <div class="font-semibold text-kc-navy">{{ $row->client_name }}</div>
-            <div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }} · {{ $row->phone }}</div>
+            <div class="text-xs text-kc-charcoal/70">{{ $row->customer_code }} · {{ $row->phone }}</div>
           </td>
           <td data-label="DPD">
             @php $cls = $row->days_overdue >= 90 ? 'kc-badge-red' : ($row->days_overdue >= 60 ? 'kc-badge-gold' : 'kc-badge-silver'); @endphp
@@ -23,7 +23,7 @@
           <td data-label="Missed">{{ $row->instalments_missed }}</td>
           <td data-label="Arrears" class="font-semibold text-red-600">R {{ number_format($row->arrears_total, 2) }}</td>
           <td data-label="Balance">R {{ number_format($row->remaining_balance, 2) }}</td>
-          <td data-label="Last Contact" class="text-xs text-kc-charcoal/60">
+          <td data-label="Last Contact" class="text-xs text-kc-charcoal/70">
             @if($row->last_contact_date)
               {{ \Carbon\Carbon::parse($row->last_contact_date)->diffForHumans() }}<br>
               <span class="truncate max-w-xs block">{{ Str::limit($row->last_contact_note, 60) }}</span>
@@ -69,7 +69,7 @@
           </td>
         </tr>
         @empty
-        <tr><td colspan="7" class="text-center text-kc-charcoal/60 py-10">No overdue accounts. 🎉</td></tr>
+        <tr><td colspan="7" class="text-center text-kc-charcoal/70 py-10">No overdue accounts. 🎉</td></tr>
         @endforelse
       </tbody>
     </table>

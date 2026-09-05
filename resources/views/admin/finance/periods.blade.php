@@ -56,7 +56,7 @@
                 <div class="w-16 h-1 bg-kc-silver-light rounded-full overflow-hidden">
                   <div class="h-full bg-kc-gold rounded-full" style="width:{{ $fp->checklistProgress() }}%"></div>
                 </div>
-                <span class="text-xs {{ $fp->checklistComplete() ? 'text-emerald-600 font-semibold' : 'text-kc-charcoal/60' }}">
+                <span class="text-xs {{ $fp->checklistComplete() ? 'text-emerald-600 font-semibold' : 'text-kc-charcoal/70' }}">
                   {{ $fp->checklistProgress() }}%
                 </span>
               </div>
@@ -76,10 +76,10 @@
                   {{ $fp->year_end_complete ? 'Complete' : 'Pending' }}
                 </span>
               @else
-                <span class="text-kc-charcoal/60 text-xs">—</span>
+                <span class="text-kc-charcoal/70 text-xs">—</span>
               @endif
             </td>
-            <td data-label="Closed" class="text-xs text-kc-charcoal/60">
+            <td data-label="Closed" class="text-xs text-kc-charcoal/70">
               {{ $fp->closed_at?->format('d M Y') ?? '—' }}
             </td>
             <td data-label="">

@@ -21,11 +21,11 @@
             <td data-label="Type">{{ ucfirst($app->loan_type) }}</td>
             <td data-label="Product"><span class="kc-badge kc-badge-silver">{{ $app->product?->name ?? 'Standard' }}</span></td>
             <td data-label="Status"><span class="kc-badge {{ $sc }}">{{ ucfirst($app->status) }}</span></td>
-            <td data-label="Submitted" class="text-xs text-kc-charcoal/60">{{ $app->created_at->format('d M Y') }}</td>
+            <td data-label="Submitted" class="text-xs text-kc-charcoal/70">{{ $app->created_at->format('d M Y') }}</td>
             <td data-label=""><a href="{{ route('loanapplications.show', $app->id) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View →</a></td>
           </tr>
           @empty
-          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/60">No applications yet. <a href="{{ route('loanapplications.create') }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Apply now →</a></td></tr>
+          <tr><td colspan="7" class="text-center py-10 text-kc-charcoal/70">No applications yet. <a href="{{ route('loanapplications.create') }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Apply now →</a></td></tr>
           @endforelse
         </tbody>
       </table>

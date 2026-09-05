@@ -11,8 +11,8 @@
   </form>
 
   <div class="grid grid-cols-2 gap-4 mb-6">
-    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Disbursements</p><p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $totals->count ?? 0 }}</p></div>
-    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Disbursed</p><p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totals->total ?? 0, 2) }}</p></div>
+    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Disbursements</p><p class="font-display text-2xl font-bold text-kc-navy mt-1">{{ $totals->count ?? 0 }}</p></div>
+    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Total Disbursed</p><p class="font-display text-2xl font-bold text-kc-navy mt-1">R {{ number_format($totals->total ?? 0, 2) }}</p></div>
   </div>
 
   <div class="kc-card">
@@ -23,7 +23,7 @@
           @forelse($disbursements as $row)
           <tr>
             <td data-label="Date">{{ \Carbon\Carbon::parse($row->disbursement_date)->format('d M Y') }}</td>
-            <td data-label="Client"><div class="font-semibold">{{ $row->client_name }}</div><div class="text-xs text-kc-charcoal/60">{{ $row->customer_code }}</div></td>
+            <td data-label="Client"><div class="font-semibold">{{ $row->client_name }}</div><div class="text-xs text-kc-charcoal/70">{{ $row->customer_code }}</div></td>
             <td data-label="Type">{{ ucfirst($row->loan_type ?? '—') }}</td>
             <td data-label="Principal" class="font-semibold">R {{ number_format($row->disbursed_amount, 2) }}</td>
             <td data-label="Init Fee">R {{ number_format($row->initiation_fee ?? 0, 2) }}</td>
@@ -33,7 +33,7 @@
             <td data-label="Term">{{ $row->loan_term_months ?? 1 }} mo</td>
           </tr>
           @empty
-          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/60">No disbursements in this period.</td></tr>
+          <tr><td colspan="9" class="text-center py-8 text-kc-charcoal/70">No disbursements in this period.</td></tr>
           @endforelse
         </tbody>
       </table>

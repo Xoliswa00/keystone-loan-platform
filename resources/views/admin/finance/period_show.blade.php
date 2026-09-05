@@ -43,7 +43,7 @@
       <div class="kc-card">
         <div class="flex items-center justify-between mb-4">
           <h4 class="font-display font-semibold text-kc-navy">Pre-Close Checklist</h4>
-          <span class="text-sm font-semibold {{ $period->checklistComplete() ? 'text-emerald-600' : 'text-kc-charcoal/60' }}">
+          <span class="text-sm font-semibold {{ $period->checklistComplete() ? 'text-emerald-600' : 'text-kc-charcoal/70' }}">
             {{ $period->checklistProgress() }}% complete
           </span>
         </div>
@@ -65,7 +65,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">IFRS 9 Provisioning</p>
-                <p class="text-xs text-kc-charcoal/60">Run ECL provision for all active loans</p>
+                <p class="text-xs text-kc-charcoal/70">Run ECL provision for all active loans</p>
               </div>
             </div>
             @if(!$period->provisioning_complete && $period->canPost())
@@ -88,7 +88,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">Funding Facility Interest Accrual</p>
-                <p class="text-xs text-kc-charcoal/60">Accrue interest on all active funding facilities</p>
+                <p class="text-xs text-kc-charcoal/70">Accrue interest on all active funding facilities</p>
               </div>
             </div>
             @if(!$period->facility_interest_accrued && $period->canPost())
@@ -111,7 +111,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">Bank Reconciliation</p>
-                <p class="text-xs text-kc-charcoal/60">
+                <p class="text-xs text-kc-charcoal/70">
                   @if($period->bank_recon_no_activity)
                     Confirmed no bank activity for this period
                   @else
@@ -148,7 +148,7 @@
               @endif
               <div>
                 <p class="text-sm font-semibold">Trial Balance &amp; P&amp;L Snapshot</p>
-                <p class="text-xs text-kc-charcoal/60">Capture GL account balances at period-end</p>
+                <p class="text-xs text-kc-charcoal/70">Capture GL account balances at period-end</p>
               </div>
             </div>
             @if(!$period->trial_balance_generated && $period->canPost())
@@ -200,7 +200,7 @@
             Start Period-End Close
           </button>
         </form>
-        <p class="text-xs text-kc-charcoal/60">Moves period to 'Closing'. You can still post adjusting entries.</p>
+        <p class="text-xs text-kc-charcoal/70">Moves period to 'Closing'. You can still post adjusting entries.</p>
         @endif
 
         @if($period->isClosing())
@@ -236,12 +236,12 @@
 
         @if($period->isLocked())
         <div class="flex items-center gap-2 p-3 rounded-lg border border-kc-silver-light bg-kc-silver-light/30">
-          <svg class="w-4 h-4 text-kc-charcoal/60 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-4 h-4 text-kc-charcoal/70 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
           </svg>
           <div>
-            <p class="text-xs font-semibold text-kc-charcoal/60">Period Locked</p>
-            <p class="text-[10px] text-kc-charcoal/60">Locked {{ $period->locked_at?->format('d M Y') }} by {{ $period->lockedBy?->name ?? 'System' }}</p>
+            <p class="text-xs font-semibold text-kc-charcoal/70">Period Locked</p>
+            <p class="text-[10px] text-kc-charcoal/70">Locked {{ $period->locked_at?->format('d M Y') }} by {{ $period->lockedBy?->name ?? 'System' }}</p>
           </div>
         </div>
         @endif
@@ -251,10 +251,10 @@
       @if($period->is_year_end)
       <div class="kc-card border-l-4 border-kc-gold">
         <h5 class="font-semibold text-kc-navy mb-2">Year-End ({{ $period->fiscal_year }})</h5>
-        <p class="text-xs text-kc-charcoal/60 mb-3">
+        <p class="text-xs text-kc-charcoal/70 mb-3">
           When this period closes, a year-end journal is automatically posted:
         </p>
-        <ul class="text-xs text-kc-charcoal/60 space-y-1 list-disc list-inside">
+        <ul class="text-xs text-kc-charcoal/70 space-y-1 list-disc list-inside">
           <li>All income accounts cleared → Retained Earnings</li>
           <li>All expense accounts cleared → Retained Earnings</li>
           <li>Net profit/loss transferred to equity</li>
@@ -263,7 +263,7 @@
         @if($period->year_end_complete)
         <div class="mt-3">
           <span class="kc-badge kc-badge-green">Year-end complete</span>
-          <p class="text-xs text-kc-charcoal/60 mt-1">GL ref: {{ $period->year_end_gl_batch_ref }}</p>
+          <p class="text-xs text-kc-charcoal/70 mt-1">GL ref: {{ $period->year_end_gl_batch_ref }}</p>
         </div>
         @endif
       </div>
@@ -285,7 +285,7 @@
               ['Notes',       Str::limit($period->notes ?? '—', 80)],
             ] as [$k,$v])
             <tr class="border-b border-kc-silver-light/60">
-              <td class="py-1.5 text-kc-charcoal/60 pr-2">{{ $k }}</td>
+              <td class="py-1.5 text-kc-charcoal/70 pr-2">{{ $k }}</td>
               <td class="py-1.5 font-medium">{{ $v }}</td>
             </tr>
             @endforeach

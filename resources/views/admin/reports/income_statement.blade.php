@@ -20,7 +20,7 @@
 
   <div class="kc-card max-w-2xl">
     <h3 class="font-display text-lg font-semibold text-kc-navy mb-1">Keystone Capital Partners</h3>
-    <p class="text-xs text-kc-charcoal/60 mb-6">Income Statement — {{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
+    <p class="text-xs text-kc-charcoal/70 mb-6">Income Statement — {{ \Carbon\Carbon::parse($from)->format('d M Y') }} to {{ \Carbon\Carbon::parse($to)->format('d M Y') }}</p>
 
     <table class="w-full text-sm">
       {{-- Net Interest Income — industry-standard presentation (per Capitec/
@@ -60,14 +60,14 @@
       {{-- Non-interest income --}}
       <thead>
         <tr>
-          <th class="text-left pt-4 pb-2 font-semibold text-kc-charcoal/60">Non-Interest Income</th>
+          <th class="text-left pt-4 pb-2 font-semibold text-kc-charcoal/70">Non-Interest Income</th>
           <th class="text-right"></th>
         </tr>
       </thead>
       <tbody>
         @forelse($nonInterestIncomeGroups as $groupName => $lines)
         <tr>
-          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60" colspan="2">{{ $groupName }}</td>
+          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70" colspan="2">{{ $groupName }}</td>
         </tr>
         @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
@@ -77,7 +77,7 @@
         @endforeach
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No non-interest income posted for this period.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/70" colspan="2">No non-interest income posted for this period.</td>
         </tr>
         @endforelse
         <tr class="border-b border-kc-navy/20 font-semibold">
@@ -89,14 +89,14 @@
       {{-- Operating expenses --}}
       <thead>
         <tr>
-          <th class="text-left pt-4 pb-2 font-semibold text-kc-charcoal/60">Operating Expenses</th>
+          <th class="text-left pt-4 pb-2 font-semibold text-kc-charcoal/70">Operating Expenses</th>
           <th class="text-right"></th>
         </tr>
       </thead>
       <tbody>
         @forelse($operatingExpenseGroups as $groupName => $lines)
         <tr>
-          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60" colspan="2">{{ $groupName }}</td>
+          <td class="pt-2 pb-1 pl-2 text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70" colspan="2">{{ $groupName }}</td>
         </tr>
         @foreach($lines as $line)
         <tr class="border-b border-kc-silver-light">
@@ -106,7 +106,7 @@
         @endforeach
         @empty
         <tr class="border-b border-kc-silver-light">
-          <td class="py-2 pl-4 text-kc-charcoal/60" colspan="2">No operating expenses posted for this period.</td>
+          <td class="py-2 pl-4 text-kc-charcoal/70" colspan="2">No operating expenses posted for this period.</td>
         </tr>
         @endforelse
         <tr class="border-b border-kc-navy/20 font-semibold">
@@ -122,7 +122,7 @@
     </table>
 
     @if($deferredInterest > 0 || $deferredFees > 0)
-    <div class="mt-4 p-3 rounded border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/60">
+    <div class="mt-4 p-3 rounded border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/70">
       <strong>Note:</strong> Deferred interest of R{{ number_format($deferredInterest, 2) }} and deferred fees of R{{ number_format($deferredFees, 2) }} relating to multi-month loans are carried as liabilities on the balance sheet and will be recognised when instalments are received.
     </div>
     @endif

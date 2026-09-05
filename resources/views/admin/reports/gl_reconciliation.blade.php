@@ -12,10 +12,10 @@
 
   @if($summary)
   <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Debits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_debit ?? 0, 2) }}</p></div>
-    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Total Credits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_credit ?? 0, 2) }}</p></div>
+    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Total Debits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_debit ?? 0, 2) }}</p></div>
+    <div class="kc-stat-card"><p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Total Credits</p><p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($summary->total_credit ?? 0, 2) }}</p></div>
     <div class="kc-stat-card">
-      <p class="text-xs text-kc-charcoal/60 uppercase tracking-wider">Unbalanced Batches</p>
+      <p class="text-xs text-kc-charcoal/70 uppercase tracking-wider">Unbalanced Batches</p>
       <p class="font-display text-xl font-bold {{ $batches->count() > 0 ? 'text-red-600' : 'text-emerald-600' }} mt-1">{{ $batches->count() }}</p>
     </div>
   </div>

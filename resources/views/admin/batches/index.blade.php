@@ -20,13 +20,13 @@
             <td data-label="File" class="text-xs text-kc-charcoal/70">{{ $batch->original_filename }}</td>
             <td data-label="Rows" class="font-semibold">{{ $batch->row_count }}</td>
             <td data-label="Status"><span class="kc-badge {{ $bsc }}">{{ $batch->status }}</span></td>
-            <td data-label="Imported" class="text-xs text-kc-charcoal/60">{{ $batch->created_at->format('d M Y H:i') }}</td>
+            <td data-label="Imported" class="text-xs text-kc-charcoal/70">{{ $batch->created_at->format('d M Y H:i') }}</td>
             <td data-label="Actions">
               <a href="{{ route('nu-pay.import.show', $batch->import_ref) }}" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View</a>
             </td>
           </tr>
           @empty
-          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/60">No imports yet. <a href="{{ route('nupay.upload.form') }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Upload now →</a></td></tr>
+          <tr><td colspan="6" class="text-center py-8 text-kc-charcoal/70">No imports yet. <a href="{{ route('nupay.upload.form') }}" class="text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">Upload now →</a></td></tr>
           @endforelse
         </tbody>
       </table>

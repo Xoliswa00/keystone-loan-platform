@@ -61,7 +61,7 @@
       <input type="number" name="max_months" value="{{ old('max_months', $product->max_months) }}" required
         class="kc-input @error('max_months') border-red-400 @enderror">
       @error('max_months')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-      <p class="text-[11px] text-kc-charcoal/60 mt-1">Set to 1–1 for a single-instalment product, or e.g. 2–5 to allow multi-month terms.</p>
+      <p class="text-[11px] text-kc-charcoal/70 mt-1">Set to 1–1 for a single-instalment product, or e.g. 2–5 to allow multi-month terms.</p>
     </div>
   </div>
 
@@ -71,7 +71,7 @@
       <input type="number" step="0.0001" name="monthly_interest_rate" value="{{ old('monthly_interest_rate', $product->monthly_interest_rate) }}" required
         class="kc-input @error('monthly_interest_rate') border-red-400 @enderror">
       @error('monthly_interest_rate')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-      <p class="text-[11px] text-kc-charcoal/60 mt-1">As a fraction, e.g. 0.05 = 5%/month. NCA cap: {{ config('nca.interest_rate_cap_monthly') }}.</p>
+      <p class="text-[11px] text-kc-charcoal/70 mt-1">As a fraction, e.g. 0.05 = 5%/month. NCA cap: {{ config('nca.interest_rate_cap_monthly') }}.</p>
     </div>
     <div>
       <label class="kc-label">VAT Rate</label>
@@ -84,7 +84,7 @@
       <input type="number" step="0.01" name="initiation_fee_flat" value="{{ old('initiation_fee_flat', $product->initiation_fee_flat) }}" required
         class="kc-input @error('initiation_fee_flat') border-red-400 @enderror">
       @error('initiation_fee_flat')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-      <p class="text-[11px] text-kc-charcoal/60 mt-1">NCA cap: R{{ config('nca.initiation_fee_flat_cap') }}.</p>
+      <p class="text-[11px] text-kc-charcoal/70 mt-1">NCA cap: R{{ config('nca.initiation_fee_flat_cap') }}.</p>
     </div>
     <div>
       <label class="kc-label">Initiation Fee Rate</label>
@@ -100,14 +100,14 @@
       <input type="number" step="0.01" name="initiation_fee_cap" value="{{ old('initiation_fee_cap', $product->initiation_fee_cap) }}" required
         class="kc-input @error('initiation_fee_cap') border-red-400 @enderror">
       @error('initiation_fee_cap')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-      <p class="text-[11px] text-kc-charcoal/60 mt-1">NCA absolute cap: R{{ config('nca.initiation_fee_absolute_cap') }}.</p>
+      <p class="text-[11px] text-kc-charcoal/70 mt-1">NCA absolute cap: R{{ config('nca.initiation_fee_absolute_cap') }}.</p>
     </div>
     <div>
       <label class="kc-label">Monthly Service Fee (R)</label>
       <input type="number" step="0.01" name="monthly_service_fee" value="{{ old('monthly_service_fee', $product->monthly_service_fee) }}" required
         class="kc-input @error('monthly_service_fee') border-red-400 @enderror">
       @error('monthly_service_fee')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-      <p class="text-[11px] text-kc-charcoal/60 mt-1">NCA cap: R{{ config('nca.monthly_service_fee_cap') }}.</p>
+      <p class="text-[11px] text-kc-charcoal/70 mt-1">NCA cap: R{{ config('nca.monthly_service_fee_cap') }}.</p>
     </div>
   </div>
 

@@ -53,7 +53,7 @@
       <div>
         <label class="kc-label">Branch Code</label>
         <input type="text" name="branch_code" x-model="branchCode" class="kc-input font-mono" placeholder="Filled in automatically once you pick a bank">
-        <p class="mt-1 text-[11px] text-kc-charcoal/60">Every branch of a bank shares one universal code — filled in for you, but you can edit it if yours differs.</p>
+        <p class="mt-1 text-[11px] text-kc-charcoal/70">Every branch of a bank shares one universal code — filled in for you, but you can edit it if yours differs.</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -72,7 +72,7 @@
         </div>
       </div>
 
-      <div class="p-3 rounded-lg border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/60">
+      <div class="p-3 rounded-lg border border-kc-gold/20 bg-kc-gold/5 text-xs text-kc-charcoal/70">
         By adding this account you authorise Keystone Capital Partners to debit it for loan repayments per your agreed schedule.
       </div>
 

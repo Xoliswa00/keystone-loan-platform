@@ -19,7 +19,7 @@
           <label class="kc-label">Select File</label>
           <input type="file" name="file" accept=".csv,.txt,.xlsx,.xls" class="kc-input py-2 cursor-pointer" required
             @change="ext = $event.target.value.split('.').pop().toLowerCase()">
-          <p class="text-xs text-kc-charcoal/60 mt-1">Max 20 MB</p>
+          <p class="text-xs text-kc-charcoal/70 mt-1">Max 20 MB</p>
         </div>
         <div x-show="ext === 'csv' || ext === 'txt'" x-cloak>
           <label class="kc-label">Transaction Type</label>
@@ -30,7 +30,7 @@
             <option value="tracking">Tracking</option>
             <option value="reversed">Reversed</option>
           </select>
-          <p class="text-xs text-kc-charcoal/60 mt-1">A CSV/TXT file has no tab to identify its type from — required for these formats only.</p>
+          <p class="text-xs text-kc-charcoal/70 mt-1">A CSV/TXT file has no tab to identify its type from — required for these formats only.</p>
         </div>
         <button type="submit" class="kc-btn-primary w-full justify-center">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -49,7 +49,7 @@
         <div class="flex items-center justify-between p-3 rounded-lg border border-kc-silver-light hover:border-kc-gold/30 transition mb-2">
           <div>
             <p class="text-sm font-semibold font-mono text-kc-navy">{{ $batch->import_ref }}</p>
-            <p class="text-xs text-kc-charcoal/60">{{ $batch->row_count }} rows · {{ $batch->created_at->format('d M Y H:i') }}</p>
+            <p class="text-xs text-kc-charcoal/70">{{ $batch->row_count }} rows · {{ $batch->created_at->format('d M Y H:i') }}</p>
           </div>
           <div class="flex items-center gap-2">
             <span class="kc-badge {{ $bsc }}">{{ $batch->status }}</span>
@@ -57,7 +57,7 @@
           </div>
         </div>
         @empty
-        <p class="text-sm text-kc-charcoal/60">No imports yet.</p>
+        <p class="text-sm text-kc-charcoal/70">No imports yet.</p>
         @endforelse
       @endisset
     </div>

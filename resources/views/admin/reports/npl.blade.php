@@ -19,12 +19,12 @@
               : 'border-kc-gold/40 bg-kc-gold/5');
     @endphp
     <div class="kc-card border-l-4 {{ $colour }}">
-      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">{{ $stage->stage }}</p>
+      <p class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">{{ $stage->stage }}</p>
       <p class="font-display text-xl font-semibold text-kc-navy mt-1">{{ $stage->loan_count }} loan(s)</p>
       <table class="w-full text-xs mt-2">
-        <tr><td class="text-kc-charcoal/60">Outstanding</td><td class="text-right font-semibold">R {{ number_format($stage->total_outstanding, 2) }}</td></tr>
-        <tr><td class="text-kc-charcoal/60">Arrears</td><td class="text-right font-semibold text-red-600">R {{ number_format($stage->total_arrears, 2) }}</td></tr>
-        <tr class="border-t border-kc-silver-light"><td class="text-kc-charcoal/60">ECL Provision</td><td class="text-right font-semibold text-orange-600">R {{ number_format($stage->total_provision, 2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/70">Outstanding</td><td class="text-right font-semibold">R {{ number_format($stage->total_outstanding, 2) }}</td></tr>
+        <tr><td class="text-kc-charcoal/70">Arrears</td><td class="text-right font-semibold text-red-600">R {{ number_format($stage->total_arrears, 2) }}</td></tr>
+        <tr class="border-t border-kc-silver-light"><td class="text-kc-charcoal/70">ECL Provision</td><td class="text-right font-semibold text-orange-600">R {{ number_format($stage->total_provision, 2) }}</td></tr>
       </table>
     </div>
     @endforeach
@@ -54,7 +54,7 @@
             <td data-label="Loan" class="font-mono text-xs">#{{ str_pad($loan->loan_id, 6, '0', STR_PAD_LEFT) }}</td>
             <td data-label="Client">
               <div class="font-semibold text-kc-navy">{{ $loan->client_name }}</div>
-              <div class="text-xs text-kc-charcoal/60">{{ $loan->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/70">{{ $loan->customer_code }}</div>
             </td>
             <td data-label="DPD" class="font-bold {{ $loan->dpd >= 90 ? 'text-red-600' : ($loan->dpd >= 30 ? 'text-orange-500' : 'text-kc-charcoal') }}">
               {{ $loan->dpd }}
@@ -77,7 +77,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="10" class="text-center text-kc-charcoal/60 py-8">No overdue loans. 🎉</td></tr>
+          <tr><td colspan="10" class="text-center text-kc-charcoal/70 py-8">No overdue loans. 🎉</td></tr>
           @endforelse
         </tbody>
       </table>
@@ -98,8 +98,8 @@
       ] as $i => $s)
       <div>
         <div class="border rounded p-2 {{ $s['colour'] }} font-semibold">{{ $s['step'] }}</div>
-        <div class="text-kc-charcoal/60 mt-1">{{ $s['note'] }}</div>
-        @if($i < 4) <div class="text-kc-charcoal/60 text-base">→</div> @endif
+        <div class="text-kc-charcoal/70 mt-1">{{ $s['note'] }}</div>
+        @if($i < 4) <div class="text-kc-charcoal/70 text-base">→</div> @endif
       </div>
       @endforeach
     </div>

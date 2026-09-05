@@ -7,16 +7,16 @@
   {{-- Org-level KPIs --}}
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Total Outstanding</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Total Outstanding</span>
       <p class="font-display text-2xl font-semibold text-kc-navy mt-2">R {{ number_format($totals['total_outstanding'], 2) }}</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Total Risky Exposure</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Total Risky Exposure</span>
       <p class="font-display text-2xl font-semibold text-red-600 mt-2">R {{ number_format($totals['total_risky'], 2) }}</p>
-      <p class="text-xs text-kc-charcoal/60 mt-1">Written-off or 90+ DPD</p>
+      <p class="text-xs text-kc-charcoal/70 mt-1">Written-off or 90+ DPD</p>
     </div>
     <div class="kc-stat-card">
-      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/60">Avg Default Rate</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-kc-charcoal/70">Avg Default Rate</span>
       <p class="font-display text-2xl font-semibold {{ $totals['avg_default_rate'] > 5 ? 'text-red-600' : 'text-emerald-600' }} mt-2">{{ number_format($totals['avg_default_rate'], 2) }}%</p>
     </div>
   </div>
@@ -56,7 +56,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="10" class="text-center text-kc-charcoal/60 py-8">No reviewed applications yet.</td></tr>
+          <tr><td colspan="10" class="text-center text-kc-charcoal/70 py-8">No reviewed applications yet.</td></tr>
           @endforelse
         </tbody>
       </table>

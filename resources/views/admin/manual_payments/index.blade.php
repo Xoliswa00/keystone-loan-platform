@@ -16,7 +16,7 @@
           <tr>
             <td data-label="Client">
               <div class="font-semibold">{{ $p->user?->name ?? '—' }}</div>
-              <div class="text-xs text-kc-charcoal/60">{{ $p->user?->customer?->customer_code }}</div>
+              <div class="text-xs text-kc-charcoal/70">{{ $p->user?->customer?->customer_code }}</div>
             </td>
             <td data-label="Schedule" class="text-xs">
               Instalment #{{ $p->repaymentSchedule?->installment_number ?? '—' }}
@@ -24,16 +24,16 @@
             </td>
             <td data-label="Amount" class="font-semibold text-kc-navy">R {{ number_format($p->payment_amount, 2) }}</td>
             <td data-label="Payment Date" class="text-xs">{{ \Carbon\Carbon::parse($p->payment_date)->format('d M Y') }}</td>
-            <td data-label="Reference" class="text-xs text-kc-charcoal/60">{{ $p->payment_reference ?? '—' }}</td>
+            <td data-label="Reference" class="text-xs text-kc-charcoal/70">{{ $p->payment_reference ?? '—' }}</td>
             <td data-label="Proof">
               @if($p->proof_of_payment_path)
               <a href="{{ route('secure-documents.repayment-proof', $p) }}"
                  target="_blank" class="text-xs text-kc-navy underline underline-offset-2 hover:text-kc-gold-muted">View</a>
               @else
-              <span class="text-xs text-kc-charcoal/60">—</span>
+              <span class="text-xs text-kc-charcoal/70">—</span>
               @endif
             </td>
-            <td data-label="Submitted" class="text-xs text-kc-charcoal/60">
+            <td data-label="Submitted" class="text-xs text-kc-charcoal/70">
               {{ $p->submittedBy?->name ?? 'Client' }} · {{ $p->created_at->format('d M Y') }}
             </td>
             <td data-label="Actions">
@@ -58,7 +58,7 @@
             </td>
           </tr>
           @empty
-          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/60">No payments awaiting verification.</td></tr>
+          <tr><td colspan="8" class="text-center py-8 text-kc-charcoal/70">No payments awaiting verification.</td></tr>
           @endforelse
         </tbody>
       </table>

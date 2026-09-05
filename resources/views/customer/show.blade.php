@@ -32,19 +32,19 @@
       {{-- Summary cards --}}
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/60 uppercase">Outstanding</p>
+          <p class="text-xs text-kc-charcoal/70 uppercase">Outstanding</p>
           <p class="font-display text-xl font-bold text-kc-navy mt-1">R {{ number_format($customer->current_balance??0,2) }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/60 uppercase">Active Loans</p>
+          <p class="text-xs text-kc-charcoal/70 uppercase">Active Loans</p>
           <p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $loans->whereNotIn('status',['settled','rejected','archived','written_off'])->count() }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/60 uppercase">Applications</p>
+          <p class="text-xs text-kc-charcoal/70 uppercase">Applications</p>
           <p class="font-display text-xl font-bold text-kc-navy mt-1">{{ $user->loanApplications->count() }}</p>
         </div>
         <div class="kc-stat-card text-center">
-          <p class="text-xs text-kc-charcoal/60 uppercase">Profile</p>
+          <p class="text-xs text-kc-charcoal/70 uppercase">Profile</p>
           <p class="font-display text-xl font-bold {{ $profileStatus['percentage']===100?'text-emerald-600':'text-kc-navy' }} mt-1">{{ $profileStatus['percentage'] }}%</p>
         </div>
       </div>
@@ -66,7 +66,7 @@
             ['Payday',    $user->salary_payment_day ? $user->salary_payment_day.'th' : '—'],
           ] as [$k,$v])
           <div class="flex gap-2">
-            <span class="text-kc-charcoal/60 text-xs flex-shrink-0 w-24">{{ $k }}</span>
+            <span class="text-kc-charcoal/70 text-xs flex-shrink-0 w-24">{{ $k }}</span>
             <span class="font-medium text-xs truncate">{{ $v }}</span>
           </div>
           @endforeach
@@ -75,9 +75,9 @@
         {{-- Affordability --}}
         @if($affordability['eligible'] ?? false)
         <div class="mt-3 pt-3 border-t border-kc-silver-light grid grid-cols-3 gap-3 text-center text-xs">
-          <div><p class="text-kc-charcoal/60">Total Income</p><p class="font-semibold">R {{ number_format($affordability['total_income']??0,2) }}</p></div>
-          <div><p class="text-kc-charcoal/60">Total Expenses</p><p class="font-semibold">R {{ number_format($affordability['total_expenses']??0,2) }}</p></div>
-          <div><p class="text-kc-charcoal/60">Disposable</p><p class="font-semibold {{ ($affordability['disposable_income']??0) > 0 ? 'text-emerald-600':'text-red-600' }}">R {{ number_format($affordability['disposable_income']??0,2) }}</p></div>
+          <div><p class="text-kc-charcoal/70">Total Income</p><p class="font-semibold">R {{ number_format($affordability['total_income']??0,2) }}</p></div>
+          <div><p class="text-kc-charcoal/70">Total Expenses</p><p class="font-semibold">R {{ number_format($affordability['total_expenses']??0,2) }}</p></div>
+          <div><p class="text-kc-charcoal/70">Disposable</p><p class="font-semibold {{ ($affordability['disposable_income']??0) > 0 ? 'text-emerald-600':'text-red-600' }}">R {{ number_format($affordability['disposable_income']??0,2) }}</p></div>
         </div>
         @endif
 
@@ -86,8 +86,8 @@
         @php $rf=$user->customerProfile->bank_statement_risk_flag??'low'; $rfCls=['low'=>'kc-badge-green','medium'=>'kc-badge-gold','high'=>'kc-badge-red','very_high'=>'kc-badge-red'][$rf]??'kc-badge-silver'; @endphp
         <div class="mt-3 pt-3 border-t border-kc-silver-light flex flex-wrap gap-3 text-xs items-center">
           <span class="kc-badge {{ $rfCls }}">Bank Risk: {{ strtoupper(str_replace('_',' ',$rf)) }}</span>
-          <span class="text-kc-charcoal/60">Days to R500 after payday: <strong>{{ $user->customerProfile->avg_days_to_zero ?? '—' }}</strong></span>
-          <span class="text-kc-charcoal/60">Verified salary: <strong>R {{ number_format($user->customerProfile->verified_income_amount??0,0) }}</strong></span>
+          <span class="text-kc-charcoal/70">Days to R500 after payday: <strong>{{ $user->customerProfile->avg_days_to_zero ?? '—' }}</strong></span>
+          <span class="text-kc-charcoal/70">Verified salary: <strong>R {{ number_format($user->customerProfile->verified_income_amount??0,0) }}</strong></span>
         </div>
         @endif
       </div>
@@ -106,10 +106,10 @@
                 <td data-label="Amount">R {{ number_format($loan->loan_amount,2) }}</td>
                 <td data-label="Status"><span class="kc-badge {{ $lsc }}">{{ ucfirst($loan->status) }}</span></td>
                 <td data-label="Remaining" class="{{ $loan->remaining_balance>0?'font-semibold':'' }}">R {{ number_format($loan->remaining_balance??0,2) }}</td>
-                <td data-label="Disbursed" class="text-xs text-kc-charcoal/60">{{ $loan->disbursed_date ? \Carbon\Carbon::parse($loan->disbursed_date)->format('d M Y') : '—' }}</td>
+                <td data-label="Disbursed" class="text-xs text-kc-charcoal/70">{{ $loan->disbursed_date ? \Carbon\Carbon::parse($loan->disbursed_date)->format('d M Y') : '—' }}</td>
               </tr>
               @empty
-              <tr><td colspan="5" class="text-center py-4 text-kc-charcoal/60">No loans.</td></tr>
+              <tr><td colspan="5" class="text-center py-4 text-kc-charcoal/70">No loans.</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -129,7 +129,7 @@
                 <td data-label="Date">{{ \Carbon\Carbon::parse($r->payment_date)->format('d M Y') }}</td>
                 <td data-label="Amount" class="font-semibold text-emerald-600">R {{ number_format($r->payment_amount,2) }}</td>
                 <td data-label="Method" class="text-xs">{{ ucfirst(str_replace('_',' ',$r->payment_method??'—')) }}</td>
-                <td data-label="GL" class="font-mono text-[10px] text-kc-charcoal/60">{{ $r->gl_batch_reference ?? '—' }}</td>
+                <td data-label="GL" class="font-mono text-[10px] text-kc-charcoal/70">{{ $r->gl_batch_reference ?? '—' }}</td>
               </tr>
               @endforeach
             </tbody>
@@ -149,7 +149,7 @@
               <span class="text-kc-gold text-[8px] font-bold">{{ strtoupper(substr($note->admin_name,0,1)) }}</span>
             </div>
             <div>
-              <p class="text-xs text-kc-charcoal/60">{{ $note->admin_name }} · {{ \Carbon\Carbon::parse($note->created_at)->diffForHumans() }} · <span class="kc-badge kc-badge-silver text-[9px]">{{ $note->note_type }}</span></p>
+              <p class="text-xs text-kc-charcoal/70">{{ $note->admin_name }} · {{ \Carbon\Carbon::parse($note->created_at)->diffForHumans() }} · <span class="kc-badge kc-badge-silver text-[9px]">{{ $note->note_type }}</span></p>
               <p>{{ $note->note }}</p>
             </div>
           </div>
@@ -192,7 +192,7 @@
             @endif
           </div>
           @else
-          <span class="text-[10px] text-kc-charcoal/60">Missing</span>
+          <span class="text-[10px] text-kc-charcoal/70">Missing</span>
           @endif
         </div>
         @endforeach

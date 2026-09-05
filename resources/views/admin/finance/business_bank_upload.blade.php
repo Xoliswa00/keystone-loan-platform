@@ -52,7 +52,7 @@
       <div class="flex items-center justify-between p-3 rounded-lg border border-kc-silver-light mb-2">
         <div>
           <p class="text-sm font-semibold font-mono">{{ $batch->import_ref }}</p>
-          <p class="text-xs text-kc-charcoal/60">{{ $meta['bank_name'] ?? '' }} · {{ $meta['period'] ?? '' }} · {{ $batch->row_count }} rows</p>
+          <p class="text-xs text-kc-charcoal/70">{{ $meta['bank_name'] ?? '' }} · {{ $meta['period'] ?? '' }} · {{ $batch->row_count }} rows</p>
         </div>
         <div class="flex items-center gap-2">
           <span class="kc-badge {{ $bsc }}">{{ $batch->status }}</span>
@@ -60,7 +60,7 @@
         </div>
       </div>
       @empty
-      <p class="text-sm text-kc-charcoal/60">No statements uploaded yet.</p>
+      <p class="text-sm text-kc-charcoal/70">No statements uploaded yet.</p>
       @endforelse
     </div>
   </div>
