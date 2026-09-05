@@ -5,6 +5,20 @@
 
     RewriteEngine On
 
+    # Canonical host — force https:// and the www. subdomain (the client
+    # advertises "www."). Scoped to the exact production domain so this
+    # never fires against a local/dev/staging hostname sharing this file.
+    # Two rules rather than one combined [OR] so each stays easy to reason
+    # about; http+apex costs two redirect hops (http→https, then →www),
+    # every other combination resolves in one.
+    RewriteCond %{HTTP_HOST} ^(www\.)?keystonecapitalpartners\.co\.za$ [NC]
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    RewriteCond %{HTTPS} on
+    RewriteCond %{HTTP_HOST} ^keystonecapitalpartners\.co\.za$ [NC]
+    RewriteRule ^ https://www.keystonecapitalpartners.co.za%{REQUEST_URI} [L,R=301]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
