@@ -52,7 +52,7 @@ The zone is on Afrihost NS (`ns.dns1.co.za`, `ns.dns2.co.za`, `ns.otherdns.com/.
 So there is **no registrar or nameserver change to make**. The "registered on behalf of a client" page you saw is just Afrihost's default for an account with nothing deployed yet.
 
 - [ ] Confirm `keystonecapitalpartners.co.za` is the account's primary domain in cPanel (it will be, given the A records) — or add it as an addon/alias if not.
-- [ ] Canonical host = **`www.`** (client advertises it). 301 apex → `www` via cPanel → *Domains* → Redirects, or a rule in `keystone/public/.htaccess`.
+- [x] Canonical host = **`www.`** (client advertises it). 301 apex → `www` and http → https are both handled by rules already committed in `keystone/public/.htaccess` — nothing to set up in cPanel *Domains → Redirects*. After a `git pull`, verify with `curl -I http://keystonecapitalpartners.co.za/` (expect a `301` to `https://www...`).
 - [ ] After the app is deployed and the docroot is set (step D), run cPanel → *SSL/TLS Status* → **Run AutoSSL** for both `@` and `www` (no CAA record blocks it). A-record TTL is 7200s, so allow ~2h if anything is changed.
 
 ---
