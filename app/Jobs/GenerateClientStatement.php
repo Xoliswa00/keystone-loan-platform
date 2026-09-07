@@ -13,7 +13,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -45,7 +44,7 @@ class GenerateClientStatement implements ShouldQueue
     public function handle(): void
     {
         $user = User::findOrFail($this->userId);
-        $company = DB::table('companies')->first();
+        $company = \App\Models\Company::settings();
 
         // Limit data to avoid memory issues
         $loans = Loan::where('user_id', $user->id)
@@ -94,7 +93,14 @@ class GenerateClientStatement implements ShouldQueue
             'statementDate' => now()->format('d F Y'),
             'statementRef' => 'STMT-'.str_pad($user->id, 6, '0', STR_PAD_LEFT).'-'.now()->format('Ymd'),
             'company' => $company,
+            // agreements.partials.header (shared with the loan agreement/pre-agreement
+            // PDFs) expects these as top-level variables, not derived from $company.
+            'companyAddress' => $company?->getFormattedAddress() ?? $company?->physical_address ?? $company?->address ?? 'South Africa',
             'ncr_number' => $company?->ncr_number ?? 'NCRCP XXXXX',
+            'vat_number' => $company?->vat_number ?? '—',
+            'contact_phone' => $company?->phone ?? '',
+            'contact_email' => $company?->email ?? '',
+            'generatedAt' => now()->format('d F Y H:i'),
         ])
             ->setPaper('A4', 'portrait')
             ->setOptions([
