@@ -59,14 +59,14 @@ class AccountSnapshotService
         $rows = 0;
 
         DB::transaction(function () use (
-            $period, $generation, $periodEnd, $defaultDpd, $settings, $balanceReconstructable, &$rows
+            $period, $generation, $periodEnd, $defaultDpd, $balanceReconstructable, &$rows
         ) {
             AccountSnapshot::where('period', $period)->where('generation', $generation)->delete();
 
             $this->eligibleLoansQuery($periodEnd)
                 ->orderBy('l.id')
                 ->chunk(500, function (Collection $loans) use (
-                    $period, $generation, $periodEnd, $defaultDpd, $settings, $balanceReconstructable, &$rows
+                    $period, $generation, $periodEnd, $defaultDpd, $balanceReconstructable, &$rows
                 ) {
                     $appIds = $loans->pluck('loan_application_id')->filter()->unique()->values()->all();
                     $loanIds = $loans->pluck('loan_id')->all();
