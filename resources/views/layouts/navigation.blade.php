@@ -18,7 +18,7 @@
                 'reports.scorecard', 'reports.alerts');
             $financeActive = request()->routeIs('nu-pay.*', 'admin.finance.*', 'admin.funding.*', 'admin.periods.*',
                 'bank-statement.*', 'loan-products.*', 'reports.*', 'admin.reports*');
-            $itActive = request()->routeIs('admin.system.*', 'admin.staff.*', 'admin.settings.*');
+            $itActive = request()->routeIs('admin.system.*', 'admin.staff.*', 'admin.settings.*', 'admin.exports.*');
         @endphp
 
         @if($isAdmin)
@@ -194,6 +194,10 @@
                     <a href="{{ route('admin.settings.lending') }}"
                         class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.settings.lending*') ? 'active' : '' }}">
                         Lending & Risk Settings
+                    </a>
+                    <a href="{{ route('admin.exports.dashboard') }}"
+                        class="kc-nav-item text-xs py-2 {{ request()->routeIs('admin.exports.*') ? 'active' : '' }}">
+                        Data Exports
                     </a>
                 </div>
             </div>

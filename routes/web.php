@@ -564,6 +564,41 @@ Route::middleware(['auth', 'role:admin,loan_officer,finance,it_admin'])->group(f
         Route::patch('/{recovery}', [\App\Http\Controllers\DebtRecoveryController::class, 'update'])->name('update');
     });
 
+    // ── Outbound data exports (SACRRA + partners) ─────────────────────────────
+    // Whole area is admin/it_admin only — it defines and triggers outbound
+    // transfers of full-book borrower PII, a governance function, not a
+    // finance one (same gate as admin/system logs). Defining a RECIPIENT
+    // (where data goes) is admin-only, one step tighter than running exports.
+    Route::middleware('role:admin,it_admin')->prefix('admin/exports')->name('admin.exports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Exports\RunController::class, 'dashboard'])->name('dashboard');
+
+        Route::get('/recipients', [\App\Http\Controllers\Admin\Exports\RecipientController::class, 'index'])->name('recipients.index');
+        Route::get('/recipients/{recipient}', [\App\Http\Controllers\Admin\Exports\RecipientController::class, 'edit'])->name('recipients.edit')->whereNumber('recipient');
+        Route::put('/recipients/{recipient}', [\App\Http\Controllers\Admin\Exports\RecipientController::class, 'update'])->name('recipients.update')->whereNumber('recipient');
+        Route::post('/recipients/{recipient}/toggle', [\App\Http\Controllers\Admin\Exports\RecipientController::class, 'toggleActive'])->name('recipients.toggle')->whereNumber('recipient');
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/recipients-new', [\App\Http\Controllers\Admin\Exports\RecipientController::class, 'create'])->name('recipients.create');
+            Route::post('/recipients', [\App\Http\Controllers\Admin\Exports\RecipientController::class, 'store'])->name('recipients.store');
+        });
+
+        Route::get('/profiles', [\App\Http\Controllers\Admin\Exports\ProfileController::class, 'index'])->name('profiles.index');
+        Route::get('/profiles-new', [\App\Http\Controllers\Admin\Exports\ProfileController::class, 'create'])->name('profiles.create');
+        Route::post('/profiles', [\App\Http\Controllers\Admin\Exports\ProfileController::class, 'store'])->name('profiles.store');
+        Route::get('/profiles/{profile}', [\App\Http\Controllers\Admin\Exports\ProfileController::class, 'edit'])->name('profiles.edit')->whereNumber('profile');
+        Route::put('/profiles/{profile}', [\App\Http\Controllers\Admin\Exports\ProfileController::class, 'update'])->name('profiles.update')->whereNumber('profile');
+        Route::post('/profiles/{profile}/toggle', [\App\Http\Controllers\Admin\Exports\ProfileController::class, 'toggleActive'])->name('profiles.toggle')->whereNumber('profile');
+        Route::post('/profiles/{profile}/preview', [\App\Http\Controllers\Admin\Exports\ProfileController::class, 'preview'])->name('profiles.preview')->whereNumber('profile');
+
+        Route::get('/runs', [\App\Http\Controllers\Admin\Exports\RunController::class, 'index'])->name('runs.index');
+        Route::get('/runs/{run}', [\App\Http\Controllers\Admin\Exports\RunController::class, 'show'])->name('runs.show')->whereNumber('run');
+        Route::get('/runs/{run}/download', [\App\Http\Controllers\Admin\Exports\RunController::class, 'download'])->name('runs.download')->whereNumber('run');
+        Route::post('/runs/{run}/rerun', [\App\Http\Controllers\Admin\Exports\RunController::class, 'rerun'])->name('runs.rerun')->whereNumber('run');
+
+        Route::get('/disputes', [\App\Http\Controllers\Admin\Exports\DisputeController::class, 'index'])->name('disputes.index');
+        Route::post('/disputes', [\App\Http\Controllers\Admin\Exports\DisputeController::class, 'store'])->name('disputes.store');
+        Route::post('/disputes/{dispute}/resolve', [\App\Http\Controllers\Admin\Exports\DisputeController::class, 'resolve'])->name('disputes.resolve')->whereNumber('dispute');
+    });
+
     // ── Admin resource (legacy) ───────────────────────────────────────────────
     // Only 'show' is real (used by loan_applications review pages as
     // Admin.show) — index/create/store/edit/update/destroy were leftover

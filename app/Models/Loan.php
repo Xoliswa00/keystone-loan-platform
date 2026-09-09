@@ -47,6 +47,12 @@ class Loan extends Model
         'deferred_interest',
         'deferred_fees',
         'carried_forward_shortfall',
+        // Write-off fields — set by BadDebtProvisionService::writeOff(); were
+        // silently dropped on save before being added here.
+        'written_off_date',
+        'write_off_amount',
+        'written_off_by',
+        'write_off_reason',
     ];
 
     protected $casts = [
@@ -62,6 +68,8 @@ class Loan extends Model
         'deferred_interest' => 'decimal:2',
         'deferred_fees' => 'decimal:2',
         'carried_forward_shortfall' => 'decimal:2',
+        'write_off_amount' => 'decimal:2',
+        'written_off_date' => 'date',
         'disbursed_date' => 'date',
         'approved_at' => 'datetime',
         'processed_at' => 'datetime',
