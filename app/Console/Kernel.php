@@ -48,6 +48,15 @@ class Kernel extends ConsoleKernel
             ->sundays()
             ->at('02:00');
 
+        // ── Account snapshots ── 27th so downstream data exports on the 28th
+        // have a fresh month. No-ops unless DATA_EXPORTS_SNAPSHOTS_ENABLED=true
+        // (the command self-gates — this is new full-book PII processing that
+        // must be in the POPIA records-of-processing before it runs in prod).
+        $schedule->command('keystone:build-account-snapshots')
+            ->monthlyOn(27, '23:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/account-snapshots.log'));
+
         // ── Xquisite monitoring heartbeat ── sync, not queued, so a dead queue
         // worker can't mask an outage (see App\Jobs\ReportHealthStatus).
         $schedule->job(new \App\Jobs\ReportHealthStatus)->everyFiveMinutes();
