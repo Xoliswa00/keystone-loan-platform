@@ -57,6 +57,15 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/account-snapshots.log'));
 
+        // ── Outbound data exports ── daily; each profile self-selects by its
+        // configured day-of-month and only runs if no successful run exists yet
+        // for the period (a missed day is caught up the next day). No-ops
+        // unless DATA_EXPORTS_ENABLED=true.
+        $schedule->command('keystone:run-data-exports')
+            ->dailyAt('06:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/data-exports.log'));
+
         // ── Xquisite monitoring heartbeat ── sync, not queued, so a dead queue
         // worker can't mask an outage (see App\Jobs\ReportHealthStatus).
         $schedule->job(new \App\Jobs\ReportHealthStatus)->everyFiveMinutes();
