@@ -393,6 +393,11 @@ class LoanApplicationController extends Controller
             'loan_amount' => 'required|numeric|min:0',
             'purpose' => 'required|string',
             'collateral' => 'nullable|string',
+            // Same file rules as store(). Without them a client could replace a
+            // statement with an HTML file, which SecureDocumentController would
+            // then open as a page in the reviewing staff member's session.
+            'bank_statement' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'payslips' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         $application->fill($request->only([

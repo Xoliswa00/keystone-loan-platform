@@ -55,7 +55,7 @@
       <form method="POST" action="{{ route('admin.exports.runs.rerun', $run) }}">
         @csrf
         <button type="submit" class="kc-btn-ghost text-sm"
-          onclick="return confirm('Re-run {{ $run->profile?->name }} for {{ $run->period }}? This sends again.')">
+          onclick="return confirm(@js('Re-run '.$run->profile?->name.' for '.$run->period.'? This sends again.'))">
           Re-run this period
         </button>
       </form>

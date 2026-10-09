@@ -29,7 +29,7 @@ class NcrExportService
      */
     public function loansForQuarter(string $quarter): Collection
     {
-        if (! preg_match('/(\d{4})-Q([1-4])/', $quarter, $m)) {
+        if (! preg_match('/^(\d{4})-Q([1-4])$/D', $quarter, $m)) {
             throw new \InvalidArgumentException('Invalid quarter format. Use YYYY-QN (e.g. 2026-Q1)');
         }
 
@@ -82,14 +82,14 @@ class NcrExportService
             $csv .= implode(',', [
                 $loan->application_id,
                 $loan->loan_id,
-                $loan->customer_code ?? '',
-                '"'.($loan->id_number ?? '').'"',
-                '"'.str_replace('"', '""', $loan->full_name ?? '').'"',
+                self::text($loan->customer_code),
+                self::text($loan->id_number),
+                self::text($loan->full_name),
                 $loan->age ?? '',
-                $loan->gender ?? '',
-                $loan->loan_type ?? '',
-                '"'.($loan->nca_credit_type ?? '').'"',
-                $loan->ncr_purpose_code ?? 'OTHER',
+                self::text($loan->gender),
+                self::text($loan->loan_type),
+                self::text($loan->nca_credit_type),
+                self::text($loan->ncr_purpose_code ?? 'OTHER'),
                 number_format($loan->principal_amount, 2, '.', ''),
                 number_format($loan->initiation_fee ?? 0, 2, '.', ''),
                 number_format($loan->service_fee ?? 0, 2, '.', ''),
@@ -97,15 +97,31 @@ class NcrExportService
                 number_format($loan->total_credit_cost ?? 0, 2, '.', ''),
                 $loan->term_months ?? 1,
                 $loan->disbursed_date ?? '',
-                $loan->loan_status ?? '',
+                self::text($loan->loan_status),
                 number_format($loan->remaining_balance ?? 0, 2, '.', ''),
-                $loan->account_status ?? '',
+                self::text($loan->account_status),
                 number_format($loan->dti_ratio ?? 0, 2, '.', ''),
-                $loan->credit_bureau_score ?? '',
-                $loan->credit_bureau_provider ?? '',
+                self::text($loan->credit_bureau_score),
+                self::text($loan->credit_bureau_provider),
             ])."\n";
         }
 
         return $csv;
+    }
+
+    /**
+     * A text cell: quoted, and with a leading = + - @ (or tab / carriage return)
+     * neutralised so a spreadsheet does not run a client-supplied name as a
+     * formula when the return is opened.
+     */
+    private static function text(mixed $value): string
+    {
+        $value = (string) ($value ?? '');
+
+        if ($value !== '' && ! is_numeric($value) && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            $value = "'".$value;
+        }
+
+        return '"'.str_replace('"', '""', $value).'"';
     }
 }

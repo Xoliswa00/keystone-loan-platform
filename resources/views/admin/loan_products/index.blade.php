@@ -58,7 +58,7 @@
                 <form method="POST" action="{{ route('loan-products.toggle-active', $product) }}">
                   @csrf
                   <button type="submit" class="kc-btn-ghost text-[10px] py-1 px-2"
-                    onclick="return confirm('{{ $product->active ? 'Deactivate' : 'Activate' }} \'{{ $product->name }}\' for all clients?')">
+                    onclick="return confirm(@js(($product->active ? 'Deactivate' : 'Activate').' \''.$product->name.'\' for all clients?'))">
                     {{ $product->active ? 'Deactivate' : 'Activate' }}
                   </button>
                 </form>

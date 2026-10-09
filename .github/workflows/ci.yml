@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   # Daily drift check — re-runs the full gate (Pint, PHP lint,
   # monitoring:verify, tests) against main even when nothing was pushed, so a
   # direct merge, revert, or dependency change that never triggered a
@@ -93,6 +93,20 @@ jobs:
       # bypassed by a push from a clone that never installed the hooks.
       - name: Verify Xquisite monitoring integration
         run: php artisan monitoring:verify
+
+      # Injection guards as their own named step, so a failure says "security"
+      # rather than hiding in the full suite. BladeJsContextTest scans every
+      # view for a Blade echo inside a JavaScript string; the rest replay each
+      # attack fixed in the 2026-10-09 audit.
+      - name: Security tests
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: ""
+        run: php artisan test tests/Feature/Security
 
       - name: Run tests
         env:

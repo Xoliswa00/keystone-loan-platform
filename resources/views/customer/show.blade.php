@@ -238,7 +238,7 @@
           <form method="POST" action="{{ route('customers.blacklist', $customer) }}">
             @csrf
             <button type="submit" class="kc-btn-ghost w-full justify-center text-xs {{ $user->blacklisted?'text-emerald-600 border-emerald-200':'text-red-600 border-red-200' }}"
-              onclick="return confirm('{{ $user->blacklisted ? 'Remove from blacklist?' : 'Blacklist this client?' }}')">
+              onclick="return confirm(@js($user->blacklisted ? 'Remove from blacklist?' : 'Blacklist this client?'))">
               {{ $user->blacklisted ? 'Remove Blacklist' : 'Add to Blacklist' }}
             </button>
           </form>
@@ -250,7 +250,7 @@
           <form method="POST" action="{{ route('customers.extended-terms', $customer) }}">
             @csrf
             <button type="submit" class="kc-btn-ghost w-full justify-center text-xs {{ $user->extended_terms_eligible ? 'text-emerald-600 border-emerald-200' : '' }}"
-              onclick="return confirm('{{ $user->extended_terms_eligible ? 'Revoke extended-term eligibility?' : 'Allow this client to apply for extended-term (multi-month) loans?' }}')">
+              onclick="return confirm(@js($user->extended_terms_eligible ? 'Revoke extended-term eligibility?' : 'Allow this client to apply for extended-term (multi-month) loans?'))">
               {{ $user->extended_terms_eligible ? 'Revoke Extended Terms' : 'Grant Extended Terms' }}
             </button>
           </form>

@@ -19,6 +19,8 @@ class SecureDocumentController extends Controller
 {
     private const APPLICATION_FIELDS = ['bank_statement', 'payslips', 'credit_score_report'];
 
+    private const INLINE_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+
     public function customerDocument(CustomerDocument $document)
     {
         $this->authoriseOwnerOrStaff($document->user_id);
@@ -63,8 +65,18 @@ class SecureDocumentController extends Controller
     {
         abort_if(! $path || ! Storage::disk('local')->exists($path), 404);
 
-        $headers = ['Content-Disposition' => 'inline'.($downloadName ? "; filename=\"{$downloadName}\"" : '')];
+        // Only PDFs and photos open in the browser. Anything else downloads, and
+        // nosniff stops a browser treating a disguised upload as a page in the
+        // viewer's session. The name comes from the client's original filename,
+        // so it is reduced to safe characters before it goes into a header.
+        $mime = Storage::disk('local')->mimeType($path) ?: 'application/octet-stream';
+        $inline = in_array($mime, self::INLINE_TYPES, true);
+        $name = preg_replace('/[^A-Za-z0-9._ -]/', '_', $downloadName ?: basename($path));
 
-        return response()->file(Storage::disk('local')->path($path), $headers);
+        return response()->file(Storage::disk('local')->path($path), [
+            'Content-Type' => $inline ? $mime : 'application/octet-stream',
+            'Content-Disposition' => ($inline ? 'inline' : 'attachment')."; filename=\"{$name}\"",
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }

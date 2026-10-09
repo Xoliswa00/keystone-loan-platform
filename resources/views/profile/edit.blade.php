@@ -67,7 +67,7 @@
               <button type="button" disabled class="kc-btn-ghost text-xs opacity-40 cursor-not-allowed">Withdraw</button>
             @else
               <form method="POST" action="{{ route('profile.consent.update') }}"
-                  onsubmit="return confirm('{{ $consents[$type] ? 'Withdrawing this consent may prevent us from assessing new or existing loan applications. Continue?' : 'Re-grant this consent?' }}');">
+                  onsubmit="return confirm(@js($consents[$type] ? 'Withdrawing this consent may prevent us from assessing new or existing loan applications. Continue?' : 'Re-grant this consent?'));">
                 @csrf
                 <input type="hidden" name="consent_type" value="{{ $type }}">
                 <input type="hidden" name="granted" value="{{ $consents[$type] ? '0' : '1' }}">

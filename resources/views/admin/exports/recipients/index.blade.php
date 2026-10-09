@@ -38,7 +38,7 @@
                   <form method="POST" action="{{ route('admin.exports.recipients.toggle', $r) }}">
                     @csrf
                     <button type="submit" class="kc-btn-ghost text-[10px] py-1 px-2"
-                      onclick="return confirm('{{ $r->active ? 'Deactivate' : 'Activate' }} {{ $r->name }}?')">
+                      onclick="return confirm(@js(($r->active ? 'Deactivate' : 'Activate').' '.$r->name.'?'))">
                       {{ $r->active ? 'Deactivate' : 'Activate' }}
                     </button>
                   </form>

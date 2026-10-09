@@ -38,8 +38,17 @@ class CompanySettingsController extends Controller
             'signatory_title' => 'nullable|string|max:100',
             'notification_from_email' => 'nullable|email',
             'notification_from_name' => 'nullable|string|max:100',
-            'notification_cc' => 'nullable|string|max:500',
-            'logo' => 'nullable|file|mimes:png,jpg,jpeg,svg|max:2048',
+            // A comma-separated list of addresses. Each one is checked, because
+            // this goes straight into the Cc of every loan email.
+            'notification_cc' => ['nullable', 'string', 'max:500', function (string $attribute, mixed $value, \Closure $fail) {
+                foreach (array_filter(array_map('trim', explode(',', (string) $value))) as $address) {
+                    if (! filter_var($address, FILTER_VALIDATE_EMAIL)) {
+                        $fail("\"{$address}\" is not a valid email address.");
+                    }
+                }
+            }],
+            // No SVG: the logo sits on the public disk and an SVG can carry script.
+            'logo' => 'nullable|file|mimes:png,jpg,jpeg|max:2048',
         ]);
 
         $company = Company::first() ?? new Company;

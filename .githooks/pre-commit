@@ -7,5 +7,8 @@
 # composer's post-install-cmd/post-update-cmd (see composer.json) via
 # `git config core.hooksPath .githooks` — so a fresh clone + composer
 # install gets this enforcement without any manual step.
-php artisan --no-ansi monitoring:verify
+php artisan --no-ansi monitoring:verify || exit 1
+
+# Blade-echo-inside-a-JavaScript-string scan (XSS). No database needed.
+php vendor/bin/phpunit --no-coverage tests/Feature/Security/BladeJsContextTest.php
 exit $?
