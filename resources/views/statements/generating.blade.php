@@ -7,7 +7,7 @@
   </x-slot>
 
   <div class="max-w-md mx-auto text-center py-12"
-    x-data="statementPoller('{{ $poll_url }}', '{{ $download_url }}')"
+    x-data="statementPoller(@js($poll_url), @js($download_url))"
     x-init="startPolling()">
 
     <div class="kc-card">

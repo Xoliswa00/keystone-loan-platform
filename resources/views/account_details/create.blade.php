@@ -20,7 +20,7 @@
           'Investec': '580105',
           'Bidvest Bank': '462005',
         },
-        branchCode: '{{ old('branch_code') }}',
+        branchCode: @js((string) old('branch_code', '')),
       }">
       @csrf
       <input type="hidden" name="status" value="active">

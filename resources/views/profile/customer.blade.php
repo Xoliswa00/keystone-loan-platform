@@ -144,8 +144,8 @@
             <script>
               document.querySelector('form').addEventListener('submit', function(e) {
                 @foreach($expenses as $key => [$label, $min, $max])
-                  document.querySelector('[name="{{ $key }}_hidden"]').name = '{{ $key }}';
-                  document.querySelector('[name="{{ $key }}"]').name = '{{ $key }}_range';
+                  document.querySelector(@js('[name="'.$key.'_hidden"]')).name = @js($key);
+                  document.querySelector(@js('[name="'.$key.'"]')).name = @js($key.'_range');
                 @endforeach
               });
             </script>

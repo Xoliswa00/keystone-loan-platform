@@ -128,7 +128,7 @@
                 <button type="submit" class="kc-btn-ghost text-xs py-1 px-3">Mark Done</button>
               </form>
               <form method="POST" action="{{ route('admin.periods.bank-recon-no-activity', $period) }}"
-                onsubmit="return confirm('Confirm there was genuinely no bank activity for {{ $period->displayLabel() }}? The system will check for repayments, disbursements, and uploaded bank statements before accepting this.')">
+                onsubmit="return confirm(@js('Confirm there was genuinely no bank activity for '.$period->displayLabel().'? The system will check for repayments, disbursements, and uploaded bank statements before accepting this.'))">
                 @csrf
                 <button type="submit" class="kc-btn-ghost text-xs py-1 px-3">No Activity</button>
               </form>
@@ -212,7 +212,7 @@
           <button type="submit"
             class="{{ $period->checklistComplete() ? 'kc-btn-primary' : 'kc-btn-ghost opacity-50 cursor-not-allowed' }} w-full justify-center"
             {{ $period->checklistComplete() ? '' : 'disabled' }}
-            onclick="return confirm('Close {{ $period->displayLabel() }}? {{ $period->is_year_end ? "This is a year-end period — year-end journals will be posted." : "" }}')">
+            onclick="return confirm(@js('Close '.$period->displayLabel().'? '.($period->is_year_end ? 'This is a year-end period — year-end journals will be posted.' : '')))">
             Close Period {{ $period->is_year_end ? '+ Year-End' : '' }}
           </button>
         </form>
@@ -228,7 +228,7 @@
         <form method="POST" action="{{ route('admin.periods.lock', $period) }}">
           @csrf
           <button type="submit" class="kc-btn-secondary w-full justify-center"
-            onclick="return confirm('Lock {{ $period->displayLabel() }}? This is irreversible — no further changes will be allowed.')">
+            onclick="return confirm(@js('Lock '.$period->displayLabel().'? This is irreversible — no further changes will be allowed.'))">
             Lock Period (Final Sign-off)
           </button>
         </form>

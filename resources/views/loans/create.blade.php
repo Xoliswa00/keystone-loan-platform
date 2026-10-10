@@ -140,7 +140,7 @@
         const initiationRate = {{ $feeRules['initiation_rate'] ?? 0.10 }};
         const maxInitiation = {{ $feeRules['max_initiation'] ?? 1050 }};
         const serviceFee = {{ $feeRules['service_fee'] ?? 60 }};
-        const loyaltyStartDate = new Date("{{ $loyaltyStartDate }}");
+        const loyaltyStartDate = new Date(@js((string) $loyaltyStartDate));
 
         function updateFees() {
             const loanAmount = parseFloat(loanAmountInput.value);

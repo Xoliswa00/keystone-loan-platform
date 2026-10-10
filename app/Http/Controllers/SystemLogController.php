@@ -21,9 +21,17 @@ class SystemLogController extends Controller
      */
     public function index(Request $request)
     {
-        $level = $request->get('level', 'all');
-        $search = $request->get('search', '');
-        $date = $request->get('date', now()->toDateString());
+        $level = (string) $request->get('level', 'all');
+        $search = (string) $request->get('search', '');
+        $date = (string) $request->get('date', now()->toDateString());
+
+        // Both end up inside a regular expression in countByLevel().
+        if (! preg_match('/^[a-z]+$/D', $level)) {
+            $level = 'all';
+        }
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date)) {
+            $date = now()->toDateString();
+        }
 
         $entries = $this->parseLog($level, $search, $date);
         $failedJobs = $this->getFailedJobs();
@@ -248,7 +256,7 @@ class SystemLogController extends Controller
         }
 
         $count = 0;
-        $pattern = "/^\[{$date}.*?\] \w+\.{$level}: /";
+        $pattern = '/^\['.preg_quote($date, '/').'.*?\] \w+\.'.preg_quote($level, '/').': /';
         $fh = fopen($path, 'r');
 
         while (! feof($fh)) {

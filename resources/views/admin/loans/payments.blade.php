@@ -9,7 +9,7 @@
     <form method="POST" action="{{ route('disbursements.approveAll') }}">
       @csrf
       <button type="submit" class="kc-btn-primary"
-        onclick="return confirm('Approve ALL {{ $disbursements->count() }} disbursements and post to GL?')">
+        onclick="return confirm(@js('Approve ALL '.$disbursements->count().' disbursements and post to GL?'))">
         Approve All + GL Post
       </button>
     </form>
@@ -43,7 +43,7 @@
                   @csrf
                   <input type="hidden" name="rejection_reason" id="rej_{{ $disb->id }}" value="">
                   <button type="button" class="kc-btn-ghost text-xs py-1 px-3 border-red-200 text-red-600"
-                    onclick="let r=prompt('Rejection reason:');if(r){document.getElementById('rej_{{ $disb->id }}').value=r;this.closest('form').submit()}">Reject</button>
+                    onclick="let r=prompt('Rejection reason:');if(r){document.getElementById(@js('rej_'.$disb->id)).value=r;this.closest('form').submit()}">Reject</button>
                 </form>
               </div>
             </td>
