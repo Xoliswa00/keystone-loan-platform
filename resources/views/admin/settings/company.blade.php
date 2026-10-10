@@ -140,16 +140,19 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="kc-label">From Email</label>
-            <input type="email" name="notification_from_email" value="{{ old('notification_from_email', $company->notification_from_email) }}" class="kc-input" placeholder="noreply@yourcompany.co.za">
+            <input type="email" name="notification_from_email" @disabled(! auth()->user()->hasRole('it_admin')) value="{{ old('notification_from_email', $company->notification_from_email) }}" class="kc-input" placeholder="noreply@yourcompany.co.za">
           </div>
           <div>
             <label class="kc-label">From Name</label>
-            <input type="text" name="notification_from_name" value="{{ old('notification_from_name', $company->notification_from_name) }}" class="kc-input" placeholder="Keystone Capital Partners">
+            <input type="text" name="notification_from_name" @disabled(! auth()->user()->hasRole('it_admin')) value="{{ old('notification_from_name', $company->notification_from_name) }}" class="kc-input" placeholder="Keystone Capital Partners">
           </div>
           <div class="sm:col-span-2">
             <label class="kc-label">CC on All Loan Notifications <span class="text-kc-charcoal/70 text-[10px]">comma-separated</span></label>
-            <input type="text" name="notification_cc" value="{{ old('notification_cc', $company->notification_cc) }}" class="kc-input" placeholder="manager@company.co.za, compliance@company.co.za">
+            <input type="text" name="notification_cc" @disabled(! auth()->user()->hasRole('it_admin')) value="{{ old('notification_cc', $company->notification_cc) }}" class="kc-input" placeholder="manager@company.co.za, compliance@company.co.za">
             <p class="text-[10px] text-kc-charcoal/70 mt-1">All approval, rejection, disbursement and payment notifications will CC these addresses.</p>
+            @unless (auth()->user()->hasRole('it_admin'))
+              <p class="text-[10px] text-kc-charcoal/70 mt-1">Only an admin or IT admin can change the sender and CC addresses.</p>
+            @endunless
           </div>
         </div>
 

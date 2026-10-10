@@ -46,9 +46,11 @@
 
                         <div>
                             <label for="loan_amount" class="block text-sm font-medium text-gray-700">Loan Amount</label>
-                            <input type="number" name="loan_amount" id="loan_amount"
-                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                                   value="{{ old('loan_amount', $loanApplication->loan_amount) }}">
+                            <input type="number" name="loan_amount" id="loan_amount" readonly
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-600"
+                                   value="{{ $loanApplication->loan_amount }}">
+                            <p class="mt-1 text-xs text-gray-500">The amount is fixed once you have applied. Contact us if you need a different amount.</p>
+                            @error('loan_amount') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="md:col-span-2">

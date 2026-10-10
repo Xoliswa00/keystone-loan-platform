@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class LoanApplicationController extends Controller
 {
@@ -400,8 +401,21 @@ class LoanApplicationController extends Controller
             'payslips' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
+        // The amount is fixed once the application is submitted. The
+        // affordability snapshot, the fee record and the repayment schedule
+        // were all calculated from it at submission, so changing it here would
+        // leave an application whose paperwork no longer matches the amount
+        // (and one that was never assessed at the new figure). A different
+        // amount goes through the counter-offer flow, which recalculates all
+        // three.
+        if (round((float) $request->input('loan_amount'), 2) !== round((float) $application->loan_amount, 2)) {
+            throw ValidationException::withMessages([
+                'loan_amount' => 'The amount cannot be changed after you have applied. Please contact us and we will propose new terms for you to accept.',
+            ]);
+        }
+
         $application->fill($request->only([
-            'loan_type', 'loan_amount', 'purpose', 'collateral',
+            'loan_type', 'purpose', 'collateral',
         ]));
 
         if ($request->hasFile('bank_statement')) {

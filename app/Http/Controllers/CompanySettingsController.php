@@ -53,6 +53,13 @@ class CompanySettingsController extends Controller
 
         $company = Company::first() ?? new Company;
 
+        // Who loan emails come from and who is copied on them decides where
+        // client information is sent, so only an admin or IT admin may change
+        // it. Other staff can still edit the company details on this page.
+        if (! $request->user()->hasRole('it_admin')) {
+            unset($validated['notification_from_email'], $validated['notification_from_name'], $validated['notification_cc']);
+        }
+
         if ($request->hasFile('logo')) {
             if ($company->logo_path) {
                 Storage::disk('public')->delete($company->logo_path);
